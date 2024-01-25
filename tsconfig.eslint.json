@@ -1,0 +1,13 @@
+// tsconfig.eslint.json
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    // Add your ESLint rules here
+  }
+}
+  
+  
