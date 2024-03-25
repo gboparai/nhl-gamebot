@@ -26,7 +26,7 @@ type TeamSummary = {
     winsInShootout: number;
 };
 
-type TeamSummaries = {
+export type TeamSummaries = {
     data: TeamSummary[];
 };
 
@@ -167,7 +167,7 @@ type GameVideo = {
     threeMinRecap: number;
 };
 
-type GameData = {
+export type GameLanding = {
     id: number;
     season: number;
     gameType: number;
@@ -285,7 +285,7 @@ type GameData = {
 
 
 //https://api-web.nhle.com/v1/gamecenter/2023020708/boxscore
-type Boxscore = {
+export type Boxscore = {
     id: number;
     season: number;
     gameType: number;
@@ -652,23 +652,12 @@ export type Game = {
     homeTeam: Team;
     gameCenterLink: string;
     threeMinRecap: string;
-    clock: {
-        timeRemaining: string;
-        secondsRemaining: number;
-        running: boolean;
-        inIntermission: boolean;
-    };
+    clock: Clock;
     neutralSite: boolean;
     venueTimezone: string;
     period: number;
-    periodDescriptor: {
-        number: number;
-        periodType: string;
-    };
-    gameOutcome: {
-        lastPeriodType: string;
-        otPeriods?: number;
-    };
+    periodDescriptor: PeriodDescriptor;
+    gameOutcome: GameOutcome;
     goals: Goal[];
 }
 
@@ -689,7 +678,7 @@ type GameWeek = {
     numberOfGames: number;
 }
 
-type NHLData = {
+export type NHLScores = {
     prevDate: string;
     currentDate: string;
     nextDate: string;
@@ -782,7 +771,7 @@ type Play = {
 type GameOutcome = {
     lastPeriodType: string;
 }
-type PlayByPlayGame = {
+export type PlayByPlayGame = {
     id: number;
     season: number;
     gameType: number;
