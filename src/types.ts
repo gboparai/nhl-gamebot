@@ -749,11 +749,20 @@ type Details = {
     typeCode?: string;
     descKey?: string;
     duration?: number;
+    servedByPlayerId?: number;
     committedByPlayerId?: number;
     drawnByPlayerId?: number;
     blockingPlayerId?: number;
     hitteePlayerId?: number;
     hittingPlayerId?: number;
+    scoringPlayerId?: number;
+    scoringPlayerTotal?: number;
+    assist1PlayerId?: number;
+    assist1PlayerTotal?: number;
+    assist2PlayerId?: number;
+    assist2PlayerTotal?: number;
+    awayScore?: number;
+    homeScore?: number;
 }
 type Play = {
     eventId: number;
@@ -763,7 +772,9 @@ type Play = {
     situationCode: string;
     homeTeamDefendingSide: string;
     typeCode: number;
-    typeDescKey: string;
+    typeDescKey: 'period-start' | 'faceoff' | 'stoppage' | 'shot-on-goal' | 'penalty' | 'hit' | 'missed-shot'
+    | 'blocked-shot' | 'takeaway' | 'giveaway' | 'offside' | 'icing' | 'challenge' | 'fight' | 'period-end'
+    | 'game-end' | 'delayed-penalty' | 'goal';
     sortOrder: number;
     details?: Details;
 }

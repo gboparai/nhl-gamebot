@@ -2,10 +2,10 @@
 import config from '../config.json';
 import { fetchTeamSummaries, fetchGameLanding, fetchBoxscore, fetchPlayByPlay, fetchNHLScores } from './api/nhl';
 import { youtubeCondensed } from './api/youtube';
-import { hockeyStatCards } from './api/hockeyStatCards';
+//import { hockeyStatCards } from './api/hockeyStatCards';
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores } from './types';
-import { logObjectToFile } from './social/socialHandler';
+import { logObjectToFile } from './logger';
 /**
  * Represents the possible states of a game.
  */
@@ -68,10 +68,14 @@ const main = async (): Promise<void> => {
     let homeTeamSummary: TeamSummary | undefined;
     let awayTeamSummary: TeamSummary | undefined;
     let scouteDetails: GameDetails | undefined;
+    let hasSentIntermission: boolean = false;
+    let lastEventID: number = 0;
     while (true) {
         if (CurrentState === GameStates.WAITING) {
             let nhlScores: NHLScores = await fetchNHLScores(new Date().toISOString().split('T')[0]);
+            logObjectToFile(nhlScores, 'nhlScores-waiting');
             currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
+            logObjectToFile(currentGame, 'currentGame-waiting');
             if (currentGame !== undefined) {
                 let sleepTime = new Date(currentGame.startTimeUTC);
                 sleepTime.setHours(sleepTime.getHours() - 1);
@@ -85,10 +89,15 @@ const main = async (): Promise<void> => {
         else if (CurrentState === GameStates.PREGAME && currentGame !== undefined) {
             gameLanding = await fetchGameLanding(String(currentGame.id));
             boxscore = await fetchBoxscore(String(currentGame.id));
+            logObjectToFile(gameLanding, 'gameLanding-pregame');
+            logObjectToFile(boxscore, 'boxscore-pregame');
             let teamSummaries = await fetchTeamSummaries();
             homeTeamSummary = teamSummaries.data.find((team) => team.teamId === currentGame!.homeTeam.id);
             awayTeamSummary = teamSummaries.data.find((team) => team.teamId === currentGame!.awayTeam.id);
+            logObjectToFile(homeTeamSummary, 'homeTeamSummary-pregame');
+            logObjectToFile(awayTeamSummary, 'awayTeamSummary-pregame');
             scouteDetails = await fetchGameDetails(currentGame);
+            logObjectToFile(scouteDetails, 'scouteDetails-pregame');
 
             if (scouteDetails.confirmed === false) {
                 await sleep(config.app.script.pregame_sleep_time);
@@ -101,23 +110,43 @@ const main = async (): Promise<void> => {
         }
         else if (CurrentState === GameStates.INGAME) {
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
-            playByPlay.gameState = 'LIVE';
-            await sleep(config.app.script.live_sleep_time);
-            await sleep(config.app.script.intermission_sleep_time);
-            CurrentState = GameStates.POSTGAME
+            logObjectToFile(playByPlay, 'gameLanding-ingame');
+            if (playByPlay.clock.inIntermission) {
+                await sleep(config.app.script.intermission_sleep_time);
+                if (!hasSentIntermission) {
+                    hasSentIntermission = true;
+                }
+            }
+            else {
+                hasSentIntermission = false;
+                if (playByPlay.plays.length > 0) {
+                    const plays = playByPlay.plays.filter((play) => play.eventId > (lastEventID) && (play.typeDescKey === "goal" || play.typeDescKey === "penalty"));
+                    lastEventID = playByPlay.plays[playByPlay.plays.length - 1].eventId;
+                    logObjectToFile(plays, 'plays-ingame');
+                }
+                await sleep(config.app.script.live_sleep_time);
+
+            }
+            if (playByPlay.plays.some((play) => play.typeDescKey === "game-end")) {
+                CurrentState = GameStates.POSTGAME
+                lastEventID = 0;
+            }
         }
         else if (CurrentState === GameStates.POSTGAME) {
             boxscore = await fetchBoxscore(String(currentGame!.id));
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
+            logObjectToFile(boxscore, 'boxscore-postgame');
+            logObjectToFile(playByPlay, 'playbyplay-postgame');
+            await sleepUntilNextTime(0, 30, 0);
             CurrentState = GameStates.POSTGAMEVID
         }
         else if (CurrentState === GameStates.POSTGAMEVID) {
             let video = await youtubeCondensed(currentGame!.awayTeam.name.default, currentGame!.homeTeam.name.default);
-            await sleep(config.app.script.final_sleep_time);
+            logObjectToFile(video, 'video-postgamevid');
+            await sleepUntilNextTime(7, 0, 0);
             CurrentState = GameStates.WAITING
         }
     }
-
 }
 
 main();
