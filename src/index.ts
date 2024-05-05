@@ -99,18 +99,23 @@ const main = async (): Promise<void> => {
             scouteDetails = await fetchGameDetails(currentGame);
             logObjectToFile(scouteDetails, 'scouteDetails-pregame');
 
-            if (scouteDetails.confirmed === false) {
-                await sleep(config.app.script.pregame_sleep_time);
-            }
-            else {
-                let sleepTime = new Date(currentGame.startTimeUTC);
-                await sleep(sleepTime.getTime() - Date.now());
-                CurrentState = GameStates.INGAME;
-            }
+            // if (scouteDetails.confirmed === false) {
+            //     await sleep(config.app.script.pregame_sleep_time);
+            // }
+            // else {
+            //     let sleepTime = new Date(currentGame.startTimeUTC);
+            //     await sleep(sleepTime.getTime() - Date.now());
+            //     CurrentState = GameStates.INGAME;
+            //     logObjectToFile("inGame", 'game-state-transition');
+            // }
+            let sleepTime = new Date(currentGame.startTimeUTC);
+            await sleep(sleepTime.getTime() - Date.now());
+            CurrentState = GameStates.INGAME;
+            logObjectToFile("inGame", 'game-state-transition');
         }
         else if (CurrentState === GameStates.INGAME) {
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
-            logObjectToFile(playByPlay, 'gameLanding-ingame');
+            logObjectToFile(playByPlay, 'playbyplay-ingame');
             if (playByPlay.clock.inIntermission) {
                 await sleep(config.app.script.intermission_sleep_time);
                 if (!hasSentIntermission) {
@@ -120,8 +125,8 @@ const main = async (): Promise<void> => {
             else {
                 hasSentIntermission = false;
                 if (playByPlay.plays.length > 0) {
-                    const plays = playByPlay.plays.filter((play) => play.eventId > (lastEventID) && (play.typeDescKey === "goal" || play.typeDescKey === "penalty"));
-                    lastEventID = playByPlay.plays[playByPlay.plays.length - 1].eventId;
+                    const plays = playByPlay.plays.filter((play) => play.sortOrder > (lastEventID) && (play.typeDescKey === "goal" || play.typeDescKey === "penalty"));
+                    lastEventID = playByPlay.plays[playByPlay.plays.length - 1].sortOrder;
                     logObjectToFile(plays, 'plays-ingame');
                 }
                 await sleep(config.app.script.live_sleep_time);
@@ -129,6 +134,7 @@ const main = async (): Promise<void> => {
             }
             if (playByPlay.plays.some((play) => play.typeDescKey === "game-end")) {
                 CurrentState = GameStates.POSTGAME
+                logObjectToFile("postGame", 'game-state-transition');
                 lastEventID = 0;
             }
         }
@@ -139,12 +145,14 @@ const main = async (): Promise<void> => {
             logObjectToFile(playByPlay, 'playbyplay-postgame');
             await sleepUntilNextTime(0, 30, 0);
             CurrentState = GameStates.POSTGAMEVID
+            logObjectToFile("postGameVid", 'game-state-transition');
         }
         else if (CurrentState === GameStates.POSTGAMEVID) {
             let video = await youtubeCondensed(currentGame!.awayTeam.name.default, currentGame!.homeTeam.name.default);
             logObjectToFile(video, 'video-postgamevid');
             await sleepUntilNextTime(7, 0, 0);
             CurrentState = GameStates.WAITING
+            logObjectToFile("waiting", 'game-state-transition');
         }
     }
 }
