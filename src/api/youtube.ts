@@ -1,15 +1,21 @@
-const search = require('yt-search');
+import search from 'yt-search';
 
-interface YouTubeVideo {
+type YouTubeVideo = {
     title: string;
     link: string;
     author: {
         name: string;
         url: string;
     };
-}
+};
 
-async function searchYouTube(searchTerm: string, numResults: number): Promise<YouTubeVideo[]> {
+/**
+ * Searches YouTube for videos based on a search term and returns a specified number of results.
+ * @param searchTerm - The term to search for on YouTube.
+ * @param numResults - The number of search results to return.
+ * @returns A promise that resolves to an array of YouTubeVideo objects.
+ */
+export async function searchYouTube(searchTerm: string, numResults: number): Promise<YouTubeVideo[]> {
     const results = await search(searchTerm);
     const videos: YouTubeVideo[] = [];
 
@@ -28,7 +34,14 @@ async function searchYouTube(searchTerm: string, numResults: number): Promise<Yo
     return videos;
 }
 
-async function youtubeCondensed(awayTeam: string, homeTeam: string): Promise<YouTubeVideo | null> {
+/**
+ * Searches for a condensed YouTube video of NHL highlights for a specific game.
+ * 
+ * @param awayTeam - The name of the away team.
+ * @param homeTeam - The name of the home team.
+ * @returns A promise that resolves to a YouTubeVideo object representing the condensed video, or null if no video is found.
+ */
+export async function youtubeCondensed(awayTeam: string, homeTeam: string): Promise<YouTubeVideo | null> {
     const searchTerm = `NHL Highlights | ${awayTeam} @ ${homeTeam}`;
     const results = await searchYouTube(searchTerm, 1);
 
@@ -42,4 +55,3 @@ async function youtubeCondensed(awayTeam: string, homeTeam: string): Promise<You
     return null;
 }
 
-export { searchYouTube, youtubeCondensed };

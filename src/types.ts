@@ -1,5 +1,5 @@
 // https://api.nhle.com/stats/rest/en/team/summary
-type TeamSummary = {
+export type TeamSummary = {
     faceoffWinPct: number | null;
     gamesPlayed: number;
     goalsAgainst: number;
@@ -797,4 +797,10 @@ export type PlayByPlayGame = {
     plays: Play[];
     players: PlayByPlayPlayer[];
     goals: PlayByPlayGoal[];
+}
+
+export type ISODateString = string;
+
+export function isISODateString(date: string): date is ISODateString {
+    return /^\d{4}-\d{2}-\d{2}$/.test(date);
 }

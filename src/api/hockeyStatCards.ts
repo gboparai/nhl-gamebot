@@ -2,12 +2,24 @@ import axios from "axios";
 import { nstAbbreviation } from "./utils"
 import { Game } from '../types';
 
-interface GameScore {
-    [key: string]: any; // Define the structure of game score object
-}
+/**
+ * Represents the score of a game.
+ */
+type GameScore = {
+    [key: string]: any;
+};
 
+/**
+ * Represents the scores of two teams in a game.
+ * @typedef {Array<GameScore[], GameScore[]>} GameScores
+ */
 type GameScores = [GameScore[], GameScore[]];
 
+/**
+ * Retrieves the hockey stat cards for a given game.
+ * @param game - The game object containing information about the game.
+ * @returns A promise that resolves to an array of game scores or `false` if the game is not found.
+ */
 export async function hockeyStatCards(game: Game): Promise<GameScores | boolean> {
     const hscBase: string = "https://api.hockeystatcards.com/webapi";
 

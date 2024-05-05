@@ -2,7 +2,10 @@ import axios from "axios";
 import { load } from 'cheerio';
 
 
-interface Post {
+/**
+ * Represents a post object.
+ */
+type Post = {
     id: number;
     date: string;
     date_gmt: string;
@@ -53,7 +56,12 @@ interface Post {
         'wp:term': { taxonomy: string; embeddable: boolean; href: string }[];
         curies: { name: string; href: string; templated: boolean }[];
     };
-}
+};
+
+/**
+ * Fetches posts data from the specified URL.
+ * @returns A promise that resolves to an array of Post objects.
+ */
 async function fetchPostsData(): Promise<Post[]> {
     const url = 'https://scoutingtherefs.com/wp-json/wp/v2/posts';
 
@@ -66,7 +74,10 @@ async function fetchPostsData(): Promise<Post[]> {
     }
 }
 
-interface Referee {
+/**
+ * Represents a referee.
+ */
+export type Referee = {
     name: string;
     seasongames: string;
     careergames: string;
@@ -74,12 +85,20 @@ interface Referee {
     totalgames: number;
 }
 
-interface GameDetails {
+/**
+ * Represents the details of a game, including the referees, linesmen, and confirmation status.
+ */
+export type GameDetails = {
     referees: Referee[];
     linesmen: Referee[];
     confirmed: boolean;
 }
 
+/**
+ * Fetches game details for a preferred team.
+ * @param prefTeam - The preferred team.
+ * @returns A promise that resolves to the game details.
+ */
 export async function fetchGameDetails(prefTeam: any): Promise<GameDetails> {
     try {
         const response = await fetchPostsData();
@@ -182,6 +201,13 @@ export async function fetchGameDetails(prefTeam: any): Promise<GameDetails> {
     }
 }
 
+/**
+ * Calculates the total number of games by adding the season games and career games.
+ * 
+ * @param seasonGames - The number of games played in the current season.
+ * @param careerGames - The number of games played in the entire career.
+ * @returns The total number of games played.
+ */
 function calculateTotalGames(seasonGames: string, careerGames: string): number {
     return parseInt(seasonGames) + parseInt(careerGames);
 }

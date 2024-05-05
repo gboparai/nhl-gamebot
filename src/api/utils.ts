@@ -1,3 +1,8 @@
+/**
+ * Returns the NHL team abbreviation for a given team name.
+ * @param teamName - The name of the NHL team.
+ * @returns The NHL team abbreviation.
+ */
 export function nstAbbreviation(teamName: string): string {
     teamName = teamName.replace("é", "e");
     const nssTeams: { [key: string]: string } = {
