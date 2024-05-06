@@ -96,10 +96,10 @@ export type GameDetails = {
 
 /**
  * Fetches game details for a preferred team.
- * @param prefTeam - The preferred team.
+ * @param prefTeamFullName - The preferred team.
  * @returns A promise that resolves to the game details.
  */
-export async function fetchGameDetails(prefTeam: any): Promise<GameDetails> {
+export async function fetchGameDetails(prefTeamFullName: string): Promise<GameDetails> {
     try {
         const response = await fetchPostsData();
 
@@ -136,7 +136,7 @@ export async function fetchGameDetails(prefTeam: any): Promise<GameDetails> {
 
 
 
-        const game = $('h1').filter((_, el) => $(el).text().includes(prefTeam.team_name)).first().next('table');
+        const game = $('h1').filter((_, el) => $(el).text().includes(prefTeamFullName)).first().next('table');
         if (!game.length) {
             console.warn('No game details found - your team is probably not playing today.');
             return gameDetails;
@@ -145,7 +145,7 @@ export async function fetchGameDetails(prefTeam: any): Promise<GameDetails> {
         const refereesRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().trim() === 'referees');
         const refereesNamesRow = refereesRow.next();
         const refereesData = refereesNamesRow.find('td');
-        const refereesSeasonGamesRow = refereesRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('22-23'));
+        const refereesSeasonGamesRow = refereesRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('23-24'));
         const refereesCareerGamesRow = refereesRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('career games'));
         const refereesPenaltyGamesRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().includes('penl/gm'));
 
@@ -165,11 +165,10 @@ export async function fetchGameDetails(prefTeam: any): Promise<GameDetails> {
 
             gameDetails.referees.push(referee);
         });
-
-        const linesmenRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().trim() === 'linesmen');
+        const linesmenRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().trim() === 'LINESPERSONS'.toLocaleLowerCase());
         const linesmenNamesRow = linesmenRow.next();
         const linesmenData = linesmenNamesRow.find('td');
-        const linesmenSeasonGamesRow = linesmenRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('22-23'));
+        const linesmenSeasonGamesRow = linesmenRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('23-24'));
         const linesmenCareerGamesRow = linesmenRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('career games'));
 
         linesmenData.each((i, el) => {

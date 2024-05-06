@@ -69,6 +69,7 @@ const main = async (): Promise<void> => {
     let awayTeamSummary: TeamSummary | undefined;
     let scouteDetails: GameDetails | undefined;
     let hasSentIntermission: boolean = false;
+
     let lastEventID: number = 0;
     while (true) {
         if (CurrentState === GameStates.WAITING) {
@@ -96,7 +97,7 @@ const main = async (): Promise<void> => {
             awayTeamSummary = teamSummaries.data.find((team) => team.teamId === currentGame!.awayTeam.id);
             logObjectToFile(homeTeamSummary, 'homeTeamSummary-pregame');
             logObjectToFile(awayTeamSummary, 'awayTeamSummary-pregame');
-            scouteDetails = await fetchGameDetails(currentGame);
+            scouteDetails = await fetchGameDetails(config.app.script.teamName);
             logObjectToFile(scouteDetails, 'scouteDetails-pregame');
 
             // if (scouteDetails.confirmed === false) {

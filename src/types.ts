@@ -599,7 +599,7 @@ type TVBroadcast = {
     sequenceNumber: number;
 }
 
-type Team = {
+export type Team = {
     id: number;
     name: { default: string };
     abbrev: string;
