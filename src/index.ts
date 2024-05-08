@@ -5,7 +5,7 @@ import { youtubeCondensed } from './api/youtube';
 //import { hockeyStatCards } from './api/hockeyStatCards';
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores, Team } from './types';
-import { logObjectToFile } from './logger';
+
 import { send } from './social/socialHandler';
 /**
  * Represents the possible states of a game.
@@ -124,7 +124,6 @@ const main = async (): Promise<void> => {
         }
         else if (CurrentState === GameStates.INGAME) {
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
-            logObjectToFile(playByPlay, 'playbyplay-ingame');
             if (playByPlay.clock.inIntermission) {
 
                 if (!hasSentIntermission) {
@@ -186,7 +185,6 @@ const main = async (): Promise<void> => {
                         }
 
                     });
-                    logObjectToFile(plays, 'plays-ingame');
                 }
                 await sleep(config.app.script.live_sleep_time);
 
