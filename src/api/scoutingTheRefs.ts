@@ -90,7 +90,7 @@ export type Referee = {
  */
 export type GameDetails = {
     referees: Referee[];
-    linesmen: Referee[];
+    linesmens: Referee[];
     confirmed: boolean;
 }
 
@@ -105,7 +105,7 @@ export async function fetchGameDetails(prefTeamFullName: string): Promise<GameDe
 
         const gameDetails: GameDetails = {
             referees: [],
-            linesmen: [],
+            linesmens: [],
             confirmed: false
         };
 
@@ -184,17 +184,19 @@ export async function fetchGameDetails(prefTeamFullName: string): Promise<GameDe
                 totalgames: calculateTotalGames(seasongames, careergames)
             };
 
-            gameDetails.linesmen.push(linesman);
+            gameDetails.linesmens.push(linesman);
         });
 
         gameDetails.confirmed = true;
+        gameDetails.referees = gameDetails.referees.filter(ref => ref.name !== '');
+        gameDetails.linesmens = gameDetails.linesmens.filter(linesmen => linesmen.name !== '');
         console.debug('Scouting the Refs -', gameDetails);
         return gameDetails;
     } catch (error: any) {
         console.error('Error:', error.message);
         return {
             referees: [],
-            linesmen: [],
+            linesmens: [],
             confirmed: false
         };
     }

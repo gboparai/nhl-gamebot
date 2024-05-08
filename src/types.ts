@@ -285,6 +285,25 @@ export type GameLanding = {
 
 
 //https://api-web.nhle.com/v1/gamecenter/2023020708/boxscore
+export type Player = {
+    playerId: number;
+    sweaterNumber: number;
+    name: {
+        default: string;
+    };
+    position: string;
+    goals: number;
+    assists: number;
+    points: number;
+    plusMinus: number;
+    pim: number;
+    hits: number;
+    powerPlayGoals: number;
+    shots: number;
+    faceoffWinningPctg: number;
+    toi: string;
+};
+
 export type Boxscore = {
     id: number;
     season: number;
@@ -326,6 +345,9 @@ export type Boxscore = {
         placeName: {
             default: string;
         };
+        forwards: Player[];
+        defense: Player[];
+        goalies: Player[];
     };
     homeTeam: {
         id: number;
@@ -339,6 +361,9 @@ export type Boxscore = {
         placeName: {
             default: string;
         };
+        forwards: Player[];
+        defense: Player[];
+        goalies: Player[];
     };
     clock: {
         timeRemaining: string;
@@ -348,118 +373,14 @@ export type Boxscore = {
     };
     playerByGameStats: {
         awayTeam: {
-            forwards: {
-                playerId: number;
-                sweaterNumber: number;
-                name: {
-                    default: string;
-                };
-                position: string;
-                goals: number;
-                assists: number;
-                points: number;
-                plusMinus: number;
-                pim: number;
-                hits: number;
-                powerPlayGoals: number;
-                shots: number;
-                faceoffWinningPctg: number;
-                toi: string;
-            }[];
-            defense: {
-                playerId: number;
-                sweaterNumber: number;
-                name: {
-                    default: string;
-                };
-                position: string;
-                goals: number;
-                assists: number;
-                points: number;
-                plusMinus: number;
-                pim: number;
-                hits: number;
-                powerPlayGoals: number;
-                shots: number;
-                faceoffWinningPctg: number;
-                toi: string;
-            }[];
-            goalies: {
-                playerId: number;
-                sweaterNumber: number;
-                name: {
-                    default: string;
-                };
-                position: string;
-                evenStrengthShotsAgainst: string;
-                powerPlayShotsAgainst: string;
-                shorthandedShotsAgainst: string;
-                saveShotsAgainst: string;
-                evenStrengthGoalsAgainst: number;
-                powerPlayGoalsAgainst: number;
-                shorthandedGoalsAgainst: number;
-                pim: number;
-                goalsAgainst: number;
-                toi: string;
-                savePctg?: string;
-            }[];
+            forwards: Player[];
+            defense: Player[];
+            goalies: Player[];
         };
         homeTeam: {
-            forwards: {
-                playerId: number;
-                sweaterNumber: number;
-                name: {
-                    default: string;
-                };
-                position: string;
-                goals: number;
-                assists: number;
-                points: number;
-                plusMinus: number;
-                pim: number;
-                hits: number;
-                powerPlayGoals: number;
-                shots: number;
-                faceoffWinningPctg: number;
-                toi: string;
-            }[];
-            defense: {
-                playerId: number;
-                sweaterNumber: number;
-                name: {
-                    default: string;
-                };
-                position: string;
-                goals: number;
-                assists: number;
-                points: number;
-                plusMinus: number;
-                pim: number;
-                hits: number;
-                powerPlayGoals: number;
-                shots: number;
-                faceoffWinningPctg: number;
-                toi: string;
-            }[];
-            goalies: {
-                playerId: number;
-                sweaterNumber: number;
-                name: {
-                    default: string;
-                };
-                position: string;
-                evenStrengthShotsAgainst: string;
-                powerPlayShotsAgainst: string;
-                shorthandedShotsAgainst: string;
-                saveShotsAgainst: string;
-                evenStrengthGoalsAgainst: number;
-                powerPlayGoalsAgainst: number;
-                shorthandedGoalsAgainst: number;
-                pim: number;
-                goalsAgainst: number;
-                toi: string;
-                savePctg?: string;
-            }[];
+            forwards: Player[];
+            defense: Player[];
+            goalies: Player[];
         };
     };
     summary: {
@@ -608,12 +529,12 @@ export type Team = {
     logo: string;
 }
 
-type Player = {
+type PlayerScore = {
     playerId: number;
     name: { default: string };
 }
 
-type Assist = Player & {
+type Assist = PlayerScore & {
     assistsToDate: number;
 }
 
@@ -695,23 +616,14 @@ type PlayByPlayAssists = {
 }
 
 type PlayByPlayPlayer = {
-    period: number;
-    periodDescriptor: PeriodDescriptor;
-    timeInPeriod: string;
+
     playerId: number;
-    name: { default: string };
+    teamId: number;
     firstName: { default: string };
     lastName: { default: string };
-    goalModifier: string;
-    assists: PlayByPlayAssists[];
-    mugshot: string;
-    teamAbbrev: string;
-    goalsToDate: number;
-    awayScore: number;
-    homeScore: number;
-    strength: string;
-    highlightClip: number;
-    highlightClipFr: number;
+    sweaterNumber: string;
+    positionCode: string;
+    headshot: string;
 }
 
 type PlayByPlayGoal = {
@@ -806,7 +718,7 @@ export type PlayByPlayGame = {
     maxPeriods: number;
     gameOutcome: GameOutcome;
     plays: Play[];
-    players: PlayByPlayPlayer[];
+    rosterSpots: PlayByPlayPlayer[];
     goals: PlayByPlayGoal[];
 }
 
