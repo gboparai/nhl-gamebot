@@ -1,6 +1,7 @@
 import { sendTweet, uploadMedia } from "./twitter";
 import config from "../../config.json";
 import { Game } from "../types";
+import { logObjectToFile } from "../logger";
 
 /**
  * Sends a tweet with optional media attachments.
@@ -9,6 +10,7 @@ import { Game } from "../types";
  * @returns A promise that resolves when the tweet is sent.
  */
 export async function send(text: string, game: Game, media?: string[]): Promise<void> {
+    logObjectToFile(text, "Sending tweet");
     if (config.twitter.isActive) {
         const mediaIds = media ? await Promise.all(media.map(uploadMedia)) : undefined;
         await sendTweet(text, game, mediaIds);
