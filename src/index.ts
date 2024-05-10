@@ -2,11 +2,12 @@
 import config from '../config.json';
 import { fetchTeamSummaries, fetchGameLanding, fetchBoxscore, fetchPlayByPlay, fetchNHLScores } from './api/nhl';
 import { youtubeCondensed } from './api/youtube';
-//import { hockeyStatCards } from './api/hockeyStatCards';
+import moment from 'moment-timezone';
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores, Team } from './types';
-
+import { logObjectToFile } from './logger';
 import { send } from './social/socialHandler';
+//import { hockeyStatCards } from './api/hockeyStatCards';
 /**
  * Represents the possible states of a game.
  */
@@ -52,13 +53,17 @@ const main = async (): Promise<void> => {
     let lastEventID: number = 0;
     while (true) {
         if (CurrentState === GameStates.WAITING) {
-            let nhlScores: NHLScores = await fetchNHLScores(new Date().toISOString().split('T')[0]);
+
+            let nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
             currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
+
+
             if (currentGame !== undefined) {
                 prefTeam = currentGame.awayTeam.abbrev === config.app.script.team ? currentGame.awayTeam : currentGame.homeTeam;
                 oppTeam = currentGame.awayTeam.abbrev === config.app.script.team ? currentGame.homeTeam : currentGame.awayTeam;
                 let sleepTime = new Date(currentGame.startTimeUTC);
                 sleepTime.setHours(sleepTime.getHours() - 1);
+                console.log(sleepTime);
                 await sleep(sleepTime.getTime() - Date.now());
                 CurrentState = GameStates.PREGAME;
             }
@@ -81,21 +86,14 @@ const main = async (): Promise<void> => {
                 await sleep(config.app.script.pregame_sleep_time);
             }
             else {
-                const pacificTime = new Date(currentGame.startTimeUTC);
-                pacificTime.setHours(pacificTime.getHours() - config.app.script.timeZoneOffset);
-                const formattedTime = pacificTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
-                const hours = formattedTime.split(':')[0];
-                const minutes = formattedTime.split(':')[1].split(' ')[0];
-                const ampm = formattedTime.split(' ')[1];
-                const formattedHour = hours.length === 1 ? `0${hours}` : hours;
-                const formattedMinutes = minutes.length === 1 ? `0${minutes}` : minutes;
-                const formattedTime12Hr = `${formattedHour}:${formattedMinutes} ${ampm}`;
+
+                const formattedTime12Hr = convertUTCToLocalTime(currentGame.startTimeUTC, config.app.script.timeZone);
 
                 send(
-                    `Tune in tonight when the new ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default} in Pacific Time.
+                    `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
                     \n
-                    \n🕢 ${formattedTime12Hr}
-                    \n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(',')}`,
+                    🕢 ${formattedTime12Hr}
+                    📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(', ')}`,
                     currentGame
                 );
 
@@ -103,14 +101,15 @@ const main = async (): Promise<void> => {
 
                 const refereeDetails: GameDetails | undefined = await fetchGameDetails(config.app.script.teamName);
                 if (refereeDetails?.confirmed) {
-                    const referees = refereeDetails.referees.map((referee) => `R: ${referee.name} (Games: ${referee.careergames} | P/GM: ${referee.penaltygame})`).join('\n');
-                    const linesmens = refereeDetails.linesmens.map((linesman) => `L: ${linesman.name} (Games: ${linesman.careergames})`).join('\n');
+                    const referees = refereeDetails.referees.map((referee) => `R: ${referee.name} (P/GM: ${referee.penaltygame})`).join('\n');
+                    const linesmens = refereeDetails.linesmens.map((linesman) => `L: ${linesman.name}`).join('\n');
 
                     send(
-                        `The officials (via @ScoutingTheRefs) -
+                        `The officials (via @ScoutingTheRefs)
                         \n
-                        \n${referees}
-                        \n${linesmens}`,
+                        ${referees}
+                        ${linesmens}
+                        `,
                         currentGame
                     );
                 }
@@ -124,6 +123,7 @@ const main = async (): Promise<void> => {
         }
         else if (CurrentState === GameStates.INGAME) {
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
+            console.log(playByPlay.clock.inIntermission);
             if (playByPlay.clock.inIntermission) {
 
                 if (!hasSentIntermission) {
@@ -131,8 +131,8 @@ const main = async (): Promise<void> => {
                     boxscore = await fetchBoxscore(String(currentGame?.id));
                     send(
                         `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
-                            \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}
-                            \n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+                            \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}
+                            ${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
                         `,
                         currentGame!
                     );
@@ -154,15 +154,15 @@ const main = async (): Promise<void> => {
                             const scoringPlayer = playByPlay?.rosterSpots.find((player) => player.playerId === play.details?.scoringPlayerId);
 
                             let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                                    \n\n${scoringPlayer?.firstName} ${scoringPlayer?.lastName} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                                    \n\n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}
-                                    \n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                            \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                                    \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}
+                                    ${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
 
                             if (scoringTeam?.id !== prefTeam?.id) {
-                                goalMessage = `${scoringTeam?.name.default} score. ${thumbsDownEmojis(scoringTeamsScore || 0)}
-                                        \n\n${scoringPlayer?.firstName} ${scoringPlayer?.lastName} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                                        \n\n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}
-                                        \n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                                goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
+                                \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                                        \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}
+                                        ${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
                             }
 
                             send(goalMessage, currentGame!);
@@ -174,7 +174,7 @@ const main = async (): Promise<void> => {
                             const penaltyTeam = play.details?.eventOwnerTeamId === currentGame?.awayTeam.id ? currentGame?.awayTeam : currentGame?.homeTeam;
                             const penaltyPlayer = playByPlay?.rosterSpots.find((player) => player.playerId === play.details?.committedByPlayerId);
                             const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
-                                \n\n${penaltyPlayer?.firstName} ${penaltyPlayer?.lastName} ${play.details?.duration}:00 minutes for ${convertdescKeyToWords(play.details?.descKey || '')} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                                \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${convertdescKeyToWords(play.details?.descKey || '')} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
                             send(penaltyMessage, currentGame!);
                         }
                         else if (play.typeDescKey === "period-start") {
@@ -210,8 +210,8 @@ const main = async (): Promise<void> => {
 
             send(
                 `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
-                    \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}
-                    \n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+                    \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}
+                    ${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
                 `,
                 currentGame!
             );
@@ -226,6 +226,7 @@ const main = async (): Promise<void> => {
         }
     }
 }
+
 /**
  * Returns the ordinal suffix of a given number.
  * 
@@ -245,6 +246,32 @@ function ordinalSuffixOf(i: number): string {
         return i + "rd";
     }
     return i + "th";
+}
+
+/**
+ * Gets the current date in Eastern Time Zone (EST/EDT).
+ * @returns The formatted date string in "YYYY-MM-DD" format.
+ */
+function getCurrentDateEasternTime() {
+    // Get current date and time in UTC
+    const currentDateUTC = new Date();
+
+    // Get the offset for Eastern Time Zone (EST/EDT)
+    const easternOffset = -4; // Eastern Standard Time (EST) is UTC-5, but Eastern Daylight Time (EDT) is UTC-4
+
+    // Calculate the milliseconds offset for the Eastern Time Zone
+    const easternOffsetMilliseconds = easternOffset * 60 * 60 * 1000;
+
+    // Adjust the current date by adding the Eastern Time Zone offset
+    const currentDateEastern = new Date(currentDateUTC.getTime() + easternOffsetMilliseconds);
+
+    // Format the date as "YYYY-MM-DD"
+    const year = currentDateEastern.getFullYear();
+    const month = String(currentDateEastern.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDateEastern.getDate()).padStart(2, '0');
+
+    // Return the formatted date string
+    return `${year}-${month}-${day}`;
 }
 
 
@@ -275,9 +302,28 @@ function thumbsDownEmojis(num: number): string {
     }
     return emojis;
 }
+
+/**
+ * Converts a string with hyphens to words by replacing hyphens with spaces.
+ * 
+ * @param str - The string to convert.
+ * @returns The converted string.
+ */
 function convertdescKeyToWords(str: string): string {
     return str
         .split('-')
         .join(' ');
 }
+
+/**
+ * Converts a UTC date and time string to the local time in the specified time zone.
+ * @param utcDateTimeString The UTC date and time string to convert.
+ * @param timeZone The time zone to convert the date and time to.
+ * @returns The converted local time in the format 'h:mm A'.
+ */
+function convertUTCToLocalTime(utcDateTimeString: string, timeZone: string): string {
+    return moment.utc(utcDateTimeString).tz(timeZone).format('h:mm A');
+}
+
+
 main();
