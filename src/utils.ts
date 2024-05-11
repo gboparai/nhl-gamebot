@@ -111,3 +111,50 @@ export function convertdescKeyToWords(str: string): string {
 export function convertUTCToLocalTime(utcDateTimeString: string, timeZone: string): string {
     return moment.utc(utcDateTimeString).tz(timeZone).format('h:mm A');
 }
+
+/**
+ * Retrieves the last name from a full name.
+ * 
+ * @param fullName - The full name from which to extract the last name.
+ * @returns The last name extracted from the full name.
+ */
+export function getLastName(fullName: string): string {
+    // Split the full name into an array of words
+    const nameParts = fullName.trim().split(' ');
+
+    // Concatenate all parts except the last one to form the last name
+    const lastName = nameParts.slice(1).join(' ');
+
+    return lastName;
+}
+
+/**
+ * Groups the elements of an array into subarrays of a specified length and returns a string representation of the grouped elements.
+ * 
+ * @param arr - The array to be grouped.
+ * @param length - The length of each subarray.
+ * @returns A string representation of the grouped elements.
+ */
+export function groupedList(arr: any[], length: number): string {
+    const chunkedArray = splitArray(arr, length);
+    let str = '';
+    chunkedArray.forEach((chunk) => {
+        str += chunk.join(' ') + '\n';
+    });
+    return str;
+}
+
+/**
+ * Splits an array into smaller chunks of a specified size.
+ *
+ * @param array - The array to be split.
+ * @param chunkSize - The size of each chunk.
+ * @returns An array of smaller chunks.
+ */
+export function splitArray(array: any[], chunkSize: number) {
+    const chunkedArray = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunkedArray.push(array.slice(i, i + chunkSize));
+    }
+    return chunkedArray;
+}

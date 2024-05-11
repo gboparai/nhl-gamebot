@@ -4,7 +4,7 @@ import { fetchTeamSummaries, fetchGameLanding, fetchBoxscore, fetchPlayByPlay, f
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores, Team } from './types';
 import { send } from './social/socialHandler';
-import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis } from './utils';
+import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis, groupedList, getLastName } from './utils';
 import moment from 'moment';
 import { dailyfaceoffLines } from './api/dailyFaceoff';
 
@@ -101,16 +101,16 @@ const main = async (): Promise<void> => {
                 if (dfLines.confirmed) {
                     send(
                         `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)
-                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`,
+                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${groupedList(dfLines.goalies.map((player) => getLastName(player)), 1)}`,
                         currentGame
                     );
-
                 }
+
                 const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || '');
                 if (dfLinesOpps.confirmed) {
                     send(
                         `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
-                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`,
+                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${groupedList(dfLines.goalies.map((player) => getLastName(player)), 1)}`,
                         currentGame
                     );
                 }
@@ -277,29 +277,5 @@ const myFunction = async (): Promise<void> => {
 
     console.log(`The projected line for todays game \n\n${groupedList(dfLines.forwards.map(player => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map(player => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`);
 }
-function getLastName(fullName: string): string {
-    // Split the full name into an array of words
-    const nameParts = fullName.trim().split(' ');
 
-    // Concatenate all parts except the last one to form the last name
-    const lastName = nameParts.slice(1).join(' ');
-
-    return lastName;
-}
-
-function groupedList(arr: any[], length: number): string {
-    const chunkedArray = splitArray(arr, length);
-    let str = '';
-    chunkedArray.forEach((chunk) => {
-        str += chunk.join(' ') + '\n';
-    });
-    return str;
-}
-function splitArray(array: any[], chunkSize: number) {
-    const chunkedArray = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-        chunkedArray.push(array.slice(i, i + chunkSize));
-    }
-    return chunkedArray;
-}
 myFunction();
