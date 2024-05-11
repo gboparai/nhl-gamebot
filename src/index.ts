@@ -1,13 +1,12 @@
 
 import config from '../config.json';
 import { fetchTeamSummaries, fetchGameLanding, fetchBoxscore, fetchPlayByPlay, fetchNHLScores } from './api/nhl';
-import { GameScores, hockeyStatCards } from './api/hockeyStatCards';
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores, Team } from './types';
-import { logObjectToFile } from './logger';
 import { send } from './social/socialHandler';
 import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis } from './utils';
 import moment from 'moment';
+import { dailyfaceoffLines } from './api/dailyFaceoff';
 
 /**
  * Represents the possible states of a game.
@@ -18,7 +17,6 @@ enum GameStates {
     INGAME = 'INGAME',
     POSTGAME = 'POSTGAME',
     POSTGAMETHREESTARS = 'POSTGAMETHREESTARS',
-    POSTGAMEHOCKEYSTATCARD = 'POSTGAMEHOCKEYSTATCARD',
     POSTGAMEVID = 'POSTGAMEVID',
     ENDGAME = 'ENDGAME'
 }
@@ -52,9 +50,9 @@ const main = async (): Promise<void> => {
     let awayTeamSummary: TeamSummary | undefined;
     let refereeDetails: GameDetails | undefined;
     let hasSentIntermission: boolean = false;
-
-
     let lastEventID: number = 0;
+
+
     while (true) {
         if (CurrentState === GameStates.WAITING) {
 
@@ -92,14 +90,30 @@ const main = async (): Promise<void> => {
             else {
 
                 const formattedTime12Hr = convertUTCToLocalTime(currentGame.startTimeUTC, config.app.script.timeZone);
-
+                //TODO add graphic
                 send(
                     `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
                     \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(', ')}`,
                     currentGame
                 );
 
+                const dfLines = await dailyfaceoffLines(prefTeam?.name.default || '');
+                if (dfLines.confirmed) {
+                    send(
+                        `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)
+                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`,
+                        currentGame
+                    );
 
+                }
+                const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || '');
+                if (dfLinesOpps.confirmed) {
+                    send(
+                        `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
+                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`,
+                        currentGame
+                    );
+                }
 
                 const refereeDetails: GameDetails | undefined = await fetchGameDetails(config.app.script.teamName);
                 if (refereeDetails?.confirmed) {
@@ -115,6 +129,7 @@ const main = async (): Promise<void> => {
                 }
 
 
+
                 let sleepTime = new Date(currentGame.startTimeUTC);
                 await sleep(sleepTime.getTime() - Date.now());
                 CurrentState = GameStates.INGAME;
@@ -128,6 +143,8 @@ const main = async (): Promise<void> => {
                 if (!hasSentIntermission) {
                     hasSentIntermission = true;
                     boxscore = await fetchBoxscore(String(currentGame?.id));
+
+                    //TODO add graphic
                     send(
                         `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} ${playByPlay?.otInUse ? " overtime" : ""} period at ${currentGame!.venue.default}
                             \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
@@ -164,7 +181,7 @@ const main = async (): Promise<void> => {
                             send(goalMessage, currentGame!);
                         }
 
-
+                        //TODO add type of penalty
                         else if (play.typeDescKey === "penalty") {
                             // Code for handling penalty
                             const penaltyTeam = play.details?.eventOwnerTeamId === currentGame?.awayTeam.id ? currentGame?.awayTeam : currentGame?.homeTeam;
@@ -203,7 +220,7 @@ const main = async (): Promise<void> => {
                 winningTeam = currentGame?.homeTeam.name.default;
                 losingTeam = currentGame?.awayTeam.name.default;
             }
-
+            //TODO add graphic
             send(
                 `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
                     \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
@@ -223,13 +240,13 @@ const main = async (): Promise<void> => {
                     \n\n${threeStars}`,
                     currentGame!
                 );
-                CurrentState = GameStates.POSTGAMEHOCKEYSTATCARD
+                CurrentState = GameStates.POSTGAMEVID
             }
             else {
                 await sleep(60000);
             }
         }
-        else if (CurrentState === GameStates.POSTGAMEHOCKEYSTATCARD) {
+        else if (CurrentState === GameStates.POSTGAMEVID) {
             boxscore = await fetchBoxscore(String(currentGame!.id));
             let video = boxscore?.gameVideo.threeMinRecap;
             if (video) {
@@ -256,11 +273,33 @@ const main = async (): Promise<void> => {
 //main();
 
 const myFunction = async (): Promise<void> => {
-    let nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
-    const currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
+    const dfLines = await dailyfaceoffLines('canucks');
 
-    const hockeyStatCard = await hockeyStatCards(currentGame!) as GameScores;
-    logObjectToFile(hockeyStatCard, 'hockeyStatCard');
+    console.log(`The projected line for todays game \n\n${groupedList(dfLines.forwards.map(player => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map(player => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`);
+}
+function getLastName(fullName: string): string {
+    // Split the full name into an array of words
+    const nameParts = fullName.trim().split(' ');
 
+    // Concatenate all parts except the last one to form the last name
+    const lastName = nameParts.slice(1).join(' ');
+
+    return lastName;
+}
+
+function groupedList(arr: any[], length: number): string {
+    const chunkedArray = splitArray(arr, length);
+    let str = '';
+    chunkedArray.forEach((chunk) => {
+        str += chunk.join(' ') + '\n';
+    });
+    return str;
+}
+function splitArray(array: any[], chunkSize: number) {
+    const chunkedArray = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunkedArray.push(array.slice(i, i + chunkSize));
+    }
+    return chunkedArray;
 }
 myFunction();

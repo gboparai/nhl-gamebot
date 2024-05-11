@@ -16,7 +16,7 @@ const twitter = new TwitterApi({
  * @param media - The media to be attached to the tweet. It can be a single media ID or an array of media IDs.
  * @returns A Promise that resolves when the tweet is sent successfully, or rejects with an error if there's a problem.
  */
-export async function sendTweet(tweet: string, game: Game, media?: string[],): Promise<void> {
+export async function sendTweet(tweet: string, game?: Game, media?: string[],): Promise<void> {
     try {
         if (media && media.length > 0) {
             await twitter.v2.tweet(tweet, {
@@ -25,8 +25,10 @@ export async function sendTweet(tweet: string, game: Game, media?: string[],): P
                 }
             });
         } else {
-
-            await twitter.v2.tweet(tweet + getHashtags(game));
+            if (game)
+                await twitter.v2.tweet(tweet + getHashtags(game));
+            else
+                await twitter.v2.tweet(tweet);
         }
     } catch (error: any) {
         logObjectToFile("failed-tweet", tweet);
