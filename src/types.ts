@@ -211,22 +211,23 @@ export type GameLanding = {
             };
         };
         scoring: PeriodGoal[];
+        threeStars: {
+            star: number;
+            playerId: number;
+            teamAbbrev: string;
+            headshot: string;
+            name: string;
+            sweaterNo: number;
+            position: string;
+            goals?: number;
+            assists?: number;
+            points?: number;
+            goalsAgainstAverage?: number;
+            savePctg?: number;
+        }[];
     };
     shootout: any[]; // Assuming this is an array of shootout goals or empty
-    threeStars: {
-        star: number;
-        playerId: number;
-        teamAbbrev: string;
-        headshot: string;
-        name: string;
-        sweaterNo: number;
-        position: string;
-        goals?: number;
-        assists?: number;
-        points?: number;
-        goalsAgainstAverage?: number;
-        savePctg?: number;
-    }[];
+
     teamGameStats: TeamGameStats[];
     shotsByPeriod: ShotsByPeriod[];
     penalties: Penalty[];

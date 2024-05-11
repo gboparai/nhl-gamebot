@@ -2,6 +2,7 @@
 import { Game } from "../types";
 import config from "../../config.json";
 import TwitterApi, { TUploadableMedia } from "twitter-api-v2";
+import { logObjectToFile } from "../logger";
 
 const twitter = new TwitterApi({
     appKey: config.twitter.appKey,
@@ -28,6 +29,8 @@ export async function sendTweet(tweet: string, game: Game, media?: string[],): P
             await twitter.v2.tweet(tweet + getHashtags(game));
         }
     } catch (error: any) {
+        logObjectToFile("failed-tweet", tweet);
+        logObjectToFile("twitter-error", error);
         console.error("Error sending tweet:", error.message as string);
     }
 
@@ -43,6 +46,7 @@ export async function uploadMedia(media: TUploadableMedia): Promise<string> {
         const mediaData = await twitter.v1.uploadMedia(media, {}, true);
         return mediaData.media_id_string;
     } catch (error: any) {
+
         console.error("Error uploading media:", error.message as string);
         return "";
     }

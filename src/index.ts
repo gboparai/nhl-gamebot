@@ -1,13 +1,14 @@
 
 import config from '../config.json';
 import { fetchTeamSummaries, fetchGameLanding, fetchBoxscore, fetchPlayByPlay, fetchNHLScores } from './api/nhl';
-import { youtubeCondensed } from './api/youtube';
-import moment from 'moment-timezone';
+import { GameScores, hockeyStatCards } from './api/hockeyStatCards';
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores, Team } from './types';
 import { logObjectToFile } from './logger';
 import { send } from './social/socialHandler';
-//import { hockeyStatCards } from './api/hockeyStatCards';
+import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis } from './utils';
+import moment from 'moment';
+
 /**
  * Represents the possible states of a game.
  */
@@ -16,7 +17,10 @@ enum GameStates {
     PREGAME = 'PREGAME',
     INGAME = 'INGAME',
     POSTGAME = 'POSTGAME',
-    POSTGAMEVID = 'POSTGAMEVID'
+    POSTGAMETHREESTARS = 'POSTGAMETHREESTARS',
+    POSTGAMEHOCKEYSTATCARD = 'POSTGAMEHOCKEYSTATCARD',
+    POSTGAMEVID = 'POSTGAMEVID',
+    ENDGAME = 'ENDGAME'
 }
 
 /**
@@ -63,7 +67,7 @@ const main = async (): Promise<void> => {
                 oppTeam = currentGame.awayTeam.abbrev === config.app.script.team ? currentGame.homeTeam : currentGame.awayTeam;
                 let sleepTime = new Date(currentGame.startTimeUTC);
                 sleepTime.setHours(sleepTime.getHours() - 1);
-                console.log(sleepTime);
+
                 await sleep(sleepTime.getTime() - Date.now());
                 CurrentState = GameStates.PREGAME;
             }
@@ -91,9 +95,7 @@ const main = async (): Promise<void> => {
 
                 send(
                     `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
-                    \n
-                    🕢 ${formattedTime12Hr}
-                    📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(', ')}`,
+                    \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(', ')}`,
                     currentGame
                 );
 
@@ -106,9 +108,7 @@ const main = async (): Promise<void> => {
 
                     send(
                         `The officials (via @ScoutingTheRefs)
-                        \n
-                        ${referees}
-                        ${linesmens}
+                        \n\n${referees}\n${linesmens}
                         `,
                         currentGame
                     );
@@ -123,16 +123,14 @@ const main = async (): Promise<void> => {
         }
         else if (CurrentState === GameStates.INGAME) {
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
-            console.log(playByPlay.clock.inIntermission);
             if (playByPlay.clock.inIntermission) {
 
                 if (!hasSentIntermission) {
                     hasSentIntermission = true;
                     boxscore = await fetchBoxscore(String(currentGame?.id));
                     send(
-                        `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
-                            \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}
-                            ${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+                        `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} ${playByPlay?.otInUse ? " overtime" : ""} period at ${currentGame!.venue.default}
+                            \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
                         `,
                         currentGame!
                     );
@@ -155,14 +153,12 @@ const main = async (): Promise<void> => {
 
                             let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
                             \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                                    \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}
-                                    ${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                                    \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
 
                             if (scoringTeam?.id !== prefTeam?.id) {
                                 goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
                                 \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                                        \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}
-                                        ${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                                        \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
                             }
 
                             send(goalMessage, currentGame!);
@@ -174,12 +170,12 @@ const main = async (): Promise<void> => {
                             const penaltyTeam = play.details?.eventOwnerTeamId === currentGame?.awayTeam.id ? currentGame?.awayTeam : currentGame?.homeTeam;
                             const penaltyPlayer = playByPlay?.rosterSpots.find((player) => player.playerId === play.details?.committedByPlayerId);
                             const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
-                                \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${convertdescKeyToWords(play.details?.descKey || '')} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                                \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
                             send(penaltyMessage, currentGame!);
                         }
                         else if (play.typeDescKey === "period-start") {
                             send(
-                                `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
+                                `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)}${playByPlay?.otInUse ? " overtime" : ""} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
                                 currentGame!
                             );
                         }
@@ -210,120 +206,61 @@ const main = async (): Promise<void> => {
 
             send(
                 `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
-                    \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}
-                    ${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+                    \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
                 `,
                 currentGame!
             );
-            await sleep(1800000);
-            CurrentState = GameStates.POSTGAMEVID
+
+            CurrentState = GameStates.POSTGAMETHREESTARS
         }
-        else if (CurrentState === GameStates.POSTGAMEVID) {
-            let video = await youtubeCondensed(currentGame!.awayTeam.name.default, currentGame!.homeTeam.name.default);
+        else if (CurrentState === GameStates.POSTGAMETHREESTARS) {
+            gameLanding = await fetchGameLanding(String(currentGame!.id));
+            if (gameLanding?.summary.threeStars !== undefined && gameLanding?.summary.threeStars.length > 0) {
+                //TODO add full name and team abbreviation
+                const threeStars = gameLanding.summary.threeStars.map((star) => `${starEmojis(star.star)}: ${star.name}`).join('\n');
+                send(
+                    `Tonight's Three Stars
+                    \n\n${threeStars}`,
+                    currentGame!
+                );
+                CurrentState = GameStates.POSTGAMEHOCKEYSTATCARD
+            }
+            else {
+                await sleep(60000);
+            }
+        }
+        else if (CurrentState === GameStates.POSTGAMEHOCKEYSTATCARD) {
+            boxscore = await fetchBoxscore(String(currentGame!.id));
+            let video = boxscore?.gameVideo.threeMinRecap;
+            if (video) {
+                const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format('M-D-YY')}-${video}`;
+                send(
+                    `Check out the game recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
+                    \n\n${videoUrl}`,
+                    currentGame!
+                );
+            }
+            else {
+                await sleep(60000);
+            }
+            CurrentState = GameStates.ENDGAME
+        }
+        else if (CurrentState === GameStates.ENDGAME) {
             await sleep(25200000);
             CurrentState = GameStates.WAITING
-
         }
     }
 }
 
-/**
- * Returns the ordinal suffix of a given number.
- * 
- * @param i - The number to get the ordinal suffix for.
- * @returns The ordinal suffix as a string.
- */
-function ordinalSuffixOf(i: number): string {
-    var j = i % 10,
-        k = i % 100;
-    if (j == 1 && k != 11) {
-        return i + "st";
-    }
-    if (j == 2 && k != 12) {
-        return i + "nd";
-    }
-    if (j == 3 && k != 13) {
-        return i + "rd";
-    }
-    return i + "th";
+
+//main();
+
+const myFunction = async (): Promise<void> => {
+    let nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
+    const currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
+
+    const hockeyStatCard = await hockeyStatCards(currentGame!) as GameScores;
+    logObjectToFile(hockeyStatCard, 'hockeyStatCard');
+
 }
-
-/**
- * Gets the current date in Eastern Time Zone (EST/EDT).
- * @returns The formatted date string in "YYYY-MM-DD" format.
- */
-function getCurrentDateEasternTime() {
-    // Get current date and time in UTC
-    const currentDateUTC = new Date();
-
-    // Get the offset for Eastern Time Zone (EST/EDT)
-    const easternOffset = -4; // Eastern Standard Time (EST) is UTC-5, but Eastern Daylight Time (EDT) is UTC-4
-
-    // Calculate the milliseconds offset for the Eastern Time Zone
-    const easternOffsetMilliseconds = easternOffset * 60 * 60 * 1000;
-
-    // Adjust the current date by adding the Eastern Time Zone offset
-    const currentDateEastern = new Date(currentDateUTC.getTime() + easternOffsetMilliseconds);
-
-    // Format the date as "YYYY-MM-DD"
-    const year = currentDateEastern.getFullYear();
-    const month = String(currentDateEastern.getMonth() + 1).padStart(2, '0');
-    const day = String(currentDateEastern.getDate()).padStart(2, '0');
-
-    // Return the formatted date string
-    return `${year}-${month}-${day}`;
-}
-
-
-/**
- * Generates a string of goal emojis based on the given number.
- * 
- * @param num - The number of goal emojis to generate.
- * @returns A string of goal emojis.
- */
-function goalEmojis(num: number): string {
-    let emojis = '';
-    for (let i = 0; i < num; i++) {
-        emojis += '🚨';
-    }
-    return emojis;
-}
-
-/**
- * Generates a string of thumbs down emojis.
- * 
- * @param num - The number of thumbs down emojis to generate.
- * @returns A string of thumbs down emojis.
- */
-function thumbsDownEmojis(num: number): string {
-    let emojis = '';
-    for (let i = 0; i < num; i++) {
-        emojis += '👎🏻';
-    }
-    return emojis;
-}
-
-/**
- * Converts a string with hyphens to words by replacing hyphens with spaces.
- * 
- * @param str - The string to convert.
- * @returns The converted string.
- */
-function convertdescKeyToWords(str: string): string {
-    return str
-        .split('-')
-        .join(' ');
-}
-
-/**
- * Converts a UTC date and time string to the local time in the specified time zone.
- * @param utcDateTimeString The UTC date and time string to convert.
- * @param timeZone The time zone to convert the date and time to.
- * @returns The converted local time in the format 'h:mm A'.
- */
-function convertUTCToLocalTime(utcDateTimeString: string, timeZone: string): string {
-    return moment.utc(utcDateTimeString).tz(timeZone).format('h:mm A');
-}
-
-
-main();
+myFunction();

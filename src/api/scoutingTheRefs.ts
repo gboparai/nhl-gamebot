@@ -190,7 +190,7 @@ export async function fetchGameDetails(prefTeamFullName: string): Promise<GameDe
         gameDetails.confirmed = true;
         gameDetails.referees = gameDetails.referees.filter(ref => ref.name !== '');
         gameDetails.linesmens = gameDetails.linesmens.filter(linesmen => linesmen.name !== '');
-        console.debug('Scouting the Refs -', gameDetails);
+
         return gameDetails;
     } catch (error: any) {
         console.error('Error:', error.message);
