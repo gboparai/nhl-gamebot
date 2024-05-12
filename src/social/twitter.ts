@@ -63,7 +63,7 @@ export async function uploadMedia(media: TUploadableMedia): Promise<string> {
 function getHashtags(game: Game) {
     const homeHashtag = teamHashtag(game.homeTeam.name.default);
     const awayHashtag = teamHashtag(game.awayTeam.name.default);
-    return `\n\n#${game.homeTeam.abbrev.toLocaleUpperCase()}vs${game.awayTeam.abbrev.toLocaleUpperCase()}  ${homeHashtag} ${awayHashtag}`;
+    return `\n\n#${game.awayTeam.abbrev.toLocaleUpperCase()}vs${game.homeTeam.abbrev.toLocaleUpperCase()}  ${homeHashtag} ${awayHashtag}`;
 }
 
 /**
