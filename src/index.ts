@@ -7,6 +7,7 @@ import { send } from './social/socialHandler';
 import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis, groupedList, getLastName } from './utils';
 import moment from 'moment';
 import { dailyfaceoffLines } from './api/dailyFaceoff';
+import { logObjectToFile } from './logger';
 
 /**
  * Represents the possible states of a game.
@@ -39,7 +40,7 @@ const sleep = (milliseconds: number): Promise<void> => {
  * @returns A Promise that resolves to void.
  */
 const main = async (): Promise<void> => {
-    let CurrentState: GameStates = GameStates.WAITING;
+    let CurrentState: GameStates = GameStates.INGAME;
     let currentGame: Game | undefined;
     let prefTeam: Team | undefined;
     let oppTeam: Team | undefined;
@@ -51,7 +52,7 @@ const main = async (): Promise<void> => {
     let refereeDetails: GameDetails | undefined;
     let hasSentIntermission: boolean = false;
     let lastEventID: number = 0;
-
+    let sentEvents: Number[] = [];
 
     while (true) {
         if (CurrentState === GameStates.WAITING) {
@@ -110,7 +111,7 @@ const main = async (): Promise<void> => {
                 if (dfLinesOpps.confirmed) {
                     send(
                         `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
-                        \n\n${groupedList(dfLines.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map((player) => getLastName(player)), 2)}\n${groupedList(dfLines.goalies.map((player) => getLastName(player)), 1)}`,
+                        \n\n${groupedList(dfLinesOpps.forwards.map((player) => getLastName(player)), 3)}\n${groupedList(dfLinesOpps.defense.map((player) => getLastName(player)), 2)}\n${groupedList(dfLinesOpps.goalies.map((player) => getLastName(player)), 1)}`,
                         currentGame
                     );
                 }
@@ -132,11 +133,16 @@ const main = async (): Promise<void> => {
 
                 let sleepTime = new Date(currentGame.startTimeUTC);
                 await sleep(sleepTime.getTime() - Date.now());
+                sentEvents = [];
                 CurrentState = GameStates.INGAME;
             }
 
         }
         else if (CurrentState === GameStates.INGAME) {
+            let nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
+            currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
+            prefTeam = currentGame?.awayTeam.abbrev === config.app.script.team ? currentGame.awayTeam : currentGame?.homeTeam;
+            oppTeam = currentGame?.awayTeam.abbrev === config.app.script.team ? currentGame.homeTeam : currentGame?.awayTeam;
             playByPlay = await fetchPlayByPlay(String(currentGame!.id));
             if (playByPlay.clock.inIntermission) {
 
@@ -146,7 +152,7 @@ const main = async (): Promise<void> => {
 
                     //TODO add graphic
                     send(
-                        `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} ${playByPlay?.otInUse ? " overtime" : ""} period at ${currentGame!.venue.default}
+                        `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
                             \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
                         `,
                         currentGame!
@@ -157,11 +163,13 @@ const main = async (): Promise<void> => {
             else {
                 hasSentIntermission = false;
                 if (playByPlay.plays.length > 0) {
-                    const plays = playByPlay.plays.filter((play) => play.sortOrder > (lastEventID) && (play.typeDescKey === "goal" || play.typeDescKey === "penalty" || play.typeDescKey === 'period-start' || play.typeDescKey === 'period-end' || play.typeDescKey === 'game-end'));
-                    lastEventID = playByPlay.plays[playByPlay.plays.length - 1].sortOrder;
+                    const plays = playByPlay.plays.filter((play) => play.sortOrder > (lastEventID)
+                        && (play.typeDescKey === "goal" || play.typeDescKey === "penalty" || play.typeDescKey === 'period-start' || play.typeDescKey === 'period-end' || play.typeDescKey === 'game-end')
+                        && !sentEvents.includes(play.eventId));
+                    lastEventID = plays[plays.length - 1]?.sortOrder || lastEventID;
                     plays.forEach(play => {
 
-
+                        sentEvents.push(play.eventId);
                         //TODO add type of goal
                         if (play.typeDescKey === "goal") {
                             const scoringTeam = play.details?.eventOwnerTeamId === currentGame?.awayTeam.id ? currentGame?.awayTeam : currentGame?.homeTeam;
@@ -192,7 +200,7 @@ const main = async (): Promise<void> => {
                         }
                         else if (play.typeDescKey === "period-start") {
                             send(
-                                `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)}${playByPlay?.otInUse ? " overtime" : ""} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
+                                `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
                                 currentGame!
                             );
                         }
@@ -248,7 +256,7 @@ const main = async (): Promise<void> => {
         }
         else if (CurrentState === GameStates.POSTGAMEVID) {
             boxscore = await fetchBoxscore(String(currentGame!.id));
-            let video = boxscore?.gameVideo.threeMinRecap;
+            let video = boxscore?.gameVideo?.threeMinRecap;
             if (video) {
                 const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format('M-D-YY')}-${video}`;
                 send(
@@ -270,12 +278,5 @@ const main = async (): Promise<void> => {
 }
 
 
-//main();
+main();
 
-const myFunction = async (): Promise<void> => {
-    const dfLines = await dailyfaceoffLines('canucks');
-
-    console.log(`The projected line for todays game \n\n${groupedList(dfLines.forwards.map(player => getLastName(player)), 3)}\n${groupedList(dfLines.defense.map(player => getLastName(player)), 2)}\n${getLastName(dfLines.goalies[0])}`);
-}
-
-myFunction();

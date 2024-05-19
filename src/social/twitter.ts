@@ -33,7 +33,27 @@ export async function sendTweet(tweet: string, game?: Game, media?: string[],): 
     } catch (error: any) {
         logObjectToFile("failed-tweet", tweet);
         logObjectToFile("twitter-error", error);
-        console.error("Error sending tweet:", error.message as string);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        if (error.message.includes("403")) {
+            console.log("Retrying tweet");
+            try {
+                if (media && media.length > 0) {
+                    await twitter.v2.tweet(tweet, {
+                        media: {
+                            media_ids: media
+                        }
+                    });
+                } else {
+                    if (game)
+                        await twitter.v2.tweet(tweet + getHashtags(game));
+                    else
+                        await twitter.v2.tweet(tweet);
+                }
+            } catch (error: any) {
+
+                console.error("Error sending tweet: retry", error.message as string);
+            }
+        }
     }
 
 }
