@@ -16,7 +16,7 @@ const twitter = new TwitterApi({
  * @param media - The media to be attached to the tweet. It can be a single media ID or an array of media IDs.
  * @returns A Promise that resolves when the tweet is sent successfully, or rejects with an error if there's a problem.
  */
-export async function sendTweet(tweet: string, game?: Game, media?: string[],): Promise<void> {
+export async function sendTweet(tweet: string, game?: Game, media?: string[], retries: number = 3): Promise<void> {
     try {
         if (media && media.length > 0) {
             await twitter.v2.tweet(tweet, {
@@ -33,26 +33,10 @@ export async function sendTweet(tweet: string, game?: Game, media?: string[],): 
     } catch (error: any) {
         logObjectToFile("failed-tweet", tweet);
         logObjectToFile("twitter-error", error);
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        if (error.message.includes("403")) {
-            console.log("Retrying tweet");
-            try {
-                if (media && media.length > 0) {
-                    await twitter.v2.tweet(tweet, {
-                        media: {
-                            media_ids: media
-                        }
-                    });
-                } else {
-                    if (game)
-                        await twitter.v2.tweet(tweet + getHashtags(game));
-                    else
-                        await twitter.v2.tweet(tweet);
-                }
-            } catch (error: any) {
 
-                console.error("Error sending tweet: retry", error.message as string);
-            }
+        if (error.message.includes("403") && retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            await sendTweet(tweet, game, media, retries - 1);
         }
     }
 
