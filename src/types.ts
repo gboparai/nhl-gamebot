@@ -528,6 +528,7 @@ export type Team = {
     score: number;
     sog: number;
     logo: string;
+    record?: string;
 }
 
 type PlayerScore = {
@@ -581,6 +582,17 @@ export type Game = {
     periodDescriptor: PeriodDescriptor;
     gameOutcome: GameOutcome;
     goals: Goal[];
+    seriesStatus?: {
+        round: number;
+        seriesAbbrev: string;
+        seriesLetter: string;
+        neededToWin: number;
+        topSeedTeamAbbrev: string;
+        topSeedWins: number;
+        bottomSeedTeamAbbrev: string;
+        bottomSeedWins: number;
+        gameNumberOfSeries: number;
+    };
 }
 
 type OddsPartner = {
@@ -606,6 +618,7 @@ export type NHLScores = {
     nextDate: string;
     gameWeek: GameWeek[];
     oddsPartners: OddsPartner[];
+
     games: Game[];
 }
 

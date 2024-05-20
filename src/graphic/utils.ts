@@ -44,8 +44,7 @@ export async function saveCanvasImage(canvas: Canvas, outputImagePath: string): 
  */
 type CustomFontOptions = {
     fontPath: string;
-    fontSize: number;
-    text: string;
+    family: string;
 };
 
 /**
@@ -55,10 +54,9 @@ type CustomFontOptions = {
  * @returns The canvas rendering context with the custom font set.
  */
 export function loadCustomFont(options: CustomFontOptions, canvas: Canvas): CanvasRenderingContext2D {
-    const { fontPath, fontSize } = options;
+    const { fontPath, family } = options;
     const ctx = canvas.getContext('2d');
-    registerFont(fontPath, { family: 'CustomFont' });
-    ctx.font = `${fontSize}px CustomFont`;
+    registerFont(fontPath, { family: family });
     return ctx;
 }
 
@@ -92,7 +90,7 @@ export function addDoubleSidedBar(ctx: CanvasRenderingContext2D, options: Double
     ctx.fillStyle = '#e74c3c';
     ctx.fillRect(x + width - barWidthRight, y, barWidthRight, height);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '14px CustomFont';
+    ctx.font = '14px RobotoRegular';
     ctx.textAlign = 'left';
     ctx.fillText(valueLeft, x + barWidthLeft / 2, y + height / 2);
     ctx.fillText(valueRight, x + width - barWidthRight / 2, y + height / 2);
@@ -165,6 +163,7 @@ type TextOptions = {
     y: number;
     font: string;
     color: string;
+    textAlign?: CanvasTextAlign;
 };
 
 
@@ -174,10 +173,12 @@ type TextOptions = {
  * @param options - The options for the text.
  */
 export function addText(ctx: CanvasRenderingContext2D, options: TextOptions): void {
-    const { text, x, y, font, color } = options;
+    const { text, x, y, font, color, textAlign } = options;
     ctx.font = font;
     ctx.fillStyle = color;
-    ctx.textAlign = 'center';
+    ctx.textAlign = textAlign || 'center';
+    console.log('text', text, x, y);
+    console.log(ctx)
     ctx.fillText(text, x, y);
 }
 
@@ -236,7 +237,7 @@ export function addRotatedText(ctx: CanvasRenderingContext2D, options: RotatedTe
  * Represents the options for a team logo.
  */
 type TeamLogoOptions = {
-    abbreviation: string;
+    teamName: string;
     x: number;
     y: number;
     width: number;
@@ -251,12 +252,47 @@ type TeamLogoOptions = {
  * @returns A promise that resolves when the team logo is added.
  */
 export async function addTeamLogo(ctx: CanvasRenderingContext2D, options: TeamLogoOptions): Promise<void> {
-    const { abbreviation, x, y, width, height } = options;
-    const logoPath = `../../assets/${abbreviation}.png`;
+    const { teamName, x, y, width, height } = options;
+    const logoPath = `./assets/logos/${teamImages[teamName as keyof typeof teamImages] || ''}`;
     try {
         const logoImage = await loadImage(logoPath);
         ctx.drawImage(logoImage, x, y, width, height);
     } catch (error: any) {
-        console.error(`Error loading or drawing the logo for ${abbreviation}: ${error.message}`);
+        console.error(`Error loading or drawing the logo for ${teamName}: ${error.message}`);
     }
 }
+
+const teamImages = {
+    'Ducks': 'AnaheimDucks.png',
+    'Coyotes': 'ArizonaCoyotes.png',
+    'Bruins': 'BostonBruins.png',
+    'Sabres': 'BuffaloSabres.png',
+    'Flames': 'CalgaryFlames.png',
+    'Hurricanes': 'CarolinaHurricanes.png',
+    'Blackhawks': 'ChicagoBlackhawks.png',
+    'Avalanche': 'ColoradoAvalanche.png',
+    'BlueJackets': 'ColumbusBlueJackets.png',
+    'Stars': 'DallasStars.png',
+    'RedWings': 'DetroitRedWings.png',
+    'Oilers': 'EdmontonOilers.png',
+    'Panthers': 'FloridaPanthers.png',
+    'Kings': 'LosAngelesKings.png',
+    'Wild': 'MinnesotaWild.png',
+    'Canadiens': 'MontrealCanadiens.png',
+    'Predators': 'NashvillePredators.png',
+    'Devils': 'NewJerseyDevils.png',
+    'Islanders': 'NewYorkIslanders.png',
+    'Rangers': 'NewYorkRangers.png',
+    'Senators': 'OttawaSenators.png',
+    'Flyers': 'PhiladelphiaFlyers.png',
+    'Penguins': 'PittsburghPenguins.png',
+    'Sharks': 'SanJoseSharks.png',
+    'Kraken': 'SeattleKraken.png',
+    'Blues': 'StLouisBlues.png',
+    'Lightning': 'TampaBayLightning.png',
+    'MapleLeafs': 'TorontoMapleLeafs.png',
+    'Canucks': 'VancouverCanucks.png',
+    'GoldenKnights': 'VegasGoldenKnights.png',
+    'Capitals': 'WashingtonCapitals.png',
+    'Jets': 'WinnipegJets.png'
+};

@@ -7,7 +7,8 @@ import { send } from './social/socialHandler';
 import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis, groupedList, getLastName } from './utils';
 import moment from 'moment';
 import { dailyfaceoffLines } from './api/dailyFaceoff';
-import { logObjectToFile } from './logger';
+import { createPreGameImage } from './graphic/preGame';
+import { teamHashtag } from './social/twitter';
 
 /**
  * Represents the possible states of a game.
@@ -91,11 +92,27 @@ const main = async (): Promise<void> => {
             else {
 
                 const formattedTime12Hr = convertUTCToLocalTime(currentGame.startTimeUTC, config.app.script.timeZone);
+                await createPreGameImage({
+                    homeTeam: currentGame.homeTeam.name.default,
+                    awayTeam: currentGame.awayTeam.name.default,
+                    homeHashtag: teamHashtag(currentGame.homeTeam.name.default) || '',
+                    awayHashtag: teamHashtag(currentGame.awayTeam.name.default) || '',
+                    venue: currentGame.venue.default,
+                    date: moment(currentGame.startTimeUTC).format('MMMM D'),
+                    time: formattedTime12Hr,
+                    homeLine1: currentGame.gameType === 3 ? currentGame.homeTeam.record || '' : `${homeTeamSummary?.wins}-${homeTeamSummary?.losses}-${homeTeamSummary?.otLosses}`,
+                    homeLine2: '',
+                    awayLine1: currentGame.gameType === 3 ? currentGame.awayTeam.record || '' : `${awayTeamSummary?.wins}-${awayTeamSummary?.losses}-${awayTeamSummary?.otLosses}`,
+                    awayLine2: ''
+
+                });
+
                 //TODO add graphic
                 send(
                     `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
                     \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(', ')}`,
-                    currentGame
+                    currentGame,
+                    [`./temp/preGame.png`]
                 );
 
                 const dfLines = await dailyfaceoffLines(prefTeam?.name.default || '');
@@ -278,5 +295,5 @@ const main = async (): Promise<void> => {
 }
 
 
-main();
+//main();
 

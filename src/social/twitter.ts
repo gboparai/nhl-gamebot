@@ -75,7 +75,7 @@ function getHashtags(game: Game) {
  * @param team - The name of the NHL team.
  * @returns The hashtag associated with the team.
  */
-function teamHashtag(team: string) {
+export function teamHashtag(team: string) {
     const teamHashtags = {
         "Ducks": "#FlyTogether",
         "Coyotes": "#Yotes",
