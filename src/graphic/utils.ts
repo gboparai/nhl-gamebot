@@ -177,8 +177,6 @@ export function addText(ctx: CanvasRenderingContext2D, options: TextOptions): vo
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.textAlign = textAlign || 'center';
-    console.log('text', text, x, y);
-    console.log(ctx)
     ctx.fillText(text, x, y);
 }
 
@@ -296,3 +294,77 @@ const teamImages = {
     'Capitals': 'WashingtonCapitals.png',
     'Jets': 'WinnipegJets.png'
 };
+
+type BarSegment = {
+    value: number;
+    label: string;
+    color: string;
+};
+
+type Bar = {
+    overallLabel: string;
+    segments: BarSegment[];
+};
+
+type BarGraphOptions = {
+    x: number;
+    y: number;
+    height: number;
+    bars: Bar[];
+    overallLabelWidth: number;
+    labelColor?: string;
+    barSpacing?: number;
+};
+/**
+ * Draws a stacked horizontal bar graph with an overall label for each bar.
+ * @param ctx - The canvas rendering context.
+ * @param options - The options for the bar graph.
+ */
+export function drawStackedHorizontalBarGraph(ctx: CanvasRenderingContext2D, options: BarGraphOptions): void {
+    const {
+        x,
+        y,
+        height,
+        bars,
+        overallLabelWidth,
+        labelColor = '#000000', // Default label color: black
+        barSpacing = 10 // Default spacing between bars
+    } = options;
+
+    let currentY = y;
+
+    for (const bar of bars) {
+        const { overallLabel, segments } = bar;
+        let currentX = x;
+
+        // Draw the overall label
+        ctx.fillStyle = labelColor;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '16px sans-serif';
+        ctx.fillText(overallLabel, currentX, currentY + height / 2);
+
+        currentX += overallLabelWidth;
+
+        for (const segment of segments) {
+            const { value, label, color } = segment;
+
+            // Draw the segment
+            ctx.fillStyle = color;
+            ctx.fillRect(currentX, currentY, value, height);
+
+            // Draw the label inside the segment
+            addText(ctx, {
+                text: label,
+                x: currentX + value / 2,
+                y: currentY + height / 2,
+                font: '16px sans-serif',
+                color: labelColor,
+                textAlign: 'center'
+            });
+
+            currentX += value;
+        }
+        currentY += height + barSpacing;
+    }
+}
