@@ -5,7 +5,7 @@ import fs from 'fs';
  * @param obj - The object to be logged.
  * @param header - The header to be included in the log.
  */
-export function logObjectToFile(obj: any, header: string) {
+export function logObjectToFile(obj: unknown, header: string) {
     const dateTime = new Date().toISOString();
     const logData = `${dateTime}\n${header}\n${JSON.stringify(obj)}\n\n`;
     fs.appendFileSync('./logfile.txt', logData);

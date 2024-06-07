@@ -1,7 +1,6 @@
 import { sendTweet, uploadMedia } from "./twitter";
 import config from "../../config.json";
 import { Game } from "../types";
-import { logObjectToFile } from "../logger";
 
 /**
  * Sends a tweet with optional media attachments.

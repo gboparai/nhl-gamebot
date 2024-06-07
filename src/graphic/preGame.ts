@@ -1,5 +1,7 @@
 import { createCanvas } from 'canvas';
-import { addText, addImageAsBackground, saveCanvasImage, loadCustomFont, addTeamLogo } from './utils';
+import {
+    addText, addImageAsBackground, saveCanvasImage, loadCustomFont, addTeamLogo,
+} from './utils';
 
 /**
  * Represents the parameters for a pre-game graphic.
@@ -24,21 +26,21 @@ export type PreGameParams = {
  * @returns A promise that resolves to void.
  */
 export async function createPreGameImage(params: PreGameParams): Promise<void> {
-    const { homeTeam, awayTeam, homeHashtag, awayHashtag, venue, date, time, homeLine1, homeLine2, awayLine1, awayLine2 } = params;
+    const {
+        homeTeam, awayTeam, homeHashtag, awayHashtag, venue, date, time, homeLine1, homeLine2, awayLine1, awayLine2,
+    } = params;
 
     const canvas = createCanvas(800, 600);
     const ctx = canvas.getContext('2d');
-    await loadCustomFont(
-        {
-            fontPath: './assets/fonts/Roboto-Bold.ttf',
-            family: "RobotoBold"
-        }, canvas);
+    await loadCustomFont({
+        fontPath: './assets/fonts/Roboto-Bold.ttf',
+        family: 'RobotoBold',
+    }, canvas);
 
-    await loadCustomFont(
-        {
-            fontPath: './assets/fonts/Roboto-Regular.ttf',
-            family: "RobotoRegular"
-        }, canvas);
+    await loadCustomFont({
+        fontPath: './assets/fonts/Roboto-Regular.ttf',
+        family: 'RobotoRegular',
+    }, canvas);
     await addImageAsBackground(ctx, canvas, './assets/images/BG2022-Gameday-Pregame.png');
     addText(ctx, {
         text: 'Pregame Matchup',
@@ -46,7 +48,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 75,
         font: '48px RobotoBold',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
 
     const logoWidth = 300;
@@ -59,7 +61,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         x: canvasCenterX - logoWidth - logoSpacing / 2,
         y: 135 + 15,
         width: logoWidth,
-        height: logoHeight
+        height: logoHeight,
     });
 
     addText(ctx, {
@@ -68,9 +70,8 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 375 + 15,
         font: '24px RobotoRegular',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
-
 
     addText(ctx, {
         text: homeLine2,
@@ -78,7 +79,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 403 + 15,
         font: '24px RobotoRegular',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
 
     addTeamLogo(ctx, {
@@ -86,7 +87,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         x: canvasCenterX + logoSpacing / 2,
         y: 135 + 15,
         width: logoWidth,
-        height: logoHeight
+        height: logoHeight,
     });
 
     addText(ctx, {
@@ -95,7 +96,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 375 + 15,
         font: '24px RobotoRegular',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
     addText(ctx, {
         text: awayLine2,
@@ -103,7 +104,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 403 + 15,
         font: '24px RobotoRegular',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
 
     addText(ctx, {
@@ -112,7 +113,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 260 + 15,
         font: '48px RobotoBold',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
 
     addText(ctx, {
@@ -121,7 +122,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 525,
         font: '48px RobotoBold',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
     addText(ctx, {
         text: venue,
@@ -129,7 +130,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 575,
         font: '48px RobotoBold',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
     addText(ctx, {
         text: `#${homeHashtag} #${awayHashtag}`,
@@ -137,7 +138,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         y: 625,
         font: '48px RobotoBold',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
     });
     saveCanvasImage(canvas, './temp/preGame.png');
 }

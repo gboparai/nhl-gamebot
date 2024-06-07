@@ -226,7 +226,7 @@ export type GameLanding = {
             savePctg?: number;
         }[];
     };
-    shootout: any[]; // Assuming this is an array of shootout goals or empty
+    shootout: unknown[]; // Assuming this is an array of shootout goals or empty
 
     teamGameStats: TeamGameStats[];
     shotsByPeriod: ShotsByPeriod[];
@@ -409,8 +409,8 @@ export type Boxscore = {
         }[];
         teamGameStats: {
             category: string;
-            awayValue: any;
-            homeValue: any;
+            awayValue: unknown;
+            homeValue: unknown;
         }[];
         seasonSeries: {
             id: number;

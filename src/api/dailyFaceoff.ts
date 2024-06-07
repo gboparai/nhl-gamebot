@@ -16,7 +16,7 @@ export type Lines = {
 export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
     const dfLinesURL = `https://www.dailyfaceoff.com/teams/${convertTeamName(teamName.toLocaleLowerCase())}/line-combinations/`;
     // Instantiate blank dictionaries
-    let currentLines: Lines = {
+    const currentLines: Lines = {
         confirmed: false,
         forwards: [],
         defense: [],
@@ -47,8 +47,8 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
         return currentLines;
 
 
-    } catch (error: any) {
-        console.error("Error fetching lines data:", error.message as string);
+    } catch (error: unknown) {
+        console.error("Error fetching lines data:", (error as Error).message as string);
         return currentLines;
     }
 

@@ -7,7 +7,7 @@ import moment from 'moment-timezone';
  * @returns The ordinal suffix as a string.
  */
 export function ordinalSuffixOf(i: number): string {
-    var j = i % 10,
+    const j = i % 10,
         k = i % 100;
     if (j == 1 && k != 11) {
         return i + "st";
@@ -135,7 +135,7 @@ export function getLastName(fullName: string): string {
  * @param length - The length of each subarray.
  * @returns A string representation of the grouped elements.
  */
-export function groupedList(arr: any[], length: number): string {
+export function groupedList(arr: unknown[], length: number): string {
     const chunkedArray = splitArray(arr, length);
     let str = '';
     chunkedArray.forEach((chunk) => {
@@ -151,7 +151,7 @@ export function groupedList(arr: any[], length: number): string {
  * @param chunkSize - The size of each chunk.
  * @returns An array of smaller chunks.
  */
-export function splitArray(array: any[], chunkSize: number) {
+export function splitArray(array: unknown[], chunkSize: number) {
     const chunkedArray = [];
     for (let i = 0; i < array.length; i += chunkSize) {
         chunkedArray.push(array.slice(i, i + chunkSize));

@@ -37,11 +37,11 @@ type Post = {
     template: string;
     format: string;
     meta: {
-        [key: string]: any;
+        [key: string]: unknown;
     };
     categories: number[];
     tags: number[];
-    jetpack_publicize_connections: any[];
+    jetpack_publicize_connections: unknown[];
     jetpack_featured_media_url: string;
     _links: {
         self: { href: string }[];
@@ -68,8 +68,8 @@ async function fetchPostsData(): Promise<Post[]> {
     try {
         const response = await axios.get<Post[]>(url);
         return response.data;
-    } catch (error: any) {
-        console.error('Error fetching data:', error.message as string);
+    } catch (error: unknown) {
+        console.error('Error fetching data:', (error as Error).message as string);
         return [];
     }
 }
@@ -192,8 +192,8 @@ export async function fetchGameDetails(prefTeamFullName: string): Promise<GameDe
         gameDetails.linesmens = gameDetails.linesmens.filter(linesmen => linesmen.name !== '');
 
         return gameDetails;
-    } catch (error: any) {
-        console.error('Error:', error.message);
+    } catch (error: unknown) {
+        console.error('Error:', (error as Error).message);
         return {
             referees: [],
             linesmens: [],

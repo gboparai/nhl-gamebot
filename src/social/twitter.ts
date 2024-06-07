@@ -30,11 +30,11 @@ export async function sendTweet(tweet: string, game?: Game, media?: string[], re
             else
                 await twitter.v2.tweet(tweet);
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         logObjectToFile("failed-tweet", tweet);
-        logObjectToFile("twitter-error", error);
+        logObjectToFile("twitter-error", (error as string));
 
-        if (error.message.includes("403") && retries > 0) {
+        if ((error as Error).message.includes("403") && retries > 0) {
             await new Promise(resolve => setTimeout(resolve, 5000));
             await sendTweet(tweet, game, media, retries - 1);
         }
@@ -51,9 +51,9 @@ export async function uploadMedia(media: TUploadableMedia): Promise<string> {
     try {
         const mediaData = await twitter.v1.uploadMedia(media, {}, true);
         return mediaData.media_id_string;
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        console.error("Error uploading media:", error.message as string);
+        console.error("Error uploading media:", (error as Error).message as string);
         return "";
     }
 }

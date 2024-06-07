@@ -4,7 +4,7 @@ import { fetchTeamSummaries, fetchGameLanding, fetchBoxscore, fetchPlayByPlay, f
 import { GameDetails, fetchGameDetails } from './api/scoutingTheRefs';
 import { Game, TeamSummary, GameLanding, Boxscore, PlayByPlayGame, NHLScores, Team } from './types';
 import { send } from './social/socialHandler';
-import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, convertdescKeyToWords, starEmojis, groupedList, getLastName } from './utils';
+import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, starEmojis, groupedList, getLastName } from './utils';
 import moment from 'moment';
 import { dailyfaceoffLines } from './api/dailyFaceoff';
 import { createPreGameImage } from './graphic/preGame';
@@ -53,19 +53,19 @@ const main = async (): Promise<void> => {
     let refereeDetails: GameDetails | undefined;
     let hasSentIntermission: boolean = false;
     let lastEventID: number = 0;
-    let sentEvents: Number[] = [];
+    let sentEvents: number[] = [];
 
     while (true) {
         if (CurrentState === GameStates.WAITING) {
 
-            let nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
+            const nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
             currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
 
 
             if (currentGame !== undefined) {
                 prefTeam = currentGame.awayTeam.abbrev === config.app.script.team ? currentGame.awayTeam : currentGame.homeTeam;
                 oppTeam = currentGame.awayTeam.abbrev === config.app.script.team ? currentGame.homeTeam : currentGame.awayTeam;
-                let sleepTime = new Date(currentGame.startTimeUTC);
+                const sleepTime = new Date(currentGame.startTimeUTC);
                 sleepTime.setHours(sleepTime.getHours() - 1);
 
                 await sleep(sleepTime.getTime() - Date.now());
@@ -80,7 +80,7 @@ const main = async (): Promise<void> => {
             boxscore = await fetchBoxscore(String(currentGame.id));
 
 
-            let teamSummaries = await fetchTeamSummaries();
+            const teamSummaries = await fetchTeamSummaries();
             homeTeamSummary = teamSummaries.data.find((team) => team.teamId === currentGame!.homeTeam.id);
             awayTeamSummary = teamSummaries.data.find((team) => team.teamId === currentGame!.awayTeam.id);
             refereeDetails = await fetchGameDetails(config.app.script.teamName);
@@ -148,7 +148,7 @@ const main = async (): Promise<void> => {
 
 
 
-                let sleepTime = new Date(currentGame.startTimeUTC);
+                const sleepTime = new Date(currentGame.startTimeUTC);
                 await sleep(sleepTime.getTime() - Date.now());
                 sentEvents = [];
                 CurrentState = GameStates.INGAME;
@@ -156,7 +156,7 @@ const main = async (): Promise<void> => {
 
         }
         else if (CurrentState === GameStates.INGAME) {
-            let nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
+            const nhlScores: NHLScores = await fetchNHLScores(getCurrentDateEasternTime());
             currentGame = nhlScores.games.find((game) => game.awayTeam.abbrev === config.app.script.team || game.homeTeam.abbrev === config.app.script.team);
             prefTeam = currentGame?.awayTeam.abbrev === config.app.script.team ? currentGame.awayTeam : currentGame?.homeTeam;
             oppTeam = currentGame?.awayTeam.abbrev === config.app.script.team ? currentGame.homeTeam : currentGame?.awayTeam;
@@ -273,7 +273,7 @@ const main = async (): Promise<void> => {
         }
         else if (CurrentState === GameStates.POSTGAMEVID) {
             boxscore = await fetchBoxscore(String(currentGame!.id));
-            let video = boxscore?.gameVideo?.threeMinRecap;
+            const video = boxscore?.gameVideo?.threeMinRecap;
             if (video) {
                 const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format('M-D-YY')}-${video}`;
                 send(
@@ -295,5 +295,5 @@ const main = async (): Promise<void> => {
 }
 
 
-//main();
+main();
 

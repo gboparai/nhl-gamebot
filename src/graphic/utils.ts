@@ -1,10 +1,12 @@
-import { loadImage, CanvasRenderingContext2D, Canvas, registerFont } from 'canvas';
+import {
+    loadImage, CanvasRenderingContext2D, Canvas, registerFont,
+} from 'canvas';
 import fs from 'fs';
 
 // Function to add an image as a background to a canvas
 /**
  * Adds an image as the background of a canvas.
- * 
+ *
  * @param ctx - The rendering context of the canvas.
  * @param canvas - The canvas element.
  * @param imageUrl - The URL of the image to be used as the background.
@@ -56,10 +58,9 @@ type CustomFontOptions = {
 export function loadCustomFont(options: CustomFontOptions, canvas: Canvas): CanvasRenderingContext2D {
     const { fontPath, family } = options;
     const ctx = canvas.getContext('2d');
-    registerFont(fontPath, { family: family });
+    registerFont(fontPath, { family });
     return ctx;
 }
-
 
 /**
  * Represents the options for a double-sided bar.
@@ -75,14 +76,15 @@ type DoubleSidedBarOptions = {
     valueRight: string;
 };
 
-
 /**
  * Adds a double-sided bar to the canvas.
  * @param ctx - The canvas rendering context.
  * @param options - The options for the double-sided bar.
  */
 export function addDoubleSidedBar(ctx: CanvasRenderingContext2D, options: DoubleSidedBarOptions): void {
-    const { x, y, width, height, percentageLeft, percentageRight, valueLeft, valueRight } = options;
+    const {
+        x, y, width, height, percentageLeft, percentageRight, valueLeft, valueRight,
+    } = options;
     const barWidthLeft = (width * percentageLeft) / 100;
     const barWidthRight = (width * percentageRight) / 100;
     ctx.fillStyle = '#3498db';
@@ -110,14 +112,15 @@ type TransparentSquareOptions = {
     lineItems: string[];
 };
 
-
 /**
  * Adds a square with goals to the canvas.
  * @param ctx - The canvas rendering context.
  * @param options - The options for the transparent square.
  */
 export function addSquareWithGoals(ctx: CanvasRenderingContext2D, options: TransparentSquareOptions): void {
-    const { x, y, width, height, transparency, lineItems, xPadding, yPadding } = options;
+    const {
+        x, y, width, height, transparency, lineItems, xPadding, yPadding,
+    } = options;
     ctx.fillStyle = `rgba(0, 0, 0, ${transparency})`;
     ctx.fillRect(x, y, width, height);
     ctx.fillStyle = '#ffffff';
@@ -130,13 +133,13 @@ export function addSquareWithGoals(ctx: CanvasRenderingContext2D, options: Trans
         const words = lineItem.split(' ');
         let line = '';
         for (const word of words) {
-            const testLine = line + word + ' ';
+            const testLine = `${line + word} `;
             const metrics = ctx.measureText(testLine);
             const testWidth = metrics.width;
             if (testWidth > width - 2 * xPadding) {
                 if (currentLine < maxLines) {
                     ctx.fillText(line.trim(), x + xPadding, y + yPadding + currentLine * lineHeight);
-                    line = word + ' ';
+                    line = `${word} `;
                     currentLine++;
                 } else {
                     break;
@@ -166,20 +169,20 @@ type TextOptions = {
     textAlign?: CanvasTextAlign;
 };
 
-
 /**
  * Adds text to the canvas.
  * @param ctx - The canvas rendering context.
  * @param options - The options for the text.
  */
 export function addText(ctx: CanvasRenderingContext2D, options: TextOptions): void {
-    const { text, x, y, font, color, textAlign } = options;
+    const {
+        text, x, y, font, color, textAlign,
+    } = options;
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.textAlign = textAlign || 'center';
     ctx.fillText(text, x, y);
 }
-
 
 /**
  * Options for rendering rotated text.
@@ -211,15 +214,16 @@ type RotatedTextOptions = {
     rotation: number;
 };
 
-
 /**
  * Adds rotated text to the canvas.
- * 
+ *
  * @param ctx - The canvas rendering context.
  * @param options - The options for the rotated text.
  */
 export function addRotatedText(ctx: CanvasRenderingContext2D, options: RotatedTextOptions): void {
-    const { text, x, y, font, color, rotation } = options;
+    const {
+        text, x, y, font, color, rotation,
+    } = options;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
@@ -229,7 +233,6 @@ export function addRotatedText(ctx: CanvasRenderingContext2D, options: RotatedTe
     ctx.fillText(text, 0, 0);
     ctx.restore();
 }
-
 
 /**
  * Represents the options for a team logo.
@@ -242,7 +245,6 @@ type TeamLogoOptions = {
     height: number;
 };
 
-
 /**
  * Adds a team logo to the canvas.
  * @param ctx - The canvas rendering context.
@@ -250,49 +252,51 @@ type TeamLogoOptions = {
  * @returns A promise that resolves when the team logo is added.
  */
 export async function addTeamLogo(ctx: CanvasRenderingContext2D, options: TeamLogoOptions): Promise<void> {
-    const { teamName, x, y, width, height } = options;
+    const {
+        teamName, x, y, width, height,
+    } = options;
     const logoPath = `./assets/logos/${teamImages[teamName as keyof typeof teamImages] || ''}`;
     try {
         const logoImage = await loadImage(logoPath);
         ctx.drawImage(logoImage, x, y, width, height);
-    } catch (error: any) {
-        console.error(`Error loading or drawing the logo for ${teamName}: ${error.message}`);
+    } catch (error: unknown) {
+        console.error(`Error loading or drawing the logo for ${teamName}: ${(error as Error).message}`);
     }
 }
 
 const teamImages = {
-    'Ducks': 'AnaheimDucks.png',
-    'Coyotes': 'ArizonaCoyotes.png',
-    'Bruins': 'BostonBruins.png',
-    'Sabres': 'BuffaloSabres.png',
-    'Flames': 'CalgaryFlames.png',
-    'Hurricanes': 'CarolinaHurricanes.png',
-    'Blackhawks': 'ChicagoBlackhawks.png',
-    'Avalanche': 'ColoradoAvalanche.png',
-    'BlueJackets': 'ColumbusBlueJackets.png',
-    'Stars': 'DallasStars.png',
-    'RedWings': 'DetroitRedWings.png',
-    'Oilers': 'EdmontonOilers.png',
-    'Panthers': 'FloridaPanthers.png',
-    'Kings': 'LosAngelesKings.png',
-    'Wild': 'MinnesotaWild.png',
-    'Canadiens': 'MontrealCanadiens.png',
-    'Predators': 'NashvillePredators.png',
-    'Devils': 'NewJerseyDevils.png',
-    'Islanders': 'NewYorkIslanders.png',
-    'Rangers': 'NewYorkRangers.png',
-    'Senators': 'OttawaSenators.png',
-    'Flyers': 'PhiladelphiaFlyers.png',
-    'Penguins': 'PittsburghPenguins.png',
-    'Sharks': 'SanJoseSharks.png',
-    'Kraken': 'SeattleKraken.png',
-    'Blues': 'StLouisBlues.png',
-    'Lightning': 'TampaBayLightning.png',
-    'MapleLeafs': 'TorontoMapleLeafs.png',
-    'Canucks': 'VancouverCanucks.png',
-    'GoldenKnights': 'VegasGoldenKnights.png',
-    'Capitals': 'WashingtonCapitals.png',
-    'Jets': 'WinnipegJets.png'
+    Ducks: 'AnaheimDucks.png',
+    Coyotes: 'ArizonaCoyotes.png',
+    Bruins: 'BostonBruins.png',
+    Sabres: 'BuffaloSabres.png',
+    Flames: 'CalgaryFlames.png',
+    Hurricanes: 'CarolinaHurricanes.png',
+    Blackhawks: 'ChicagoBlackhawks.png',
+    Avalanche: 'ColoradoAvalanche.png',
+    BlueJackets: 'ColumbusBlueJackets.png',
+    Stars: 'DallasStars.png',
+    RedWings: 'DetroitRedWings.png',
+    Oilers: 'EdmontonOilers.png',
+    Panthers: 'FloridaPanthers.png',
+    Kings: 'LosAngelesKings.png',
+    Wild: 'MinnesotaWild.png',
+    Canadiens: 'MontrealCanadiens.png',
+    Predators: 'NashvillePredators.png',
+    Devils: 'NewJerseyDevils.png',
+    Islanders: 'NewYorkIslanders.png',
+    Rangers: 'NewYorkRangers.png',
+    Senators: 'OttawaSenators.png',
+    Flyers: 'PhiladelphiaFlyers.png',
+    Penguins: 'PittsburghPenguins.png',
+    Sharks: 'SanJoseSharks.png',
+    Kraken: 'SeattleKraken.png',
+    Blues: 'StLouisBlues.png',
+    Lightning: 'TampaBayLightning.png',
+    MapleLeafs: 'TorontoMapleLeafs.png',
+    Canucks: 'VancouverCanucks.png',
+    GoldenKnights: 'VegasGoldenKnights.png',
+    Capitals: 'WashingtonCapitals.png',
+    Jets: 'WinnipegJets.png',
 };
 
 /**
@@ -338,7 +342,7 @@ export function drawStackedHorizontalBarGraph(ctx: CanvasRenderingContext2D, opt
         bars,
         overallLabelWidth,
         labelColor = '#000000', // Default label color: black
-        barSpacing = 10 // Default spacing between bars
+        barSpacing = 10, // Default spacing between bars
     } = options;
 
     let currentY = y;
@@ -370,7 +374,7 @@ export function drawStackedHorizontalBarGraph(ctx: CanvasRenderingContext2D, opt
                 y: currentY + height / 2,
                 font: '16px sans-serif',
                 color: labelColor,
-                textAlign: 'center'
+                textAlign: 'center',
             });
 
             currentX += value;
