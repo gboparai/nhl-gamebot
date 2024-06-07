@@ -295,17 +295,26 @@ const teamImages = {
     'Jets': 'WinnipegJets.png'
 };
 
+/**
+ * Represents a segment of a bar in a graphic.
+ */
 type BarSegment = {
     value: number;
     label: string;
     color: string;
 };
 
+/**
+ * Represents a bar with an overall label and segments.
+ */
 type Bar = {
     overallLabel: string;
     segments: BarSegment[];
 };
 
+/**
+ * Represents the options for a bar graph.
+ */
 type BarGraphOptions = {
     x: number;
     y: number;
@@ -315,6 +324,7 @@ type BarGraphOptions = {
     labelColor?: string;
     barSpacing?: number;
 };
+
 /**
  * Draws a stacked horizontal bar graph with an overall label for each bar.
  * @param ctx - The canvas rendering context.

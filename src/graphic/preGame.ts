@@ -70,6 +70,8 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         color: 'white',
         textAlign: 'center'
     });
+
+
     addText(ctx, {
         text: homeLine2,
         x: canvasCenterX - logoWidth - logoSpacing / 2 + logoWidth / 2,
