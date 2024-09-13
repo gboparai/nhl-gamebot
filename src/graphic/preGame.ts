@@ -1,6 +1,10 @@
 import { createCanvas } from "canvas";
 import {
-  addText, addImageAsBackground, saveCanvasImage, loadCustomFont, addTeamLogo,
+  addText,
+  addImageAsBackground,
+  saveCanvasImage,
+  loadCustomFont,
+  addTeamLogo,
 } from "./utils";
 
 /**
@@ -27,25 +31,42 @@ export type PreGameParams = {
  */
 export default async function preGame(params: PreGameParams): Promise<void> {
   const {
-    homeTeam, awayTeam, homeHashtag, awayHashtag, venue, date, time, homeLine1, homeLine2, awayLine1, awayLine2,
+    homeTeam,
+    awayTeam,
+    homeHashtag,
+    awayHashtag,
+    venue,
+    date,
+    time,
+    homeLine1,
+    homeLine2,
+    awayLine1,
+    awayLine2,
   } = params;
 
   const canvas = createCanvas(800, 600);
 
-  await loadCustomFont({
-    fontPath: './assets/fonts/Roboto-Bold.ttf',
-    family: 'RobotoBold',
-  },
+  await loadCustomFont(
+    {
+      fontPath: './assets/fonts/Roboto-Bold.ttf',
+      family: 'RobotoBold',
+    },
     canvas,
   );
 
-  await loadCustomFont({
-    fontPath: './assets/fonts/Roboto-Regular.ttf',
-    family: 'RobotoRegular',
-  },
-    canvas);
+  await loadCustomFont(
+    {
+      fontPath: './assets/fonts/Roboto-Regular.ttf',
+      family: 'RobotoRegular',
+    },
+    canvas,
+  );
   const ctx = canvas.getContext('2d');
-  await addImageAsBackground(ctx, canvas, './assets/images/BG2022-Gameday-Pregame.png');
+  await addImageAsBackground(
+    ctx,
+    canvas,
+    './assets/images/BG2022-Gameday-Pregame.png',
+  );
   addText(ctx, {
     text: 'Pregame Matchup',
     x: canvas.width / 2,
