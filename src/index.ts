@@ -7,7 +7,7 @@ import { send } from './social/socialHandler';
 import { convertUTCToLocalTime, getCurrentDateEasternTime, ordinalSuffixOf, goalEmojis, thumbsDownEmojis, starEmojis, groupedList, getLastName } from './utils';
 import moment from 'moment';
 import { dailyfaceoffLines } from './api/dailyFaceoff';
-import { createPreGameImage } from './graphic/preGame';
+import preGameImage from './graphic/preGame';
 import { teamHashtag } from './social/twitter';
 
 /**
@@ -92,7 +92,7 @@ const main = async (): Promise<void> => {
             else {
 
                 const formattedTime12Hr = convertUTCToLocalTime(currentGame.startTimeUTC, config.app.script.timeZone);
-                await createPreGameImage({
+                await preGameImage({
                     homeTeam: currentGame.homeTeam.name.default,
                     awayTeam: currentGame.awayTeam.name.default,
                     homeHashtag: teamHashtag(currentGame.homeTeam.name.default) || '',

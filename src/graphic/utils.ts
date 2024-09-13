@@ -62,41 +62,9 @@ export function loadCustomFont(options: CustomFontOptions, canvas: Canvas): Canv
     return ctx;
 }
 
-/**
- * Represents the options for a double-sided bar.
- */
-type DoubleSidedBarOptions = {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    percentageLeft: number;
-    percentageRight: number;
-    valueLeft: string;
-    valueRight: string;
-};
 
-/**
- * Adds a double-sided bar to the canvas.
- * @param ctx - The canvas rendering context.
- * @param options - The options for the double-sided bar.
- */
-export function addDoubleSidedBar(ctx: CanvasRenderingContext2D, options: DoubleSidedBarOptions): void {
-    const {
-        x, y, width, height, percentageLeft, percentageRight, valueLeft, valueRight,
-    } = options;
-    const barWidthLeft = (width * percentageLeft) / 100;
-    const barWidthRight = (width * percentageRight) / 100;
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x, y, barWidthLeft, height);
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(x + width - barWidthRight, y, barWidthRight, height);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px RobotoRegular';
-    ctx.textAlign = 'left';
-    ctx.fillText(valueLeft, x + barWidthLeft / 2, y + height / 2);
-    ctx.fillText(valueRight, x + width - barWidthRight / 2, y + height / 2);
-}
+
+
 
 /**
  * Represents the options for a transparent square.
@@ -124,7 +92,7 @@ export function addSquareWithGoals(ctx: CanvasRenderingContext2D, options: Trans
     ctx.fillStyle = `rgba(0, 0, 0, ${transparency})`;
     ctx.fillRect(x, y, width, height);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '14px CustomFont';
+    ctx.font = '14px RobotoRegular';
     ctx.textAlign = 'left';
     const lineHeight = 20;
     const maxLines = Math.floor((height - 2 * yPadding) / lineHeight);
@@ -355,8 +323,17 @@ export function drawStackedHorizontalBarGraph(ctx: CanvasRenderingContext2D, opt
         ctx.fillStyle = labelColor;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.font = '16px sans-serif';
-        ctx.fillText(overallLabel, currentX, currentY + height / 2);
+        ctx.font = '16px RobotoBold';
+        ctx.fillText(overallLabel, currentX + 10, currentY + height / 2);
+
+        // Draw the rectangle around the label
+        const labelWidth = overallLabelWidth;
+        const rectX = currentX;
+        const rectY = currentY;
+        const rectWidth = labelWidth;
+        const rectHeight = height;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
 
         currentX += overallLabelWidth;
 
@@ -372,7 +349,7 @@ export function drawStackedHorizontalBarGraph(ctx: CanvasRenderingContext2D, opt
                 text: label,
                 x: currentX + value / 2,
                 y: currentY + height / 2,
-                font: '16px sans-serif',
+                font: '16px RobotoBold',
                 color: labelColor,
                 textAlign: 'center',
             });
@@ -382,3 +359,5 @@ export function drawStackedHorizontalBarGraph(ctx: CanvasRenderingContext2D, opt
         currentY += height + barSpacing;
     }
 }
+
+

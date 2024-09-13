@@ -25,7 +25,7 @@ export type PreGameParams = {
  * @param params - The parameters for creating the pregame image.
  * @returns A promise that resolves to void.
  */
-export async function createPreGameImage(params: PreGameParams): Promise<void> {
+export default async function preGame(params: PreGameParams): Promise<void> {
     const {
         homeTeam, awayTeam, homeHashtag, awayHashtag, venue, date, time, homeLine1, homeLine2, awayLine1, awayLine2,
     } = params;
@@ -56,7 +56,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
     const logoSpacing = 50;
     const canvasCenterX = canvas.width / 2;
 
-    addTeamLogo(ctx, {
+    await addTeamLogo(ctx, {
         teamName: homeTeam,
         x: canvasCenterX - logoWidth - logoSpacing / 2,
         y: 135 + 15,
@@ -82,7 +82,7 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         textAlign: 'center',
     });
 
-    addTeamLogo(ctx, {
+    await addTeamLogo(ctx, {
         teamName: awayTeam,
         x: canvasCenterX + logoSpacing / 2,
         y: 135 + 15,
@@ -140,5 +140,5 @@ export async function createPreGameImage(params: PreGameParams): Promise<void> {
         color: 'white',
         textAlign: 'center',
     });
-    saveCanvasImage(canvas, './temp/preGame.png');
+    await saveCanvasImage(canvas, './temp/preGame.png');
 }
