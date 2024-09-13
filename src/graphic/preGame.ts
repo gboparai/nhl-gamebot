@@ -31,7 +31,7 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     } = params;
 
     const canvas = createCanvas(800, 600);
-    const ctx = canvas.getContext('2d');
+
     await loadCustomFont({
         fontPath: './assets/fonts/Roboto-Bold.ttf',
         family: 'RobotoBold',
@@ -41,6 +41,7 @@ export default async function preGame(params: PreGameParams): Promise<void> {
         fontPath: './assets/fonts/Roboto-Regular.ttf',
         family: 'RobotoRegular',
     }, canvas);
+    const ctx = canvas.getContext('2d');
     await addImageAsBackground(ctx, canvas, './assets/images/BG2022-Gameday-Pregame.png');
     addText(ctx, {
         text: 'Pregame Matchup',

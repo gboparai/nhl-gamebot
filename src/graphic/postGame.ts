@@ -54,7 +54,7 @@ export type LineScore = {
 };
 export default async function postGame(params: PostGameGameParams): Promise<void> {
     const canvas = createCanvas(800, 600);
-    const ctx = canvas.getContext('2d');
+
     await loadCustomFont({
         fontPath: './assets/fonts/Roboto-Bold.ttf',
         family: 'RobotoBold',
@@ -64,6 +64,7 @@ export default async function postGame(params: PostGameGameParams): Promise<void
         fontPath: './assets/fonts/Roboto-Regular.ttf',
         family: 'RobotoRegular',
     }, canvas);
+    const ctx = canvas.getContext('2d');
     await addImageAsBackground(ctx, canvas, './assets/images/BG2022-Gameday-ScoreReport.png');
     addText(ctx, {
         text: 'END OF GAME RECAP',
