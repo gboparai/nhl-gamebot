@@ -5,7 +5,9 @@
         "node": true
     },
     "extends": [
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+        "eslint:recommended",
+        "plugin:prettier/recommended"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -14,7 +16,72 @@
         "project": "./tsconfig.json"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "prettier"
     ],
-    "rules": {}
+    "rules": {
+        // Enable Prettier for code formatting
+        "prettier/prettier": "error",
+        // TypeScript-specific rules
+        "@typescript-eslint/explicit-module-boundary-types": "off", // Allow omitting return types for functions
+        "@typescript-eslint/no-explicit-any": "warn", // Avoid using 'any' unless necessary
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_"
+            }
+        ], // Ignore unused variables prefixed with '_'
+        "@typescript-eslint/no-inferrable-types": "off", // Allow explicit type annotations for clarity
+        "@typescript-eslint/ban-ts-comment": "warn", // Warn about using @ts-ignore and similar comments
+        // JavaScript and ES6 rules
+        "no-var": "error", // Enforce let/const instead of var
+        "prefer-const": "warn", // Prefer const if variables are not reassigned
+        "no-console": "warn", // Avoid console.log (use logging libraries for production)
+        "eqeqeq": [
+            "error",
+            "always"
+        ], // Use strict equality (=== and !==)
+        "curly": "error", // Enforce curly braces for all control structures
+        "no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_"
+            }
+        ], // Ignore unused variables prefixed with '_'
+        "no-multiple-empty-lines": [
+            "error",
+            {
+                "max": 1
+            }
+        ], // Limit multiple empty lines
+        "semi": [
+            "error",
+            "always"
+        ], // Require semicolons
+        "quotes": [
+            "error",
+            "single",
+            {
+                "avoidEscape": true
+            }
+        ], // Use single quotes
+        "arrow-parens": [
+            "error",
+            "as-needed"
+        ], // Omit parens when not needed in arrow functions
+        "no-trailing-spaces": "error", // No trailing spaces
+        "prefer-template": "warn", // Prefer template literals over string concatenation
+        // Enforce consistent spacing and indentation
+        "indent": [
+            "error",
+            2,
+            {
+                "SwitchCase": 1
+            }
+        ],
+        "space-before-function-paren": [
+            "error",
+            "never"
+        ]
+    }
 }

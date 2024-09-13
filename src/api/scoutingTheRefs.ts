@@ -1,61 +1,60 @@
 import axios from "axios";
 import { load } from 'cheerio';
 
-
 /**
  * Represents a post object.
  */
 type Post = {
-    id: number;
-    date: string;
-    date_gmt: string;
-    guid: {
-        rendered: string;
-    };
-    modified: string;
-    modified_gmt: string;
-    slug: string;
-    status: string;
-    type: string;
-    link: string;
-    title: {
-        rendered: string;
-    };
-    content: {
-        rendered: string;
-        protected: boolean;
-    };
-    excerpt: {
-        rendered: string;
-        protected: boolean;
-    };
-    author: number;
-    featured_media: number;
-    comment_status: string;
-    ping_status: string;
-    sticky: boolean;
-    template: string;
-    format: string;
-    meta: {
-        [key: string]: unknown;
-    };
-    categories: number[];
-    tags: number[];
-    jetpack_publicize_connections: unknown[];
-    jetpack_featured_media_url: string;
-    _links: {
-        self: { href: string }[];
-        collection: { href: string }[];
-        about: { href: string }[];
-        author: { embeddable: boolean; href: string }[];
-        replies: { embeddable: boolean; href: string }[];
-        version_history: { count: number; href: string }[];
-        predecessor_version: { id: number; href: string }[];
-        'wp:featuredmedia': { embeddable: boolean; href: string }[];
-        'wp:attachment': { href: string }[];
-        'wp:term': { taxonomy: string; embeddable: boolean; href: string }[];
-        curies: { name: string; href: string; templated: boolean }[];
-    };
+  id: number;
+  date: string;
+  date_gmt: string;
+  guid: {
+    rendered: string;
+  };
+  modified: string;
+  modified_gmt: string;
+  slug: string;
+  status: string;
+  type: string;
+  link: string;
+  title: {
+    rendered: string;
+  };
+  content: {
+    rendered: string;
+    protected: boolean;
+  };
+  excerpt: {
+    rendered: string;
+    protected: boolean;
+  };
+  author: number;
+  featured_media: number;
+  comment_status: string;
+  ping_status: string;
+  sticky: boolean;
+  template: string;
+  format: string;
+  meta: {
+    [key: string]: unknown;
+  };
+  categories: number[];
+  tags: number[];
+  jetpack_publicize_connections: unknown[];
+  jetpack_featured_media_url: string;
+  _links: {
+    self: { href: string }[];
+    collection: { href: string }[];
+    about: { href: string }[];
+    author: { embeddable: boolean; href: string }[];
+    replies: { embeddable: boolean; href: string }[];
+    version_history: { count: number; href: string }[];
+    predecessor_version: { id: number; href: string }[];
+    'wp:featuredmedia': { embeddable: boolean; href: string }[];
+    'wp:attachment': { href: string }[];
+    'wp:term': { taxonomy: string; embeddable: boolean; href: string }[];
+    curies: { name: string; href: string; templated: boolean }[];
+  };
 };
 
 /**
@@ -63,152 +62,185 @@ type Post = {
  * @returns A promise that resolves to an array of Post objects.
  */
 async function fetchPostsData(): Promise<Post[]> {
-    const url = 'https://scoutingtherefs.com/wp-json/wp/v2/posts';
+  const url = "https://scoutingtherefs.com/wp-json/wp/v2/posts";
 
-    try {
-        const response = await axios.get<Post[]>(url);
-        return response.data;
-    } catch (error: unknown) {
-        console.error('Error fetching data:', (error as Error).message as string);
-        return [];
-    }
+  try {
+    const response = await axios.get<Post[]>(url);
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Error fetching data:", (error as Error).message as string);
+    return [];
+  }
 }
 
 /**
  * Represents a referee.
  */
 export type Referee = {
-    name: string;
-    seasongames: string;
-    careergames: string;
-    penaltygame: string;
-    totalgames: number;
-}
+  name: string;
+  seasongames: string;
+  careergames: string;
+  penaltygame: string;
+  totalgames: number;
+};
 
 /**
  * Represents the details of a game, including the referees, linesmen, and confirmation status.
  */
 export type GameDetails = {
-    referees: Referee[];
-    linesmens: Referee[];
-    confirmed: boolean;
-}
+  referees: Referee[];
+  linesmens: Referee[];
+  confirmed: boolean;
+};
 
 /**
  * Fetches game details for a preferred team.
  * @param prefTeamFullName - The preferred team.
  * @returns A promise that resolves to the game details.
  */
-export async function fetchGameDetails(prefTeamFullName: string): Promise<GameDetails> {
-    try {
-        const response = await fetchPostsData();
+export async function fetchGameDetails(
+  prefTeamFullName: string,
+): Promise<GameDetails> {
+  try {
+    const response = await fetchPostsData();
 
-        const gameDetails: GameDetails = {
-            referees: [],
-            linesmens: [],
-            confirmed: false
-        };
+    const gameDetails: GameDetails = {
+      referees: [],
+      linesmens: [],
+      confirmed: false,
+    };
 
-        let postToLoad: Post | null = null;
+    let postToLoad: Post | null = null;
 
-        for (let i = 0; i < response.length; i++) {
-            const post = response[i];
-            const categories = post.categories;
-            // Assuming you'll implement parse and datetime logic accordingly
-            const postDate = new Date(post.date);
-            const today = new Date();
-            const postedToday = postDate.getDate() === today.getDate() &&
-                postDate.getMonth() === today.getMonth() &&
-                postDate.getFullYear() === today.getFullYear();
-            const postTitle = post.title.rendered;
+    for (let i = 0; i < response.length; i++) {
+      const post = response[i];
+      const categories = post.categories;
+      // Assuming you'll implement parse and datetime logic accordingly
+      const postDate = new Date(post.date);
+      const today = new Date();
+      const postedToday =
+        postDate.getDate() === today.getDate() &&
+        postDate.getMonth() === today.getMonth() &&
+        postDate.getFullYear() === today.getFullYear();
+      const postTitle = post.title.rendered;
 
-            if ((categories.includes(921) && postedToday) || (postedToday && postTitle.includes('NHL Referees and Linesmen'))) {
-                postToLoad = post;
-                break;
-            }
-        }
-
-        if (!postToLoad) {
-            console.warn('No relevant game details found.');
-            return gameDetails;
-        }
-        const $ = load(postToLoad?.content.rendered || '');
-
-
-
-        const game = $('h1').filter((_, el) => $(el).text().includes(prefTeamFullName)).first().next('table');
-        if (!game.length) {
-            console.warn('No game details found - your team is probably not playing today.');
-            return gameDetails;
-        }
-
-        const refereesRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().trim() === 'referees');
-        const refereesNamesRow = refereesRow.next();
-        const refereesData = refereesNamesRow.find('td');
-        const refereesSeasonGamesRow = refereesRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('23-24'));
-        const refereesCareerGamesRow = refereesRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('career games'));
-        const refereesPenaltyGamesRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().includes('penl/gm'));
-
-        refereesData.each((i, el) => {
-            const name = $(el).text().trim();
-            const seasongames = $(refereesSeasonGamesRow.children().get(i)).text();
-            const careergames = $(refereesCareerGamesRow.children().get(i)).text();
-            const penaltygame = $(refereesPenaltyGamesRow.children().get(i)).text().split(' (')[0];
-
-            const referee: Referee = {
-                name,
-                seasongames,
-                careergames,
-                penaltygame,
-                totalgames: calculateTotalGames(seasongames, careergames)
-            };
-
-            gameDetails.referees.push(referee);
-        });
-        const linesmenRow = game.find('tr').filter((_, el) => $(el).text().toLowerCase().trim() === 'LINESPERSONS'.toLocaleLowerCase());
-        const linesmenNamesRow = linesmenRow.next();
-        const linesmenData = linesmenNamesRow.find('td');
-        const linesmenSeasonGamesRow = linesmenRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('23-24'));
-        const linesmenCareerGamesRow = linesmenRow.nextAll().filter((_, el) => $(el).text().toLowerCase().includes('career games'));
-
-        linesmenData.each((i, el) => {
-            const name = $(el).text().trim();
-            const seasongames = $(linesmenSeasonGamesRow.children().get(i)).text();
-            const careergames = $(linesmenCareerGamesRow.children().get(i)).text();
-
-            const linesman: Referee = {
-                name,
-                seasongames,
-                careergames,
-                penaltygame: '',
-                totalgames: calculateTotalGames(seasongames, careergames)
-            };
-
-            gameDetails.linesmens.push(linesman);
-        });
-
-        gameDetails.confirmed = true;
-        gameDetails.referees = gameDetails.referees.filter(ref => ref.name !== '');
-        gameDetails.linesmens = gameDetails.linesmens.filter(linesmen => linesmen.name !== '');
-
-        return gameDetails;
-    } catch (error: unknown) {
-        console.error('Error:', (error as Error).message);
-        return {
-            referees: [],
-            linesmens: [],
-            confirmed: false
-        };
+      if (
+        (categories.includes(921) && postedToday) ||
+        (postedToday && postTitle.includes("NHL Referees and Linesmen"))
+      ) {
+        postToLoad = post;
+        break;
+      }
     }
+
+    if (!postToLoad) {
+      console.warn("No relevant game details found.");
+      return gameDetails;
+    }
+    const $ = load(postToLoad?.content.rendered || "");
+
+    const game = $('h1')
+      .filter((_, el) => $(el).text().includes(prefTeamFullName))
+      .first()
+      .next('table');
+    if (!game.length) {
+      console.warn(
+        "No game details found - your team is probably not playing today.",
+      );
+      return gameDetails;
+    }
+
+    const refereesRow = game
+      .find("tr")
+      .filter((_, el) => $(el).text().toLowerCase().trim() === "referees");
+    const refereesNamesRow = refereesRow.next();
+    const refereesData = refereesNamesRow.find("td");
+    const refereesSeasonGamesRow = refereesRow
+      .nextAll()
+      .filter((_, el) => $(el).text().toLowerCase().includes("23-24"));
+    const refereesCareerGamesRow = refereesRow
+      .nextAll()
+      .filter((_, el) => $(el).text().toLowerCase().includes("career games"));
+    const refereesPenaltyGamesRow = game
+      .find("tr")
+      .filter((_, el) => $(el).text().toLowerCase().includes("penl/gm"));
+
+    refereesData.each((i, el) => {
+      const name = $(el).text().trim();
+      const seasongames = $(refereesSeasonGamesRow.children().get(i)).text();
+      const careergames = $(refereesCareerGamesRow.children().get(i)).text();
+      const penaltygame = $(refereesPenaltyGamesRow.children().get(i))
+        .text()
+        .split(" (")[0];
+
+      const referee: Referee = {
+        name,
+        seasongames,
+        careergames,
+        penaltygame,
+        totalgames: calculateTotalGames(seasongames, careergames),
+      };
+
+      gameDetails.referees.push(referee);
+    });
+    const linesmenRow = game
+      .find("tr")
+      .filter(
+        (_, el) =>
+          $(el).text().toLowerCase().trim() ===
+          "LINESPERSONS".toLocaleLowerCase(),
+      );
+    const linesmenNamesRow = linesmenRow.next();
+    const linesmenData = linesmenNamesRow.find("td");
+    const linesmenSeasonGamesRow = linesmenRow
+      .nextAll()
+      .filter((_, el) => $(el).text().toLowerCase().includes("23-24"));
+    const linesmenCareerGamesRow = linesmenRow
+      .nextAll()
+      .filter((_, el) => $(el).text().toLowerCase().includes("career games"));
+
+    linesmenData.each((i, el) => {
+      const name = $(el).text().trim();
+      const seasongames = $(linesmenSeasonGamesRow.children().get(i)).text();
+      const careergames = $(linesmenCareerGamesRow.children().get(i)).text();
+
+      const linesman: Referee = {
+        name,
+        seasongames,
+        careergames,
+        penaltygame: "",
+        totalgames: calculateTotalGames(seasongames, careergames),
+      };
+
+      gameDetails.linesmens.push(linesman);
+    });
+
+    gameDetails.confirmed = true;
+    gameDetails.referees = gameDetails.referees.filter(
+      (ref) => ref.name !== "",
+    );
+    gameDetails.linesmens = gameDetails.linesmens.filter(
+      (linesmen) => linesmen.name !== "",
+    );
+
+    return gameDetails;
+  } catch (error: unknown) {
+    console.error("Error:", (error as Error).message);
+    return {
+      referees: [],
+      linesmens: [],
+      confirmed: false,
+    };
+  }
 }
 
 /**
  * Calculates the total number of games by adding the season games and career games.
- * 
+ *
  * @param seasonGames - The number of games played in the current season.
  * @param careerGames - The number of games played in the entire career.
  * @returns The total number of games played.
  */
 function calculateTotalGames(seasonGames: string, careerGames: string): number {
-    return parseInt(seasonGames) + parseInt(careerGames);
+  return parseInt(seasonGames) + parseInt(careerGames);
 }
