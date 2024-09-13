@@ -2,6 +2,9 @@ import { createCanvas } from 'canvas';
 import {
     addText, addImageAsBackground, saveCanvasImage, loadCustomFont, drawStackedHorizontalBarGraph, addSquareWithGoals, addTeamLogo
 } from './utils';
+/**
+ * Represents the parameters for generating a game image.
+ */
 export type GameImageParams = {
     shots: {
         pref: number;
@@ -26,6 +29,11 @@ export type GameImageParams = {
 };
 
 
+/**
+ * Creates a game image based on the provided parameters.
+ * @param params - The parameters for creating the game image.
+ * @returns A promise that resolves when the game image is created.
+ */
 export async function createGameImage(params: GameImageParams): Promise<void> {
     const canvas = createCanvas(800, 600);
     const ctx = canvas.getContext('2d');
