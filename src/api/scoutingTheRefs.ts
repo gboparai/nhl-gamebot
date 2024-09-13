@@ -1,5 +1,5 @@
 import axios from "axios";
-import { load } from 'cheerio';
+import { load } from "cheerio";
 
 /**
  * Represents a post object.
@@ -50,9 +50,9 @@ type Post = {
     replies: { embeddable: boolean; href: string }[];
     version_history: { count: number; href: string }[];
     predecessor_version: { id: number; href: string }[];
-    'wp:featuredmedia': { embeddable: boolean; href: string }[];
-    'wp:attachment': { href: string }[];
-    'wp:term': { taxonomy: string; embeddable: boolean; href: string }[];
+    "wp:featuredmedia": { embeddable: boolean; href: string }[];
+    "wp:attachment": { href: string }[];
+    "wp:term": { taxonomy: string; embeddable: boolean; href: string }[];
     curies: { name: string; href: string; templated: boolean }[];
   };
 };
@@ -139,10 +139,10 @@ export async function fetchGameDetails(
     }
     const $ = load(postToLoad?.content.rendered || "");
 
-    const game = $('h1')
+    const game = $("h1")
       .filter((_, el) => $(el).text().includes(prefTeamFullName))
       .first()
-      .next('table');
+      .next("table");
     if (!game.length) {
       console.warn(
         "No game details found - your team is probably not playing today.",

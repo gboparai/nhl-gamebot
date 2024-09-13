@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { load } from 'cheerio';
+import axios from "axios";
+import { load } from "cheerio";
 export type Lines = {
   confirmed: boolean;
   forwards: string[];
@@ -22,7 +22,7 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
     goalies: [],
   };
   const uaHeader = {
-    'User-Agent':
+    "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
   };
   try {
@@ -34,11 +34,11 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
     const lastUpdate = lastUpdateElement.text().split(": ")[1].replace("@", "");
     console.log(lastUpdate);
 
-    const fwdLinesElements = $('#forwards')
+    const fwdLinesElements = $("#forwards")
       .parent()
       .parent()
-      .find('img')
-      .map((i, el) => $(el).attr('alt'))
+      .find("img")
+      .map((i, el) => $(el).attr("alt"))
       .get();
     const defLinesElements = $("#defense")
       .parent()
@@ -74,36 +74,36 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
  */
 function convertTeamName(teamName: string): string {
   const teamMappings: Record<string, string> = {
-    canucks: 'vancouver-canucks',
-    oilers: 'edmonton-oilers',
-    flames: 'calgary-flames',
-    jets: 'winnipeg-jets',
-    'maple leafs': "toronto-maple-leafs",
-    senators: 'ottawa-senators',
-    canadiens: 'montreal-canadiens',
-    lightning: 'tampa-bay-lightning',
-    panthers: 'florida-panthers',
-    'red wings': "detroit-red-wings",
-    bruins: 'boston-bruins',
-    sabres: 'buffalo-sabres',
-    rangers: 'new-york-rangers',
-    islanders: 'new-york-islanders',
-    devils: 'new-jersey-devils',
-    flyers: 'philadelphia-flyers',
-    penguins: 'pittsburgh-penguins',
-    capitals: 'washington-capitals',
-    hurricanes: 'carolina-hurricanes',
-    blackhawks: 'chicago-blackhawks',
-    predators: 'nashville-predators',
-    stars: 'dallas-stars',
-    wild: 'minnesota-wild',
-    avalanche: 'colorado-avalanche',
-    'golden knights': "vegas-golden-knights",
-    ducks: 'anaheim-ducks',
-    sharks: 'san-jose-sharks',
-    kings: 'los-angeles-kings',
-    coyotes: 'arizona-coyotes',
-    'blue jackets': "columbus-blue-jackets",
+    canucks: "vancouver-canucks",
+    oilers: "edmonton-oilers",
+    flames: "calgary-flames",
+    jets: "winnipeg-jets",
+    "maple leafs": "toronto-maple-leafs",
+    senators: "ottawa-senators",
+    canadiens: "montreal-canadiens",
+    lightning: "tampa-bay-lightning",
+    panthers: "florida-panthers",
+    "red wings": "detroit-red-wings",
+    bruins: "boston-bruins",
+    sabres: "buffalo-sabres",
+    rangers: "new-york-rangers",
+    islanders: "new-york-islanders",
+    devils: "new-jersey-devils",
+    flyers: "philadelphia-flyers",
+    penguins: "pittsburgh-penguins",
+    capitals: "washington-capitals",
+    hurricanes: "carolina-hurricanes",
+    blackhawks: "chicago-blackhawks",
+    predators: "nashville-predators",
+    stars: "dallas-stars",
+    wild: "minnesota-wild",
+    avalanche: "colorado-avalanche",
+    "golden knights": "vegas-golden-knights",
+    ducks: "anaheim-ducks",
+    sharks: "san-jose-sharks",
+    kings: "los-angeles-kings",
+    coyotes: "arizona-coyotes",
+    "blue jackets": "columbus-blue-jackets",
     // Add more mappings as needed
   };
 

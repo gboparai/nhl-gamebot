@@ -3,8 +3,8 @@ import {
   CanvasRenderingContext2D,
   Canvas,
   registerFont,
-} from 'canvas';
-import fs from 'fs';
+} from "canvas";
+import fs from "fs";
 
 // Function to add an image as a background to a canvas
 /**

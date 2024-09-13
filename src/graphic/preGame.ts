@@ -48,32 +48,32 @@ export default async function preGame(params: PreGameParams): Promise<void> {
 
   await loadCustomFont(
     {
-      fontPath: './assets/fonts/Roboto-Bold.ttf',
-      family: 'RobotoBold',
+      fontPath: "./assets/fonts/Roboto-Bold.ttf",
+      family: "RobotoBold",
     },
     canvas,
   );
 
   await loadCustomFont(
     {
-      fontPath: './assets/fonts/Roboto-Regular.ttf',
-      family: 'RobotoRegular',
+      fontPath: "./assets/fonts/Roboto-Regular.ttf",
+      family: "RobotoRegular",
     },
     canvas,
   );
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   await addImageAsBackground(
     ctx,
     canvas,
-    './assets/images/BG2022-Gameday-Pregame.png',
+    "./assets/images/BG2022-Gameday-Pregame.png",
   );
   addText(ctx, {
-    text: 'Pregame Matchup',
+    text: "Pregame Matchup",
     x: canvas.width / 2,
     y: 75,
-    font: '48px RobotoBold',
-    color: 'white',
-    textAlign: 'center',
+    font: "48px RobotoBold",
+    color: "white",
+    textAlign: "center",
   });
 
   const logoWidth = 300;
@@ -93,18 +93,18 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     text: homeLine1,
     x: canvasCenterX - logoWidth - logoSpacing / 2 + logoWidth / 2,
     y: 375 + 15,
-    font: '24px RobotoRegular',
-    color: 'white',
-    textAlign: 'center',
+    font: "24px RobotoRegular",
+    color: "white",
+    textAlign: "center",
   });
 
   addText(ctx, {
     text: homeLine2,
     x: canvasCenterX - logoWidth - logoSpacing / 2 + logoWidth / 2,
     y: 403 + 15,
-    font: '24px RobotoRegular',
-    color: 'white',
-    textAlign: 'center',
+    font: "24px RobotoRegular",
+    color: "white",
+    textAlign: "center",
   });
 
   await addTeamLogo(ctx, {
@@ -119,51 +119,51 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     text: awayLine1,
     x: canvasCenterX + logoSpacing / 2 + logoWidth / 2,
     y: 375 + 15,
-    font: '24px RobotoRegular',
-    color: 'white',
-    textAlign: 'center',
+    font: "24px RobotoRegular",
+    color: "white",
+    textAlign: "center",
   });
   addText(ctx, {
     text: awayLine2,
     x: canvasCenterX + logoSpacing / 2 + logoWidth / 2,
     y: 403 + 15,
-    font: '24px RobotoRegular',
-    color: 'white',
-    textAlign: 'center',
+    font: "24px RobotoRegular",
+    color: "white",
+    textAlign: "center",
   });
 
   addText(ctx, {
-    text: 'VS',
+    text: "VS",
     x: canvasCenterX,
     y: 260 + 15,
-    font: '48px RobotoBold',
-    color: 'white',
-    textAlign: 'center',
+    font: "48px RobotoBold",
+    color: "white",
+    textAlign: "center",
   });
 
   addText(ctx, {
     text: `${date} - ${time}`,
     x: canvasCenterX,
     y: 525,
-    font: '48px RobotoBold',
-    color: 'white',
-    textAlign: 'center',
+    font: "48px RobotoBold",
+    color: "white",
+    textAlign: "center",
   });
   addText(ctx, {
     text: venue,
     x: canvasCenterX,
     y: 575,
-    font: '48px RobotoBold',
-    color: 'white',
-    textAlign: 'center',
+    font: "48px RobotoBold",
+    color: "white",
+    textAlign: "center",
   });
   addText(ctx, {
     text: `#${homeHashtag} #${awayHashtag}`,
     x: canvasCenterX,
     y: 625,
-    font: '48px RobotoBold',
-    color: 'white',
-    textAlign: 'center',
+    font: "48px RobotoBold",
+    color: "white",
+    textAlign: "center",
   });
-  await saveCanvasImage(canvas, './temp/preGame.png');
+  await saveCanvasImage(canvas, "./temp/preGame.png");
 }

@@ -6,9 +6,9 @@ import {
   TeamSummaries,
   NHLScores,
   ISODateString,
-} from '../types';
+} from "../types";
 
-const BASE_URL = 'https://api-web.nhle.com/v1';
+const BASE_URL = "https://api-web.nhle.com/v1";
 
 /**
  * Fetches team summaries from the NHL API.

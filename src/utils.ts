@@ -1,4 +1,4 @@
-import moment from 'moment-timezone';
+import moment from "moment-timezone";
 
 /**
  * Returns the ordinal suffix of a given number.

@@ -1,4 +1,4 @@
-import { Game } from '../types';
+import { Game } from "../types";
 import config from "../../config.json";
 import TwitterApi, { TUploadableMedia } from "twitter-api-v2";
 import { logObjectToFile } from "../logger";
@@ -56,7 +56,7 @@ export async function uploadMedia(media: TUploadableMedia): Promise<string> {
     const mediaData = await twitter.v1.uploadMedia(media, {}, true);
     return mediaData.media_id_string;
   } catch (error: unknown) {
-    console.error('Error uploading media:', (error as Error).message as string);
+    console.error("Error uploading media:", (error as Error).message as string);
     return "";
   }
 }
@@ -80,38 +80,38 @@ function getHashtags(game: Game) {
  */
 export function teamHashtag(team: string) {
   const teamHashtags = {
-    Ducks: '#FlyTogether',
-    Coyotes: '#Yotes',
-    Bruins: '#NHLBruins',
-    Sabres: '#LetsGoBuffalo',
-    Flames: '#Flames',
-    Hurricanes: '#LetsGoCanes',
-    Blackhawks: '#Blackhawks',
-    Avalanche: '#GoAvsGo',
-    'Blue Jackets': "#CBJ",
-    Stars: '#GoStars',
-    'Red Wings': "#LGRW",
-    Oilers: '#LetsGoOilers',
-    Panthers: '#FLAPanthers',
-    Kings: '#GoKingsGo',
-    Wild: '#MNWild',
-    Canadiens: '#GoHabsGo',
-    Predators: '#Preds',
-    Devils: '#NJDevils',
-    Islanders: '#Isles',
-    Rangers: '#NYR',
-    Senators: '#GoSensGo',
-    Flyers: '#AnytimeAnywhere',
-    Penguins: '#LetsGoPens',
-    Sharks: '#SJSharks',
-    Kraken: '#SeaKraken',
-    Blues: '#STLBlues',
-    Lightning: '#GoBolts',
-    'Maple Leafs': "#LeafsForever",
-    Canucks: '#Canucks',
-    'Golden Knights': "#VegasBorn",
-    Capitals: '#ALLCAPS',
-    Jets: '#GoJetsGo',
+    Ducks: "#FlyTogether",
+    Coyotes: "#Yotes",
+    Bruins: "#NHLBruins",
+    Sabres: "#LetsGoBuffalo",
+    Flames: "#Flames",
+    Hurricanes: "#LetsGoCanes",
+    Blackhawks: "#Blackhawks",
+    Avalanche: "#GoAvsGo",
+    "Blue Jackets": "#CBJ",
+    Stars: "#GoStars",
+    "Red Wings": "#LGRW",
+    Oilers: "#LetsGoOilers",
+    Panthers: "#FLAPanthers",
+    Kings: "#GoKingsGo",
+    Wild: "#MNWild",
+    Canadiens: "#GoHabsGo",
+    Predators: "#Preds",
+    Devils: "#NJDevils",
+    Islanders: "#Isles",
+    Rangers: "#NYR",
+    Senators: "#GoSensGo",
+    Flyers: "#AnytimeAnywhere",
+    Penguins: "#LetsGoPens",
+    Sharks: "#SJSharks",
+    Kraken: "#SeaKraken",
+    Blues: "#STLBlues",
+    Lightning: "#GoBolts",
+    "Maple Leafs": "#LeafsForever",
+    Canucks: "#Canucks",
+    "Golden Knights": "#VegasBorn",
+    Capitals: "#ALLCAPS",
+    Jets: "#GoJetsGo",
   };
 
   return teamHashtags[team as keyof typeof teamHashtags];

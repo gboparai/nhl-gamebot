@@ -694,24 +694,24 @@ type Play = {
   homeTeamDefendingSide: string;
   typeCode: number;
   typeDescKey:
-    | 'period-start'
-    | 'faceoff'
-    | 'stoppage'
-    | 'shot-on-goal'
-    | 'penalty'
-    | 'hit'
-    | 'missed-shot'
-    | 'blocked-shot'
-    | 'takeaway'
-    | 'giveaway'
-    | 'offside'
-    | 'icing'
-    | 'challenge'
-    | 'fight'
-    | 'period-end'
-    | 'game-end'
-    | 'delayed-penalty'
-    | 'goal';
+    | "period-start"
+    | "faceoff"
+    | "stoppage"
+    | "shot-on-goal"
+    | "penalty"
+    | "hit"
+    | "missed-shot"
+    | "blocked-shot"
+    | "takeaway"
+    | "giveaway"
+    | "offside"
+    | "icing"
+    | "challenge"
+    | "fight"
+    | "period-end"
+    | "game-end"
+    | "delayed-penalty"
+    | "goal";
   sortOrder: number;
   details?: Details;
 };
