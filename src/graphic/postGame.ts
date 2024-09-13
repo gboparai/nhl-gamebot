@@ -2,39 +2,51 @@ import { createCanvas } from 'canvas';
 import {
     addText, addImageAsBackground, saveCanvasImage, loadCustomFont, drawStackedHorizontalBarGraph, addSquareWithGoals, addTeamLogo
 } from './utils';
+/**
+ * Represents the parameters for a post-game summary of a game.
+ */
 export type PostGameGameParams = {
     pref: {
         team: string;
         score: number;
         lineScores: LineScore[];
     };
+
     opp: {
         team: string;
         score: number;
         lineScores: LineScore[];
     };
+
     shots: {
         pref: number;
         opp: number;
     };
+
     blockedShots: {
         pref: number;
         opp: number;
     };
+
     penalties: {
         pref: number;
         opp: number;
     };
+
     hits: {
         pref: number;
         opp: number;
     };
+
     faceoffPercentage: {
         pref: number;
         opp: number;
     };
 };
 
+/**
+ * Represents a line score in a postgame graphic.
+ */
 export type LineScore = {
     time: string;
     goalScorer: string;

@@ -2,6 +2,9 @@ import { createCanvas } from 'canvas';
 import {
     addText, addImageAsBackground, saveCanvasImage, loadCustomFont, drawStackedHorizontalBarGraph, addSquareWithGoals, addTeamLogo
 } from './utils';
+/**
+ * Represents the parameters for an intermission game.
+ */
 export type IntermissionGameParams = {
     pref: {
         team: string;
@@ -35,11 +38,19 @@ export type IntermissionGameParams = {
     };
 };
 
+/**
+ * Represents a line score in a hockey game.
+ */
 export type LineScore = {
     time: string;
     goalScorer: string;
     assists: string[];
 };
+/**
+ * Renders the intermission report graphic.
+ * @param params - The game parameters for the intermission report.
+ * @returns A promise that resolves when the intermission graphic is rendered.
+ */
 export default async function intermission(params: IntermissionGameParams): Promise<void> {
     const canvas = createCanvas(800, 600);
     const ctx = canvas.getContext('2d');
