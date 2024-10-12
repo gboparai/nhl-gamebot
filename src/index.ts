@@ -5,6 +5,7 @@ import {
   fetchBoxscore,
   fetchPlayByPlay,
   fetchNHLScores,
+  fetchGameCenterRightRail
 } from "./api/nhl";
 import { GameDetails, fetchGameDetails } from "./api/scoutingTheRefs";
 import {
@@ -30,6 +31,9 @@ import {
 import moment from "moment";
 import { dailyfaceoffLines } from "./api/dailyFaceoff";
 import preGameImage from "./graphic/preGame";
+import intermissionImage, { LineScore } from "./graphic/intermission";
+import postGameImage from "./graphic/postGame";
+import gameImage from "./graphic/game";
 import { teamHashtag } from "./social/twitter";
 
 /**
@@ -150,14 +154,43 @@ const handlePregameState = async () => {
         awayLine2: "",
       });
 
-      //TODO add graphic
       send(
         `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
                 \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
         currentGame,
         [`./temp/preGame.png`],
       );
-
+      await gameImage({
+        shots: {
+          pref: homeTeamSummary?.shotsForPerGame || 0,
+          opp: awayTeamSummary?.shotsForPerGame || 0,
+        },
+        pentaltyKillPercentage: {
+          pref: homeTeamSummary?.penaltyKillPct || 0,
+          opp: awayTeamSummary?.penaltyKillPct || 0,
+        },
+        powerPlayPercentage: {
+          pref: homeTeamSummary?.powerPlayPct || 0,
+          opp: awayTeamSummary?.powerPlayPct || 0,
+        },
+        goalsAgainstPerGame: {
+          pref: homeTeamSummary?.goalsAgainstPerGame || 0,
+          opp: awayTeamSummary?.goalsAgainstPerGame || 0,
+        },
+        goalsForPerGame: {
+          pref: homeTeamSummary?.goalsForPerGame || 0,
+          opp: awayTeamSummary?.goalsForPerGame || 0,
+        },
+        faceoffPercentage: {
+          pref: homeTeamSummary?.faceoffWinPct || 0,
+          opp: awayTeamSummary?.faceoffWinPct || 0,
+        },
+      })
+      send(
+       `🔥 Get ready for an epic showdown! Tonight, it's the ${prefTeam?.name.default} going head-to-head with the ${oppTeam?.name.default} at ${currentGame.venue.default}. You won’t want to miss a second of the action! `,
+        currentGame,
+        [`./temp/game.png`],
+      );
       const dfLines = await dailyfaceoffLines(prefTeam?.name.default || "");
       if (dfLines.confirmed) {
         send(
@@ -175,7 +208,7 @@ const handlePregameState = async () => {
           currentGame,
         );
       }
-
+    
       const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || "");
       if (dfLinesOpps.confirmed) {
         send(
@@ -249,13 +282,74 @@ const handleInGameState = async () => {
     if (!hasSentIntermission) {
       hasSentIntermission = true;
       boxscore = await fetchBoxscore(String(currentGame?.id));
+      gameLanding = await fetchGameLanding(String(currentGame?.id));
+      const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
+      const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
+      const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
+      const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
+      const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
+      const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
+      const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
+      const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
+      const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
+      const lineScores = transformGameLandingToLineScores(gameLanding);
+      
+      await intermissionImage({
+        pref: {
+          team: prefTeam?.name.default || "",
+          score: boxscore.summary.linescore.totals.home,
+          lineScores: lineScores.homeLineScores,
+        },
+        opp: {
+          team: oppTeam?.name.default || "",
+          score: boxscore.summary.linescore.totals.away,
+          lineScores: lineScores.awayLineScores,
+        },
+        shots: {
+          pref: boxscore.homeTeam.sog,
+          opp: boxscore.awayTeam.sog,
+        },
 
-      //TODO add graphic
+        blockedShots: {
+          pref: Number(blockedShots?.homeValue) || 0,
+          opp: Number(blockedShots?.awayValue) || 0,
+        },
+        penalties: {
+          pref: Number(pims?.homeValue) || 0,
+          opp: Number(pims?.awayValue) || 0,
+        },
+        hits: {
+          pref: Number(hits?.homeValue) || 0,
+          opp: Number(hits?.awayValue) || 0,
+        },
+        faceoffPercentage: {
+          pref: Number(faceoffWinningPctg?.homeValue) || 0,
+          opp:  Number(faceoffWinningPctg?.awayValue) || 0,
+        },
+        giveaways: {
+          pref: Number(giveaways?.homeValue) || 0,
+          opp: Number(giveaways?.awayValue) || 0,
+        },
+        takeaways: {
+          pref: Number(takeaways?.homeValue) || 0,
+          opp: Number(takeaways?.awayValue) || 0,
+        },
+        powerPlay: {
+          pref: String(powerPlay?.homeValue) || "",
+          opp: String(powerPlay?.awayValue) || "",
+        },
+        powerPlayPctg:{
+          pref: Number(powerPlayPctg?.homeValue) || 0,
+          opp: Number(powerPlayPctg?.awayValue) || 0,
+        }
+      });
+
       send(
         `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
                     \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
                 `,
         currentGame!,
+        [`./temp/intermission.png`],
       );
     }
     await sleep(config.app.script.intermission_sleep_time);
@@ -350,12 +444,75 @@ const handlePostGameState = async () => {
     winningTeam = currentGame?.homeTeam.name.default;
     losingTeam = currentGame?.awayTeam.name.default;
   }
-  //TODO add graphic
+  boxscore = await fetchBoxscore(String(currentGame?.id));
+  gameLanding = await fetchGameLanding(String(currentGame?.id));
+  const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
+  const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
+  const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
+  const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
+  const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
+  const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
+  const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
+  const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
+  const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
+  const lineScores = transformGameLandingToLineScores(gameLanding);
+  
+  await postGameImage({
+    pref: {
+      team: prefTeam?.name.default || "",
+      score: boxscore.summary.linescore.totals.home,
+      lineScores: lineScores.homeLineScores,
+    },
+    opp: {
+      team: oppTeam?.name.default || "",
+      score: boxscore.summary.linescore.totals.away,
+      lineScores: lineScores.awayLineScores,
+    },
+    shots: {
+      pref: boxscore.homeTeam.sog,
+      opp: boxscore.awayTeam.sog,
+    },
+
+    blockedShots: {
+      pref: Number(blockedShots?.homeValue) || 0,
+      opp: Number(blockedShots?.awayValue) || 0,
+    },
+    penalties: {
+      pref: Number(pims?.homeValue) || 0,
+      opp: Number(pims?.awayValue) || 0,
+    },
+    hits: {
+      pref: Number(hits?.homeValue) || 0,
+      opp: Number(hits?.awayValue) || 0,
+    },
+    faceoffPercentage: {
+      pref: Number(faceoffWinningPctg?.homeValue) || 0,
+      opp:  Number(faceoffWinningPctg?.awayValue) || 0,
+    },
+    giveaways: {
+      pref: Number(giveaways?.homeValue) || 0,
+      opp: Number(giveaways?.awayValue) || 0,
+    },
+    takeaways: {
+      pref: Number(takeaways?.homeValue) || 0,
+      opp: Number(takeaways?.awayValue) || 0,
+    },
+    powerPlay: {
+      pref: String(powerPlay?.homeValue) || "",
+      opp: String(powerPlay?.awayValue) || "",
+    },
+    powerPlayPctg:{
+      pref: Number(powerPlayPctg?.homeValue) || 0,
+      opp: Number(powerPlayPctg?.awayValue) || 0,
+    }
+  });
+
   send(
     `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
             \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
         `,
     currentGame!,
+    [`./temp/postGame.png`],
   );
 
   CurrentState = GameStates.POSTGAMETHREESTARS;
@@ -423,7 +580,7 @@ const handleEndGameState = async () => {
  * The main function that controls the game state transitions.
  * @returns A Promise that resolves to void.
  */
-const main = async (): Promise<void> => {
+const main = async(): Promise<void> => {
   while (true) {
     if (CurrentState === GameStates.WAITING) {
       await handleWaitingState();
@@ -445,5 +602,46 @@ const main = async (): Promise<void> => {
     }
   }
 };
+
+function transformGameLandingToLineScores(gameLanding: GameLanding): {
+  homeLineScores: LineScore[];
+  awayLineScores: LineScore[];
+} {
+  const homeLineScores: LineScore[] = [];
+  const awayLineScores: LineScore[] = [];
+
+  gameLanding.summary.scoring.forEach((periodGoal) => {
+    periodGoal.goals.forEach((goal) => {
+      const lineScore: LineScore = {
+        time: `${periodGoal.periodDescriptor.number}:${goal.timeInPeriod}`,
+        type: getGoalType(goal.situationCode),
+        goalScorer: `${goal.firstName.default} ${goal.lastName.default}`,
+        assists: goal.assists.map(assist => `${assist.firstName.default} ${assist.lastName.default}`),
+      };
+
+      if (goal.teamAbbrev.default === gameLanding.homeTeam.abbrev) {
+        homeLineScores.push(lineScore);
+      } else {
+        awayLineScores.push(lineScore);
+      }
+    });
+  });
+
+  return { homeLineScores, awayLineScores };
+}
+
+function getGoalType(situationCode: string): 'ev' | 'pp' | 'sh' {
+  switch (situationCode) {
+    case 'ev':
+      return 'ev';
+    case 'pp':
+      return 'pp';
+    case 'sh':
+      return 'sh';
+    default:
+      return 'ev'; // Default to even strength if unknown
+  }
+}
+
 
 main();

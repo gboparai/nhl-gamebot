@@ -5,6 +5,7 @@ import {
   Boxscore,
   TeamSummaries,
   NHLScores,
+  GameCenterRightRail,
   ISODateString,
 } from "../types";
 
@@ -96,3 +97,16 @@ export async function fetchNHLScores(date: ISODateString) {
     throw error;
   }
 }
+
+export async function fetchGameCenterRightRail(gameID: string) {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/gamecenter/${gameID}/right-rail`,
+    );
+    return response.data as GameCenterRightRail;
+  } catch (error) {
+    console.error("Error fetching game center right rail data:", error);
+    throw error;
+  }
+}
+

@@ -5,26 +5,26 @@ import {
   saveCanvasImage,
   loadCustomFont,
   drawStackedHorizontalBarGraph,
-  addSquareWithGoals,
-  addTeamLogo,
 } from "./utils";
-/**
- * Represents the parameters for generating a game image.
- */
+
 export type GameImageParams = {
   shots: {
     pref: number;
     opp: number;
   };
-  blockedShots: {
+  goalsForPerGame: {
     pref: number;
     opp: number;
   };
-  penalties: {
+  goalsAgainstPerGame: {
     pref: number;
     opp: number;
   };
-  hits: {
+  powerPlayPercentage: {
+    pref: number;
+    opp: number;
+  };
+  pentaltyKillPercentage: {
     pref: number;
     opp: number;
   };
@@ -34,12 +34,11 @@ export type GameImageParams = {
   };
 };
 
-/**
- * Creates a game image based on the provided parameters.
- * @param params - The parameters for creating the game image.
- * @returns A promise that resolves when the game image is created.
- */
-export async function createGameImage(params: GameImageParams): Promise<void> {
+function calculatePercentage(value: number, total: number): number {
+  return total === 0 ? 0.5 : value / total;
+}
+
+export default async function createGameImage(params: GameImageParams): Promise<void> {
   const canvas = createCanvas(800, 600);
   await loadCustomFont(
     {
@@ -85,78 +84,73 @@ export async function createGameImage(params: GameImageParams): Promise<void> {
         overallLabel: "Shots",
         segments: [
           {
-            value:
-              (params.shots.pref / (params.shots.pref + params.shots.opp)) *
-              barLength,
-            label: String(params.shots.pref),
+            value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
+            label: String(params.shots.pref.toFixed(2)),
             color: segment1Color,
           },
           {
-            value:
-              (params.shots.opp / (params.shots.pref + params.shots.opp)) *
-              barLength,
-            label: String(params.shots.opp),
+            value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
+            label: String(params.shots.opp.toFixed(2)),
             color: segment2Color,
           },
         ],
       },
       {
-        overallLabel: "Blocked Shots",
+        overallLabel: "Power Play Percentage",
         segments: [
           {
-            value:
-              (params.blockedShots.pref /
-                (params.blockedShots.pref + params.blockedShots.opp)) *
-              barLength,
-            label: String(params.blockedShots.pref),
+            value: calculatePercentage(params.powerPlayPercentage.pref, params.powerPlayPercentage.pref + params.powerPlayPercentage.opp) * barLength,
+            label: String((params.powerPlayPercentage.pref*100).toFixed(2)),
             color: segment1Color,
           },
           {
-            value:
-              (params.blockedShots.opp /
-                (params.blockedShots.pref + params.blockedShots.opp)) *
-              barLength,
-            label: String(params.blockedShots.opp),
+            value: calculatePercentage(params.powerPlayPercentage.opp, params.powerPlayPercentage.pref + params.powerPlayPercentage.opp) * barLength,
+            label: String((params.powerPlayPercentage.opp*100).toFixed(2)),
             color: segment2Color,
           },
         ],
       },
       {
-        overallLabel: "Penalties",
+        overallLabel: "Penalty Kill Percentage",
         segments: [
           {
-            value:
-              (params.penalties.pref /
-                (params.penalties.pref + params.penalties.opp)) *
-              barLength,
-            label: String(params.penalties.pref),
+            value: calculatePercentage(params.pentaltyKillPercentage.pref, params.pentaltyKillPercentage.pref + params.pentaltyKillPercentage.opp) * barLength,
+            label: String((params.pentaltyKillPercentage.pref*100).toFixed(2)),
             color: segment1Color,
           },
           {
-            value:
-              (params.penalties.opp /
-                (params.penalties.pref + params.penalties.opp)) *
-              barLength,
-            label: String(params.penalties.opp),
+            value: calculatePercentage(params.pentaltyKillPercentage.opp, params.pentaltyKillPercentage.pref + params.pentaltyKillPercentage.opp) * barLength,
+            label: String((params.pentaltyKillPercentage.opp*100).toFixed(2)),
             color: segment2Color,
           },
         ],
       },
       {
-        overallLabel: "Hits",
+        overallLabel: "Goals For Per Game",
         segments: [
           {
-            value:
-              (params.hits.pref / (params.hits.pref + params.hits.opp)) *
-              barLength,
-            label: String(params.hits.pref),
+            value: calculatePercentage(params.goalsForPerGame.pref, params.goalsForPerGame.pref + params.goalsForPerGame.opp) * barLength,
+            label: String(params.goalsForPerGame.pref.toFixed(2)),
             color: segment1Color,
           },
           {
-            value:
-              (params.hits.opp / (params.hits.pref + params.hits.opp)) *
-              barLength,
-            label: String(params.hits.opp),
+            value: calculatePercentage(params.goalsForPerGame.opp, params.goalsForPerGame.pref + params.goalsForPerGame.opp) * barLength,
+            label: String(params.goalsForPerGame.opp.toFixed(2)),
+            color: segment2Color,
+          },
+        ],
+      },
+      {
+        overallLabel: "Goals Against Per Game",
+        segments: [
+          {
+            value: calculatePercentage(params.goalsAgainstPerGame.pref, params.goalsAgainstPerGame.pref + params.goalsAgainstPerGame.opp) * barLength,
+            label: String(params.goalsAgainstPerGame.pref.toFixed(2)),
+            color: segment1Color,
+          },
+          {
+            value: calculatePercentage(params.goalsAgainstPerGame.opp, params.goalsAgainstPerGame.pref + params.goalsAgainstPerGame.opp) * barLength,
+            label: String(params.goalsAgainstPerGame.opp.toFixed(2)),
             color: segment2Color,
           },
         ],
@@ -165,21 +159,13 @@ export async function createGameImage(params: GameImageParams): Promise<void> {
         overallLabel: "Faceoff Percentage",
         segments: [
           {
-            value:
-              (params.faceoffPercentage.pref /
-                (params.faceoffPercentage.pref +
-                  params.faceoffPercentage.opp)) *
-              barLength,
-            label: String(params.faceoffPercentage.pref),
+            value: calculatePercentage(params.faceoffPercentage.pref, params.faceoffPercentage.pref + params.faceoffPercentage.opp) * barLength,
+            label: String((params.faceoffPercentage.pref*100).toFixed(2)),
             color: segment1Color,
           },
           {
-            value:
-              (params.faceoffPercentage.opp /
-                (params.faceoffPercentage.pref +
-                  params.faceoffPercentage.opp)) *
-              barLength,
-            label: String(params.faceoffPercentage.opp),
+            value: calculatePercentage(params.faceoffPercentage.opp, params.faceoffPercentage.pref + params.faceoffPercentage.opp) * barLength,
+            label: String((params.faceoffPercentage.opp*100).toFixed(2)),
             color: segment2Color,
           },
         ],
@@ -187,7 +173,6 @@ export async function createGameImage(params: GameImageParams): Promise<void> {
     ],
     overallLabelWidth: 200,
     labelColor: "#ffffff",
-
     barSpacing: 20,
   };
 

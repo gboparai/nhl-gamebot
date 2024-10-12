@@ -8,58 +8,76 @@ import {
   addSquareWithGoals,
   addTeamLogo,
 } from "./utils";
+
 /**
- * Represents the parameters for a post-game summary of a game.
+ * Represents the parameters for a post-game report.
  */
-export type PostGameGameParams = {
+export type PostGameParams = {
   pref: {
     team: string;
     score: number;
     lineScores: LineScore[];
   };
-
   opp: {
     team: string;
     score: number;
     lineScores: LineScore[];
   };
-
   shots: {
     pref: number;
     opp: number;
   };
-
   blockedShots: {
     pref: number;
     opp: number;
   };
-
   penalties: {
     pref: number;
     opp: number;
   };
-
   hits: {
     pref: number;
     opp: number;
   };
-
   faceoffPercentage: {
+    pref: number;
+    opp: number;
+  };
+  giveaways: {
+    pref: number;
+    opp: number;
+  };
+  takeaways: {
+    pref: number;
+    opp: number;
+  };
+  powerPlay: {
+    pref: string;
+    opp:  string;
+  };
+  powerPlayPctg: {
     pref: number;
     opp: number;
   };
 };
 
 /**
- * Represents a line score in a postgame graphic.
+ * Represents a line score in a hockey game.
  */
 export type LineScore = {
   time: string;
+  type: 'ev' | 'pp' | 'sh';
   goalScorer: string;
   assists: string[];
 };
+
+/**
+ * Renders the post-game report graphic.
+ * @param params - The game parameters for the post-game report.
+ * @returns A promise that resolves when the post-game graphic is rendered.
+ */
 export default async function postGame(
-  params: PostGameGameParams,
+  params: PostGameParams,
 ): Promise<void> {
   const canvas = createCanvas(800, 600);
 
@@ -107,58 +125,66 @@ export default async function postGame(
         overallLabel: "Shots",
         segments: [
           {
-            value:
-              (params.shots.pref / (params.shots.pref + params.shots.opp)) *
-              barLength,
+            value: params.shots.pref + params.shots.opp === 0 ? barLength / 2 :
+              (params.shots.pref / (params.shots.pref + params.shots.opp)) * barLength,
             label: String(params.shots.pref),
             color: segment1Color,
           },
           {
-            value:
-              (params.shots.opp / (params.shots.pref + params.shots.opp)) *
-              barLength,
+            value: params.shots.pref + params.shots.opp === 0 ? barLength / 2 :
+              (params.shots.opp / (params.shots.pref + params.shots.opp)) * barLength,
             label: String(params.shots.opp),
             color: segment2Color,
           },
         ],
       },
       {
-        overallLabel: "Blocked Shots",
+        overallLabel: "Faceoff Percentage",
         segments: [
           {
-            value:
-              (params.blockedShots.pref /
-                (params.blockedShots.pref + params.blockedShots.opp)) *
-              barLength,
-            label: String(params.blockedShots.pref),
+            value: params.faceoffPercentage.pref + params.faceoffPercentage.opp === 0 ? barLength / 2 :
+              (params.faceoffPercentage.pref / (params.faceoffPercentage.pref + params.faceoffPercentage.opp)) * barLength,
+            label: `${(params.faceoffPercentage.pref*100).toFixed(2)}%`,
             color: segment1Color,
           },
           {
-            value:
-              (params.blockedShots.opp /
-                (params.blockedShots.pref + params.blockedShots.opp)) *
-              barLength,
-            label: String(params.blockedShots.opp),
+            value: params.faceoffPercentage.pref + params.faceoffPercentage.opp === 0 ? barLength / 2 :
+              (params.faceoffPercentage.opp / (params.faceoffPercentage.pref + params.faceoffPercentage.opp)) * barLength,
+            label:`${(params.faceoffPercentage.opp*100).toFixed(2)}%`,
             color: segment2Color,
           },
         ],
       },
       {
-        overallLabel: "Penalties",
+        overallLabel: "Power Play",
         segments: [
           {
-            value:
-              (params.penalties.pref /
-                (params.penalties.pref + params.penalties.opp)) *
-              barLength,
+            value: params.powerPlayPctg.pref + params.powerPlayPctg.opp === 0 ? barLength / 2 :
+              (params.powerPlayPctg.pref / (params.powerPlayPctg.pref + params.powerPlayPctg.opp)) * barLength,
+            label: params.powerPlay.pref,
+            color: segment1Color,
+          },
+          {
+            value: params.powerPlayPctg.pref + params.powerPlayPctg.opp === 0 ? barLength / 2 :
+              (params.powerPlayPctg.opp / (params.powerPlayPctg.pref + params.powerPlayPctg.opp)) * barLength,
+            label: params.powerPlay.opp,
+            color: segment2Color,
+          },
+        ],
+      },
+      
+      {
+        overallLabel: "Penalties Minutes",
+        segments: [
+          {
+            value: params.penalties.pref + params.penalties.opp === 0 ? barLength / 2 :
+              (params.penalties.pref / (params.penalties.pref + params.penalties.opp)) * barLength,
             label: String(params.penalties.pref),
             color: segment1Color,
           },
           {
-            value:
-              (params.penalties.opp /
-                (params.penalties.pref + params.penalties.opp)) *
-              barLength,
+            value: params.penalties.pref + params.penalties.opp === 0 ? barLength / 2 :
+              (params.penalties.opp / (params.penalties.pref + params.penalties.opp)) * barLength,
             label: String(params.penalties.opp),
             color: segment2Color,
           },
@@ -168,40 +194,66 @@ export default async function postGame(
         overallLabel: "Hits",
         segments: [
           {
-            value:
-              (params.hits.pref / (params.hits.pref + params.hits.opp)) *
-              barLength,
+            value: params.hits.pref + params.hits.opp === 0 ? barLength / 2 :
+              (params.hits.pref / (params.hits.pref + params.hits.opp)) * barLength,
             label: String(params.hits.pref),
             color: segment1Color,
           },
           {
-            value:
-              (params.hits.opp / (params.hits.pref + params.hits.opp)) *
-              barLength,
+            value: params.hits.pref + params.hits.opp === 0 ? barLength / 2 :
+              (params.hits.opp / (params.hits.pref + params.hits.opp)) * barLength,
             label: String(params.hits.opp),
             color: segment2Color,
           },
         ],
       },
       {
-        overallLabel: "Faceoff Percentage",
+        overallLabel: "Blocked Shots",
         segments: [
           {
-            value:
-              (params.faceoffPercentage.pref /
-                (params.faceoffPercentage.pref +
-                  params.faceoffPercentage.opp)) *
-              barLength,
-            label: String(params.faceoffPercentage.pref),
+            value: params.blockedShots.pref + params.blockedShots.opp === 0 ? barLength / 2 :
+              (params.blockedShots.pref / (params.blockedShots.pref + params.blockedShots.opp)) * barLength,
+            label: String(params.blockedShots.pref),
             color: segment1Color,
           },
           {
-            value:
-              (params.faceoffPercentage.opp /
-                (params.faceoffPercentage.pref +
-                  params.faceoffPercentage.opp)) *
-              barLength,
-            label: String(params.faceoffPercentage.opp),
+            value: params.blockedShots.pref + params.blockedShots.opp === 0 ? barLength / 2 :
+              (params.blockedShots.opp / (params.blockedShots.pref + params.blockedShots.opp)) * barLength,
+            label: String(params.blockedShots.opp),
+            color: segment2Color,
+          },
+        ],
+      },
+      {
+        overallLabel: "Giveaways",
+        segments: [
+          {
+            value: params.giveaways.pref + params.giveaways.opp === 0 ? barLength / 2 :
+              (params.giveaways.pref / (params.giveaways.pref + params.giveaways.opp)) * barLength,
+            label: String(params.giveaways.pref),
+            color: segment1Color,
+          },
+          {
+            value: params.giveaways.pref + params.giveaways.opp === 0 ? barLength / 2 :
+              (params.giveaways.opp / (params.giveaways.pref + params.giveaways.opp)) * barLength,
+            label: String(params.giveaways.opp),
+            color: segment2Color,
+          },
+        ],
+      },
+      {
+        overallLabel: "Takeaways",
+        segments: [
+          {
+            value: params.takeaways.pref + params.takeaways.opp === 0 ? barLength / 2 :
+              (params.takeaways.pref / (params.takeaways.pref + params.takeaways.opp)) * barLength,
+            label: String(params.takeaways.pref),
+            color: segment1Color,
+          },
+          {
+            value: params.takeaways.pref + params.takeaways.opp === 0 ? barLength / 2 :
+              (params.takeaways.opp / (params.takeaways.pref + params.takeaways.opp)) * barLength,
+            label: String(params.takeaways.opp),
             color: segment2Color,
           },
         ],
@@ -209,7 +261,6 @@ export default async function postGame(
     ],
     overallLabelWidth: 200,
     labelColor: "#ffffff",
-
     barSpacing: 20,
   };
 

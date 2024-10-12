@@ -30,6 +30,128 @@ export type TeamSummaries = {
   data: TeamSummary[];
 };
 
+//https://api-web.nhle.com/v1/gamecenter/2024020022/right-rail
+export type GameCenterRightRail = {
+  seasonSeries: {
+    id: number;
+    season: number;
+    gameType: number;
+    gameDate: string;
+    startTimeUTC: string;
+    easternUTCOffset: string;
+    venueUTCOffset: string;
+    gameState: string;
+    gameScheduleState: string;
+    awayTeam: {
+      id: number;
+      abbrev: string;
+      logo?: string;
+      score?: number;
+    };
+    homeTeam: {
+      id: number;
+      abbrev: string;
+      logo?: string;
+      score?: number;
+    };
+    gameCenterLink: string;
+    periodDescriptor?: {
+      number: number;
+      periodType: string;
+      maxRegulationPeriods?: number;
+    };
+    gameOutcome?: {
+      lastPeriodType: string;
+    };
+    clock?: {
+      timeRemaining: string;
+      secondsRemaining: number;
+      running: boolean;
+      inIntermission: boolean;
+    };
+  }[];
+  seasonSeriesWins: {
+    awayTeamWins: number;
+    homeTeamWins: number;
+  };
+  gameInfo: {
+    referees: {
+      default: string;
+    }[];
+    linesmen: {
+      default: string;
+    }[];
+    awayTeam: {
+      headCoach: {
+        default: string;
+      };
+      scratches: {
+        id: number;
+        firstName: {
+          default: string;
+        };
+        lastName: {
+          default: string;
+        };
+      }[];
+    };
+    homeTeam: {
+      headCoach: {
+        default: string;
+      };
+      scratches: {
+        id: number;
+        firstName: {
+          default: string;
+        };
+        lastName: {
+          default: string;
+        };
+      }[];
+    };
+  };
+  linescore: {
+    byPeriod: {
+      periodDescriptor: {
+        number: number;
+        periodType: string;
+        maxRegulationPeriods: number;
+      };
+      away: number;
+      home: number;
+    }[];
+    totals: {
+      away: number;
+      home: number;
+    };
+  };
+  shotsByPeriod: {
+    periodDescriptor: {
+      number: number;
+      periodType: string;
+      maxRegulationPeriods: number;
+    };
+    away: number;
+    home: number;
+  }[];
+  teamGameStats: {
+    category: string;
+    awayValue: number | string;
+    homeValue: number | string;
+  }[];
+  gameReports: {
+    gameSummary: string;
+    eventSummary: string;
+    playByPlay: string;
+    faceoffSummary: string;
+    faceoffComparison: string;
+    rosters: string;
+    shotSummary: string;
+    toiAway: string;
+    toiHome: string;
+  };
+};
+
 //https://api-web.nhle.com/v1/gamecenter/2023020180/landing
 type Venue = {
   default: string;
