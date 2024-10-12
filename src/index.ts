@@ -31,10 +31,11 @@ import {
 import moment from "moment";
 import { dailyfaceoffLines } from "./api/dailyFaceoff";
 import preGameImage from "./graphic/preGame";
-import intermissionImage, { LineScore } from "./graphic/intermission";
+import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
 import { teamHashtag } from "./social/twitter";
+import { LineScore } from "./graphic/utils";
 
 /**
  * Represents the possible states of a game.

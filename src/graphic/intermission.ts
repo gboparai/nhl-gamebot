@@ -7,6 +7,7 @@ import {
   drawStackedHorizontalBarGraph,
   addSquareWithGoals,
   addTeamLogo,
+  LineScore
 } from "./utils";
 
 /**
@@ -61,15 +62,7 @@ export type IntermissionGameParams = {
   };
 };
 
-/**
- * Represents a line score in a hockey game.
- */
-export type LineScore = {
-  time: string;
-  type: 'ev' | 'pp' | 'sh';
-  goalScorer: string;
-  assists: string[];
-};
+
 
 /**
  * Renders the intermission report graphic.

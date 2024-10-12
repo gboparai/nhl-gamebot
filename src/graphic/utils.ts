@@ -386,3 +386,17 @@ export function drawStackedHorizontalBarGraph(
     currentY += height + barSpacing;
   }
 }
+
+/**
+ * Represents a line score in a hockey game.
+ */
+export type LineScore = {
+  time: string;
+  type: 'ev' | 'pp' | 'sh';
+  goalScorer: string;
+  assists: string[];
+};
+
+export function calculatePercentage(value: number, total: number): number {
+  return total === 0 ? 0.5 : value / total;
+}

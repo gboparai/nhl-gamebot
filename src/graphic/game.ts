@@ -5,6 +5,7 @@ import {
   saveCanvasImage,
   loadCustomFont,
   drawStackedHorizontalBarGraph,
+  calculatePercentage,
 } from "./utils";
 
 export type GameImageParams = {
@@ -34,9 +35,6 @@ export type GameImageParams = {
   };
 };
 
-function calculatePercentage(value: number, total: number): number {
-  return total === 0 ? 0.5 : value / total;
-}
 
 export default async function createGameImage(params: GameImageParams): Promise<void> {
   const canvas = createCanvas(800, 600);
