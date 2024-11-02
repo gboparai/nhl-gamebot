@@ -7,7 +7,8 @@ import {
   drawStackedHorizontalBarGraph,
   addSquareWithGoals,
   addTeamLogo,
-  LineScore
+  LineScore,
+  calculatePercentage
 } from "./utils";
 
 /**
@@ -118,14 +119,12 @@ export default async function intermission(
         overallLabel: "Shots",
         segments: [
           {
-            value: params.shots.pref + params.shots.opp === 0 ? barLength / 2 :
-              (params.shots.pref / (params.shots.pref + params.shots.opp)) * barLength,
+            value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
             label: String(params.shots.pref),
             color: segment1Color,
           },
           {
-            value: params.shots.pref + params.shots.opp === 0 ? barLength / 2 :
-              (params.shots.opp / (params.shots.pref + params.shots.opp)) * barLength,
+            value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
             label: String(params.shots.opp),
             color: segment2Color,
           },
@@ -135,14 +134,12 @@ export default async function intermission(
         overallLabel: "Faceoff Percentage",
         segments: [
           {
-            value: params.faceoffPercentage.pref + params.faceoffPercentage.opp === 0 ? barLength / 2 :
-              (params.faceoffPercentage.pref / (params.faceoffPercentage.pref + params.faceoffPercentage.opp)) * barLength,
+            value: calculatePercentage(params.faceoffPercentage.pref, params.faceoffPercentage.pref + params.faceoffPercentage.opp) * barLength,
             label: `${(params.faceoffPercentage.pref*100).toFixed(2)}%`,
             color: segment1Color,
           },
           {
-            value: params.faceoffPercentage.pref + params.faceoffPercentage.opp === 0 ? barLength / 2 :
-              (params.faceoffPercentage.opp / (params.faceoffPercentage.pref + params.faceoffPercentage.opp)) * barLength,
+            value: calculatePercentage(params.faceoffPercentage.opp, params.faceoffPercentage.pref + params.faceoffPercentage.opp) * barLength,
             label:`${(params.faceoffPercentage.opp*100).toFixed(2)}%`,
             color: segment2Color,
           },
@@ -152,14 +149,12 @@ export default async function intermission(
         overallLabel: "Power Play",
         segments: [
           {
-            value: params.powerPlayPctg.pref + params.powerPlayPctg.opp === 0 ? barLength / 2 :
-              (params.powerPlayPctg.pref / (params.powerPlayPctg.pref + params.powerPlayPctg.opp)) * barLength,
+            value: calculatePercentage(params.powerPlayPctg.pref, params.powerPlayPctg.pref + params.powerPlayPctg.opp) * barLength,
             label: params.powerPlay.pref,
             color: segment1Color,
           },
           {
-            value: params.powerPlayPctg.pref + params.powerPlayPctg.opp === 0 ? barLength / 2 :
-              (params.powerPlayPctg.opp / (params.powerPlayPctg.pref + params.powerPlayPctg.opp)) * barLength,
+            value: calculatePercentage(params.powerPlayPctg.opp, params.powerPlayPctg.pref + params.powerPlayPctg.opp) * barLength,
             label: params.powerPlay.opp,
             color: segment2Color,
           },
@@ -170,14 +165,12 @@ export default async function intermission(
         overallLabel: "Penalties Minutes",
         segments: [
           {
-            value: params.penalties.pref + params.penalties.opp === 0 ? barLength / 2 :
-              (params.penalties.pref / (params.penalties.pref + params.penalties.opp)) * barLength,
+            value: calculatePercentage(params.penalties.pref, params.penalties.pref + params.penalties.opp) * barLength,
             label: String(params.penalties.pref),
             color: segment1Color,
           },
           {
-            value: params.penalties.pref + params.penalties.opp === 0 ? barLength / 2 :
-              (params.penalties.opp / (params.penalties.pref + params.penalties.opp)) * barLength,
+            value: calculatePercentage(params.penalties.opp, params.penalties.pref + params.penalties.opp) * barLength,
             label: String(params.penalties.opp),
             color: segment2Color,
           },
@@ -187,14 +180,12 @@ export default async function intermission(
         overallLabel: "Hits",
         segments: [
           {
-            value: params.hits.pref + params.hits.opp === 0 ? barLength / 2 :
-              (params.hits.pref / (params.hits.pref + params.hits.opp)) * barLength,
+            value: calculatePercentage(params.hits.pref, params.hits.pref + params.hits.opp) * barLength,
             label: String(params.hits.pref),
             color: segment1Color,
           },
           {
-            value: params.hits.pref + params.hits.opp === 0 ? barLength / 2 :
-              (params.hits.opp / (params.hits.pref + params.hits.opp)) * barLength,
+            value: calculatePercentage(params.hits.opp, params.hits.pref + params.hits.opp) * barLength,
             label: String(params.hits.opp),
             color: segment2Color,
           },
@@ -204,14 +195,12 @@ export default async function intermission(
         overallLabel: "Blocked Shots",
         segments: [
           {
-            value: params.blockedShots.pref + params.blockedShots.opp === 0 ? barLength / 2 :
-              (params.blockedShots.pref / (params.blockedShots.pref + params.blockedShots.opp)) * barLength,
+            value: calculatePercentage(params.blockedShots.pref, params.blockedShots.pref + params.blockedShots.opp) * barLength,
             label: String(params.blockedShots.pref),
             color: segment1Color,
           },
           {
-            value: params.blockedShots.pref + params.blockedShots.opp === 0 ? barLength / 2 :
-              (params.blockedShots.opp / (params.blockedShots.pref + params.blockedShots.opp)) * barLength,
+            value: calculatePercentage(params.blockedShots.opp, params.blockedShots.pref + params.blockedShots.opp) * barLength,
             label: String(params.blockedShots.opp),
             color: segment2Color,
           },
@@ -221,14 +210,12 @@ export default async function intermission(
         overallLabel: "Giveaways",
         segments: [
           {
-            value: params.giveaways.pref + params.giveaways.opp === 0 ? barLength / 2 :
-              (params.giveaways.pref / (params.giveaways.pref + params.giveaways.opp)) * barLength,
+            value: calculatePercentage(params.giveaways.pref, params.giveaways.pref + params.giveaways.opp) * barLength,
             label: String(params.giveaways.pref),
             color: segment1Color,
           },
           {
-            value: params.giveaways.pref + params.giveaways.opp === 0 ? barLength / 2 :
-              (params.giveaways.opp / (params.giveaways.pref + params.giveaways.opp)) * barLength,
+            value: calculatePercentage(params.giveaways.opp, params.giveaways.pref + params.giveaways.opp) * barLength,
             label: String(params.giveaways.opp),
             color: segment2Color,
           },
@@ -238,14 +225,12 @@ export default async function intermission(
         overallLabel: "Takeaways",
         segments: [
           {
-            value: params.takeaways.pref + params.takeaways.opp === 0 ? barLength / 2 :
-              (params.takeaways.pref / (params.takeaways.pref + params.takeaways.opp)) * barLength,
+            value: calculatePercentage(params.takeaways.pref, params.takeaways.pref + params.takeaways.opp) * barLength,
             label: String(params.takeaways.pref),
             color: segment1Color,
           },
           {
-            value: params.takeaways.pref + params.takeaways.opp === 0 ? barLength / 2 :
-              (params.takeaways.opp / (params.takeaways.pref + params.takeaways.opp)) * barLength,
+            value: calculatePercentage(params.takeaways.opp, params.takeaways.pref + params.takeaways.opp) * barLength,
             label: String(params.takeaways.opp),
             color: segment2Color,
           },
