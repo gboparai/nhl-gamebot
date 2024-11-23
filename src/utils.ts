@@ -160,3 +160,15 @@ export function splitArray(array: unknown[], chunkSize: number) {
   }
   return chunkedArray;
 }
+
+
+/**
+ * Pauses the execution for the specified number of milliseconds.
+ * @param milliseconds - The number of milliseconds to sleep.
+ * @returns A Promise that resolves after the specified number of milliseconds.
+ */
+export function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}

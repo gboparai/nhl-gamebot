@@ -10,10 +10,7 @@ import {
 import { GameDetails, fetchGameDetails } from "./api/scoutingTheRefs";
 import {
   Game,
-  TeamSummary,
   GameLanding,
-  Boxscore,
-  PlayByPlayGame,
   NHLScores,
   Team,
 } from "./types";
@@ -27,6 +24,7 @@ import {
   starEmojis,
   groupedList,
   getLastName,
+  sleep
 } from "./utils";
 import moment from "moment";
 import { dailyfaceoffLines } from "./api/dailyFaceoff";
@@ -36,6 +34,7 @@ import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
 import { teamHashtag } from "./social/twitter";
 import { LineScore } from "./graphic/utils";
+
 
 /**
  * Represents the possible states of a game.
@@ -50,26 +49,11 @@ enum GameStates {
   ENDGAME = "ENDGAME",
 }
 
-/**
- * Pauses the execution for the specified number of milliseconds.
- * @param milliseconds - The number of milliseconds to sleep.
- * @returns A Promise that resolves after the specified number of milliseconds.
- */
-const sleep = (milliseconds: number): Promise<void> => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, milliseconds);
-  });
-};
-let CurrentState: GameStates = GameStates.WAITING;
+
+let currentState: GameStates = GameStates.WAITING;
 let currentGame: Game | undefined;
 let prefTeam: Team | undefined;
 let oppTeam: Team | undefined;
-let gameLanding: GameLanding | undefined;
-let boxscore: Boxscore | undefined;
-let playByPlay: PlayByPlayGame | undefined;
-let homeTeamSummary: TeamSummary | undefined;
-let awayTeamSummary: TeamSummary | undefined;
-let refereeDetails: GameDetails | undefined;
 let hasSentIntermission: boolean = false;
 let lastEventID: number = 0;
 let sentEvents: number[] = [];
@@ -103,7 +87,7 @@ const handleWaitingState = async () => {
     sleepTime.setHours(sleepTime.getHours() - 1);
 
     await sleep(sleepTime.getTime() - Date.now());
-    CurrentState = GameStates.PREGAME;
+    currentState = GameStates.PREGAME;
   } else {
     await sleep(25200000);
   }
@@ -116,17 +100,14 @@ const handleWaitingState = async () => {
  */
 const handlePregameState = async () => {
   if (currentGame !== undefined) {
-    gameLanding = await fetchGameLanding(String(currentGame.id));
-    boxscore = await fetchBoxscore(String(currentGame.id));
-
     const teamSummaries = await fetchTeamSummaries();
-    homeTeamSummary = teamSummaries.data.find(
+    const homeTeamSummary = teamSummaries.data.find(
       (team) => team.teamId === currentGame!.homeTeam.id,
     );
-    awayTeamSummary = teamSummaries.data.find(
+    const awayTeamSummary = teamSummaries.data.find(
       (team) => team.teamId === currentGame!.awayTeam.id,
     );
-    refereeDetails = await fetchGameDetails(config.app.script.teamName);
+    const refereeDetails = await fetchGameDetails(config.app.script.teamName);
 
     if (refereeDetails.confirmed === false) {
       await sleep(config.app.script.pregame_sleep_time);
@@ -250,7 +231,7 @@ const handlePregameState = async () => {
       const sleepTime = new Date(currentGame.startTimeUTC);
       await sleep(sleepTime.getTime() - Date.now());
       sentEvents = [];
-      CurrentState = GameStates.INGAME;
+      currentState = GameStates.INGAME;
     }
   }
 };
@@ -278,12 +259,12 @@ const handleInGameState = async () => {
     currentGame?.awayTeam.abbrev === config.app.script.team
       ? currentGame.homeTeam
       : currentGame?.awayTeam;
-  playByPlay = await fetchPlayByPlay(String(currentGame!.id));
+  const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
   if (playByPlay.clock.inIntermission) {
     if (!hasSentIntermission) {
       hasSentIntermission = true;
-      boxscore = await fetchBoxscore(String(currentGame?.id));
-      gameLanding = await fetchGameLanding(String(currentGame?.id));
+      const boxscore = await fetchBoxscore(String(currentGame?.id));
+      const gameLanding = await fetchGameLanding(String(currentGame?.id));
       const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
       const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
       const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
@@ -421,8 +402,7 @@ const handleInGameState = async () => {
     await sleep(config.app.script.live_sleep_time);
   }
   if (playByPlay.plays.some((play) => play.typeDescKey === "game-end")) {
-    CurrentState = GameStates.POSTGAME;
-
+    currentState = GameStates.POSTGAME;
     lastEventID = 0;
   }
 };
@@ -434,8 +414,8 @@ const handleInGameState = async () => {
  * sends a message with the game result, and updates the current state to POSTGAMETHREESTARS.
  */
 const handlePostGameState = async () => {
-  boxscore = await fetchBoxscore(String(currentGame!.id));
-  playByPlay = await fetchPlayByPlay(String(currentGame!.id));
+  const boxscore = await fetchBoxscore(String(currentGame!.id));
+
   const awayScore = boxscore.summary.linescore.totals.away;
   const homeScore = boxscore.summary.linescore.totals.home;
   let winningTeam = currentGame?.awayTeam.name.default;
@@ -445,8 +425,8 @@ const handlePostGameState = async () => {
     winningTeam = currentGame?.homeTeam.name.default;
     losingTeam = currentGame?.awayTeam.name.default;
   }
-  boxscore = await fetchBoxscore(String(currentGame?.id));
-  gameLanding = await fetchGameLanding(String(currentGame?.id));
+  
+  const gameLanding = await fetchGameLanding(String(currentGame?.id));
   const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
   const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
   const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
@@ -516,7 +496,7 @@ const handlePostGameState = async () => {
     [`./temp/postGame.png`],
   );
 
-  CurrentState = GameStates.POSTGAMETHREESTARS;
+  currentState = GameStates.POSTGAMETHREESTARS;
 };
 
 /**
@@ -526,7 +506,7 @@ const handlePostGameState = async () => {
  * If the three stars are not available, it waits for 60 seconds before proceeding.
  */
 const handlePostGameThreeStarsState = async () => {
-  gameLanding = await fetchGameLanding(String(currentGame!.id));
+  const gameLanding = await fetchGameLanding(String(currentGame!.id));
   if (
     gameLanding?.summary.threeStars !== undefined &&
     gameLanding?.summary.threeStars.length > 0
@@ -540,7 +520,7 @@ const handlePostGameThreeStarsState = async () => {
             \n\n${threeStars}`,
       currentGame!,
     );
-    CurrentState = GameStates.POSTGAMEVID;
+    currentState = GameStates.POSTGAMEVID;
   } else {
     await sleep(60000);
   }
@@ -552,7 +532,7 @@ const handlePostGameThreeStarsState = async () => {
  * If no video is available, it waits for 60 seconds before transitioning to the ENDGAME state.
  */
 const handlePostGameVideoState = async () => {
-  boxscore = await fetchBoxscore(String(currentGame!.id));
+  const boxscore = await fetchBoxscore(String(currentGame!.id));
   const video = boxscore?.gameVideo?.threeMinRecap;
   if (video) {
     const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format("M-D-YY")}-${video}`;
@@ -564,7 +544,7 @@ const handlePostGameVideoState = async () => {
   } else {
     await sleep(60000);
   }
-  CurrentState = GameStates.ENDGAME;
+  currentState = GameStates.ENDGAME;
 };
 
 /**
@@ -574,7 +554,7 @@ const handlePostGameVideoState = async () => {
  */
 const handleEndGameState = async () => {
   await sleep(25200000);
-  CurrentState = GameStates.WAITING;
+  currentState = GameStates.WAITING;
 };
 
 /**
@@ -583,27 +563,32 @@ const handleEndGameState = async () => {
  */
 const main = async(): Promise<void> => {
   while (true) {
-    if (CurrentState === GameStates.WAITING) {
+    if (currentState === GameStates.WAITING) {
       await handleWaitingState();
     } else if (
-      CurrentState === GameStates.PREGAME &&
+      currentState === GameStates.PREGAME &&
       currentGame !== undefined
     ) {
       await handlePregameState();
-    } else if (CurrentState === GameStates.INGAME) {
+    } else if (currentState === GameStates.INGAME) {
       await handleInGameState();
-    } else if (CurrentState === GameStates.POSTGAME) {
+    } else if (currentState === GameStates.POSTGAME) {
       await handlePostGameState();
-    } else if (CurrentState === GameStates.POSTGAMETHREESTARS) {
+    } else if (currentState === GameStates.POSTGAMETHREESTARS) {
       await handlePostGameThreeStarsState();
-    } else if (CurrentState === GameStates.POSTGAMEVID) {
+    } else if (currentState === GameStates.POSTGAMEVID) {
       await handlePostGameVideoState();
-    } else if (CurrentState === GameStates.ENDGAME) {
+    } else if (currentState === GameStates.ENDGAME) {
       await handleEndGameState();
     }
   }
 };
 
+/**
+ * Transforms a GameLanding object into home and away LineScores.
+ * @param gameLanding - The GameLanding object to transform.
+ * @returns An object containing homeLineScores and awayLineScores.
+ */
 function transformGameLandingToLineScores(gameLanding: GameLanding): {
   homeLineScores: LineScore[];
   awayLineScores: LineScore[];
@@ -631,6 +616,11 @@ function transformGameLandingToLineScores(gameLanding: GameLanding): {
   return { homeLineScores, awayLineScores };
 }
 
+/**
+ * Determines the type of a goal based on the given situation code.
+ * @param situationCode - The situation code representing the goal type.
+ * @returns The type of the goal: 'ev' for even strength, 'pp' for power play, 'sh' for short-handed.
+ */
 function getGoalType(situationCode: string): 'ev' | 'pp' | 'sh' {
   switch (situationCode) {
     case 'ev':
