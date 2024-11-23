@@ -90,12 +90,14 @@ export default async function postGame(
     },
     canvas,
   );
+
   const ctx = canvas.getContext("2d");
   await addImageAsBackground(
     ctx,
     canvas,
     "./assets/images/BG2022-Gameday-ScoreReport.png",
   );
+
   addText(ctx, {
     text: "END OF GAME RECAP",
     x: canvas.width / 2,
@@ -246,7 +248,6 @@ export default async function postGame(
 
   const logoWidth = 120;
   const logoHeight = 80;
-
   const logoSpacing = 60;
   const textSpacing = 0;
 
@@ -257,6 +258,7 @@ export default async function postGame(
     width: logoWidth,
     height: logoHeight,
   });
+  
   addText(ctx, {
     text: String(params.pref.score),
     x: 810 + logoWidth + textSpacing,
@@ -273,6 +275,7 @@ export default async function postGame(
     width: logoWidth,
     height: logoHeight,
   });
+
   addText(ctx, {
     text: String(params.opp.score),
     x: 810 + logoSpacing + logoWidth * 2 + textSpacing * 2,
@@ -298,6 +301,7 @@ export default async function postGame(
     height: 205,
     transparency: 0.25,
   });
+
   addSquareWithGoals(ctx, {
     x: 810,
     y: 440,

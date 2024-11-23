@@ -79,7 +79,7 @@ function getHashtags(game: Game) {
  * @returns The hashtag associated with the team.
  */
 export function teamHashtag(team: string) {
-  const teamHashtags = {
+  const TEAM_HASH_TAGS = {
     Ducks: "#FlyTogether",
     Coyotes: "#Yotes",
     Bruins: "#NHLBruins",
@@ -114,5 +114,5 @@ export function teamHashtag(team: string) {
     Jets: "#GoJetsGo",
   };
 
-  return teamHashtags[team as keyof typeof teamHashtags];
+  return TEAM_HASH_TAGS[team as keyof typeof TEAM_HASH_TAGS];
 }

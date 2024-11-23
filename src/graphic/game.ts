@@ -38,6 +38,7 @@ export type GameImageParams = {
 
 export default async function createGameImage(params: GameImageParams): Promise<void> {
   const canvas = createCanvas(800, 600);
+
   await loadCustomFont(
     {
       fontPath: "./assets/fonts/Roboto-Bold.ttf",
@@ -53,12 +54,15 @@ export default async function createGameImage(params: GameImageParams): Promise<
     },
     canvas,
   );
+
   const ctx = canvas.getContext("2d");
+
   await addImageAsBackground(
     ctx,
     canvas,
     "./assets/images/BG2022-Gameday-ScoreReport.png",
   );
+  
   addText(ctx, {
     text: "MATCHUP REPORT",
     x: canvas.width / 2,

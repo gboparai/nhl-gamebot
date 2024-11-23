@@ -91,11 +91,13 @@ export default async function intermission(
     canvas,
   );
   const ctx = canvas.getContext("2d");
+  
   await addImageAsBackground(
     ctx,
     canvas,
     "./assets/images/BG2022-Gameday-ScoreReport.png",
   );
+
   addText(ctx, {
     text: "INTERMISSION REPORT",
     x: canvas.width / 2,
@@ -257,6 +259,7 @@ export default async function intermission(
     width: logoWidth,
     height: logoHeight,
   });
+
   addText(ctx, {
     text: String(params.pref.score),
     x: 810 + logoWidth + textSpacing,
@@ -273,6 +276,7 @@ export default async function intermission(
     width: logoWidth,
     height: logoHeight,
   });
+
   addText(ctx, {
     text: String(params.opp.score),
     x: 810 + logoSpacing + logoWidth * 2 + textSpacing * 2,
@@ -298,6 +302,7 @@ export default async function intermission(
     height: 205,
     transparency: 0.25,
   });
+
   addSquareWithGoals(ctx, {
     x: 810,
     y: 440,

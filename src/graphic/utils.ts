@@ -6,7 +6,7 @@ import {
 } from "canvas";
 import fs from "fs";
 
-// Function to add an image as a background to a canvas
+
 /**
  * Adds an image as the background of a canvas.
  *
@@ -26,7 +26,7 @@ export async function addImageAsBackground(
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 }
 
-// Function to save a canvas image to a file
+
 /**
  * Saves the canvas image to the specified output path.
  * @param canvas - The canvas object containing the image.
@@ -245,7 +245,7 @@ export async function addTeamLogo(
   options: TeamLogoOptions,
 ): Promise<void> {
   const { teamName, x, y, width, height } = options;
-  const logoPath = `./assets/logos/${teamImages[teamName as keyof typeof teamImages] || ""}`;
+  const logoPath = `./assets/logos/${TEAM_IMAGES[teamName as keyof typeof TEAM_IMAGES] || ""}`;
   try {
     const logoImage = await loadImage(logoPath);
     ctx.drawImage(logoImage, x, y, width, height);
@@ -256,7 +256,7 @@ export async function addTeamLogo(
   }
 }
 
-const teamImages = {
+const TEAM_IMAGES = {
   Ducks: "AnaheimDucks.png",
   Coyotes: "ArizonaCoyotes.png",
   Bruins: "BostonBruins.png",
@@ -387,9 +387,7 @@ export function drawStackedHorizontalBarGraph(
   }
 }
 
-/**
- * Represents a line score in a hockey game.
- */
+
 export type LineScore = {
   time: string;
   type: 'ev' | 'pp' | 'sh';
@@ -397,6 +395,12 @@ export type LineScore = {
   assists: string[];
 };
 
+/**
+ * Calculates the percentage value of a given number in relation to a total number.
+ * @param value - The value for which the percentage needs to be calculated.
+ * @param total - The total value against which the percentage needs to be calculated.
+ * @returns The calculated percentage value.
+ */
 export function calculatePercentage(value: number, total: number): number {
   return total === 0 ? 0.5 : value / total;
 }

@@ -98,6 +98,12 @@ export async function fetchNHLScores(date: ISODateString) {
   }
 }
 
+/**
+ * Fetches the right rail data for the game center of a specific game.
+ * @param gameID - The ID of the game.
+ * @returns A promise that resolves to the right rail data for the game center.
+ * @throws If there is an error while fetching the data.
+ */
 export async function fetchGameCenterRightRail(gameID: string) {
   try {
     const response = await axios.get(

@@ -61,12 +61,15 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     },
     canvas,
   );
+  
   const ctx = canvas.getContext("2d");
+
   await addImageAsBackground(
     ctx,
     canvas,
     "./assets/images/BG2022-Gameday-Pregame.png",
   );
+
   addText(ctx, {
     text: "Pregame Matchup",
     x: canvas.width / 2,
@@ -123,6 +126,7 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     color: "white",
     textAlign: "center",
   });
+
   addText(ctx, {
     text: awayLine2,
     x: canvasCenterX + logoSpacing / 2 + logoWidth / 2,
@@ -149,6 +153,7 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     color: "white",
     textAlign: "center",
   });
+
   addText(ctx, {
     text: venue,
     x: canvasCenterX,
@@ -157,6 +162,7 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     color: "white",
     textAlign: "center",
   });
+
   addText(ctx, {
     text: `#${homeHashtag} #${awayHashtag}`,
     x: canvasCenterX,
@@ -165,5 +171,6 @@ export default async function preGame(params: PreGameParams): Promise<void> {
     color: "white",
     textAlign: "center",
   });
+
   await saveCanvasImage(canvas, "./temp/preGame.png");
 }
