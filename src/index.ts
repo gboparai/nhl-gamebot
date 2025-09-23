@@ -32,7 +32,7 @@ import preGameImage from "./graphic/preGame";
 import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
-import { teamHashtag } from "./social/twitter";
+import { teamHashtag } from "./social/utils";
 import { LineScore } from "./graphic/utils";
 
 

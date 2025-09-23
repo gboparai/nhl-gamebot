@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, TextChannel, AttachmentBuilder } from "disco
 import { Game, Config } from "../types";
 import config from "../../config.json";
 import { logObjectToFile } from "../logger";
+import { shouldRetry, retryOperation } from "./utils";
 
 const typedConfig = config as Config;
 
@@ -59,7 +60,7 @@ export async function sendDiscordMessage(
   media?: string[],
   retries: number = 3,
 ): Promise<void> {
-  try {
+  const operation = async () => {
     await initializeClient();
     
     if (!client || !isReady) {
@@ -96,38 +97,11 @@ export async function sendDiscordMessage(
     }
 
     await channel.send(messageOptions);
-    
-  } catch (error: unknown) {
-    logObjectToFile("failed-discord-message", text);
-    logObjectToFile("discord-error", error as string);
+  };
 
-    // Retry logic for temporary failures
-    if (retries > 0 && shouldRetry(error)) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      await sendDiscordMessage(text, game, media, retries - 1);
-    } else {
-      console.error("Failed to send Discord message:", error);
-    }
-  }
+  await retryOperation(operation, retries, 5000, "discord", text);
 }
 
-/**
- * Determines if an error should trigger a retry.
- * @param error - The error object.
- * @returns True if the error indicates a temporary failure.
- */
-function shouldRetry(error: unknown): boolean {
-  const errorMessage = (error as Error).message?.toLowerCase() || '';
-  
-  // Retry on network errors, rate limits, and temporary server errors
-  return errorMessage.includes('network') ||
-         errorMessage.includes('timeout') ||
-         errorMessage.includes('rate limit') ||
-         errorMessage.includes('502') ||
-         errorMessage.includes('503') ||
-         errorMessage.includes('504') ||
-         errorMessage.includes('websocket');
-}
 
 /**
  * Gracefully shutdown the Discord client

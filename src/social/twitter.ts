@@ -2,6 +2,7 @@ import { Game } from "../types";
 import config from "../../config.json";
 import { TwitterApi, TUploadableMedia } from "twitter-api-v2";
 import { logObjectToFile } from "../logger";
+import { retryOperation, generateGameHashtags, teamHashtag } from "./utils";
 
 const twitter = new TwitterApi({
   appKey: config.twitter.appKey,
@@ -21,7 +22,7 @@ export async function sendTweet(
   media?: string[],
   retries: number = 3,
 ): Promise<void> {
-  try {
+  const operation = async () => {
     if (media && media.length > 0) {
       await twitter.v2.tweet(tweet, {
         media: {
@@ -35,6 +36,10 @@ export async function sendTweet(
         await twitter.v2.tweet(tweet);
       }
     }
+  };
+
+  try {
+    await operation();
   } catch (error: unknown) {
     logObjectToFile("failed-tweet", tweet);
     logObjectToFile("twitter-error", error as string);
@@ -42,6 +47,8 @@ export async function sendTweet(
     if ((error as Error).message.includes("403") && retries > 0) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       await sendTweet(tweet, game, media, retries - 1);
+    } else {
+      throw error;
     }
   }
 }
@@ -68,51 +75,7 @@ export async function uploadMedia(media: TUploadableMedia): Promise<string> {
  * @returns A string containing the generated hashtags.
  */
 function getHashtags(game: Game) {
-  const homeHashtag = teamHashtag(game.homeTeam.name.default);
-  const awayHashtag = teamHashtag(game.awayTeam.name.default);
-  return `\n\n#${game.awayTeam.abbrev.toLocaleUpperCase()}vs${game.homeTeam.abbrev.toLocaleUpperCase()}  ${homeHashtag} ${awayHashtag}`;
+  return generateGameHashtags(game, teamHashtag, "twitter");
 }
 
-/**
- * Retrieves the hashtag associated with a given NHL team.
- * @param team - The name of the NHL team.
- * @returns The hashtag associated with the team.
- */
-export function teamHashtag(team: string) {
-  const TEAM_HASH_TAGS = {
-    Ducks: "#FlyTogether",
-    Coyotes: "#Yotes",
-    Bruins: "#NHLBruins",
-    Sabres: "#LetsGoBuffalo",
-    Flames: "#Flames",
-    Hurricanes: "#LetsGoCanes",
-    Blackhawks: "#Blackhawks",
-    Avalanche: "#GoAvsGo",
-    "Blue Jackets": "#CBJ",
-    Stars: "#GoStars",
-    "Red Wings": "#LGRW",
-    Oilers: "#LetsGoOilers",
-    Panthers: "#FLAPanthers",
-    Kings: "#GoKingsGo",
-    Wild: "#MNWild",
-    Canadiens: "#GoHabsGo",
-    Predators: "#Preds",
-    Devils: "#NJDevils",
-    Islanders: "#Isles",
-    Rangers: "#NYR",
-    Senators: "#GoSensGo",
-    Flyers: "#AnytimeAnywhere",
-    Penguins: "#LetsGoPens",
-    Sharks: "#SJSharks",
-    Kraken: "#SeaKraken",
-    Blues: "#STLBlues",
-    Lightning: "#GoBolts",
-    "Maple Leafs": "#LeafsForever",
-    Canucks: "#Canucks",
-    "Golden Knights": "#VegasBorn",
-    Capitals: "#ALLCAPS",
-    Jets: "#GoJetsGo",
-  };
 
-  return TEAM_HASH_TAGS[team as keyof typeof TEAM_HASH_TAGS];
-}

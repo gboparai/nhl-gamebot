@@ -2,7 +2,7 @@ import { BskyAgent, RichText } from "@atproto/api";
 import { Game, Config } from "../types";
 import config from "../../config.json";
 import { logObjectToFile } from "../logger";
-import { teamHashtag } from "./twitter";
+import { shouldRetry, getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
 
 const typedConfig = config as Config;
 
@@ -43,7 +43,7 @@ export async function sendBlueskyPost(
   media?: string[],
   retries: number = 3,
 ): Promise<void> {
-  try {
+  const operation = async () => {
     await initializeAgent();
     
     if (!agent) {
@@ -89,19 +89,9 @@ export async function sendBlueskyPost(
     }
 
     await agent.post(postData);
-    
-  } catch (error: unknown) {
-    logObjectToFile("failed-bluesky-post", text);
-    logObjectToFile("bluesky-error", error as string);
+  };
 
-    // Retry logic for temporary failures
-    if (retries > 0 && shouldRetry(error)) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      await sendBlueskyPost(text, game, media, retries - 1);
-    } else {
-      console.error("Failed to send Bluesky post:", error);
-    }
-  }
+  await retryOperation(operation, retries, 5000, "bluesky", text);
 }
 
 /**
@@ -148,47 +138,7 @@ export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
  * @returns A string containing the generated hashtags.
  */
 function getBlueskyHashtags(game: Game): string {
-  const homeHashtag = teamHashtag(game.homeTeam.name.default);
-  const awayHashtag = teamHashtag(game.awayTeam.name.default);
-  return `\n\n#${game.awayTeam.abbrev.toUpperCase()}vs${game.homeTeam.abbrev.toUpperCase()} ${homeHashtag} ${awayHashtag} #NHL #Hockey`;
+  return generateGameHashtags(game, teamHashtag, "bluesky");
 }
 
-/**
- * Determines the MIME type based on file extension.
- * @param filePath - The path to the file.
- * @returns The MIME type string.
- */
-function getMimeType(filePath: string): string {
-  const extension = filePath.toLowerCase().split('.').pop();
-  
-  switch (extension) {
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg';
-    case 'png':
-      return 'image/png';
-    case 'gif':
-      return 'image/gif';
-    case 'webp':
-      return 'image/webp';
-    default:
-      return 'image/jpeg'; // Default fallback
-  }
-}
 
-/**
- * Determines if an error should trigger a retry.
- * @param error - The error object.
- * @returns True if the error indicates a temporary failure.
- */
-function shouldRetry(error: unknown): boolean {
-  const errorMessage = (error as Error).message?.toLowerCase() || '';
-  
-  // Retry on network errors, rate limits, and temporary server errors
-  return errorMessage.includes('network') ||
-         errorMessage.includes('timeout') ||
-         errorMessage.includes('rate limit') ||
-         errorMessage.includes('502') ||
-         errorMessage.includes('503') ||
-         errorMessage.includes('504');
-}
