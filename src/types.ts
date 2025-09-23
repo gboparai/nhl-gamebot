@@ -18,6 +18,12 @@ export interface Config {
     handle: string;
     isActive: boolean;
   };
+  discord: {
+    botToken: string;
+    channelId: string;
+    guildId: string;
+    isActive: boolean;
+  };
   app: {
     script: {
       team: string;

@@ -1,5 +1,6 @@
 import { sendTweet, uploadMedia } from "./twitter";
 import { sendBlueskyPost } from "./bluesky";
+import { sendDiscordMessage } from "./discord";
 import config from "../../config.json";
 import { Game, Config } from "../types";
 
@@ -30,5 +31,10 @@ export async function send(
   // Send to Bluesky if active (always send regardless of extended flag)
   if (typedConfig.bluesky.isActive) {
     await sendBlueskyPost(text, game, media);
+  }
+
+  // Send to Discord if active (always send regardless of extended flag)
+  if (typedConfig.discord.isActive) {
+    await sendDiscordMessage(text, game, media);
   }
 }
