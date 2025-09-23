@@ -36,6 +36,7 @@ import { teamHashtag } from "./social/twitter";
 import { LineScore } from "./graphic/utils";
 
 
+
 /**
  * Represents the possible states of a game.
  */
@@ -65,31 +66,55 @@ let sentEvents: number[] = [];
  * If there is no current game, it waits for 7 hours before checking again.
  */
 const handleWaitingState = async () => {
-  const nhlScores: NHLScores = await fetchNHLScores(
-    getCurrentDateEasternTime(),
-  );
-  currentGame = nhlScores.games.find(
-    (game) =>
-      game.awayTeam.abbrev === config.app.script.team ||
-      game.homeTeam.abbrev === config.app.script.team,
-  );
+  console.log(`[${new Date().toISOString()}] Entering WAITING state`);
+  
+  
+  try {
+    console.log(`[${new Date().toISOString()}] Fetching NHL scores for ${getCurrentDateEasternTime()}`);
+    const nhlScores: NHLScores = await fetchNHLScores(
+      getCurrentDateEasternTime(),
+    );
+    
 
-  if (currentGame !== undefined) {
-    prefTeam =
-      currentGame.awayTeam.abbrev === config.app.script.team
-        ? currentGame.awayTeam
-        : currentGame.homeTeam;
-    oppTeam =
-      currentGame.awayTeam.abbrev === config.app.script.team
-        ? currentGame.homeTeam
-        : currentGame.awayTeam;
-    const sleepTime = new Date(currentGame.startTimeUTC);
-    sleepTime.setHours(sleepTime.getHours() - 1);
+    
+    currentGame = nhlScores.games.find(
+      (game) =>
+        game.awayTeam.abbrev === config.app.script.team ||
+        game.homeTeam.abbrev === config.app.script.team,
+    );
 
-    await sleep(sleepTime.getTime() - Date.now());
-    currentState = GameStates.PREGAME;
-  } else {
-    await sleep(25200000);
+    if (currentGame !== undefined) {
+      console.log(`[${new Date().toISOString()}] Found game: ${currentGame.awayTeam.abbrev} @ ${currentGame.homeTeam.abbrev} at ${currentGame.startTimeUTC}`);
+      
+      prefTeam =
+        currentGame.awayTeam.abbrev === config.app.script.team
+          ? currentGame.awayTeam
+          : currentGame.homeTeam;
+      oppTeam =
+        currentGame.awayTeam.abbrev === config.app.script.team
+          ? currentGame.homeTeam
+          : currentGame.awayTeam;
+          
+
+      
+      const sleepTime = new Date(currentGame.startTimeUTC);
+      sleepTime.setHours(sleepTime.getHours() - 1);
+      const sleepDuration = sleepTime.getTime() - Date.now();
+      
+      console.log(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until pregame (${sleepTime.toISOString()})`);
+      
+      await sleep(sleepDuration);
+      currentState = GameStates.PREGAME;
+      console.log(`[${new Date().toISOString()}] Transitioning to PREGAME state`);
+    } else {
+      console.log(`[${new Date().toISOString()}] No game found for ${config.app.script.team}, sleeping for 7 hours`);
+      
+      
+      await sleep(25200000);
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in WAITING state:`, error);
+   
   }
 };
 
@@ -99,84 +124,106 @@ const handleWaitingState = async () => {
  * @returns {Promise<void>} A promise that resolves when the pregame state is handled.
  */
 const handlePregameState = async () => {
+  console.log(`[${new Date().toISOString()}] Entering PREGAME state`);
+
   if (currentGame !== undefined) {
-    const teamSummaries = await fetchTeamSummaries();
-    const homeTeamSummary = teamSummaries.data.find(
-      (team) => team.teamId === currentGame!.homeTeam.id,
-    );
-    const awayTeamSummary = teamSummaries.data.find(
-      (team) => team.teamId === currentGame!.awayTeam.id,
-    );
-    const refereeDetails = await fetchGameDetails(config.app.script.teamName);
+    try {
+      console.log(`[${new Date().toISOString()}] Fetching team summaries`);
+      const teamSummaries = await fetchTeamSummaries();
 
-    if (refereeDetails.confirmed === false) {
-      await sleep(config.app.script.pregame_sleep_time);
-    } else {
-      const formattedTime12Hr = convertUTCToLocalTime(
-        currentGame.startTimeUTC,
-        config.app.script.timeZone,
+      const homeTeamSummary = teamSummaries.data.find(
+        (team) => team.teamId === currentGame!.homeTeam.id,
       );
-      await preGameImage({
-        homeTeam: currentGame.homeTeam.name.default,
-        awayTeam: currentGame.awayTeam.name.default,
-        homeHashtag: teamHashtag(currentGame.homeTeam.name.default) || "",
-        awayHashtag: teamHashtag(currentGame.awayTeam.name.default) || "",
-        venue: currentGame.venue.default,
-        date: moment(currentGame.startTimeUTC).format("MMMM D"),
-        time: formattedTime12Hr,
-        homeLine1:
-          currentGame.gameType === 3
-            ? currentGame.homeTeam.record || ""
-            : `${homeTeamSummary?.wins}-${homeTeamSummary?.losses}-${homeTeamSummary?.otLosses}`,
-        homeLine2: "",
-        awayLine1:
-          currentGame.gameType === 3
-            ? currentGame.awayTeam.record || ""
-            : `${awayTeamSummary?.wins}-${awayTeamSummary?.losses}-${awayTeamSummary?.otLosses}`,
-        awayLine2: "",
-      });
+      const awayTeamSummary = teamSummaries.data.find(
+        (team) => team.teamId === currentGame!.awayTeam.id,
+      );
+      
 
-      send(
-        `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
-                \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
-        currentGame,
-        [`./temp/preGame.png`],
-      );
-      await gameImage({
-        shots: {
-          pref: homeTeamSummary?.shotsForPerGame || 0,
-          opp: awayTeamSummary?.shotsForPerGame || 0,
-        },
-        pentaltyKillPercentage: {
-          pref: homeTeamSummary?.penaltyKillPct || 0,
-          opp: awayTeamSummary?.penaltyKillPct || 0,
-        },
-        powerPlayPercentage: {
-          pref: homeTeamSummary?.powerPlayPct || 0,
-          opp: awayTeamSummary?.powerPlayPct || 0,
-        },
-        goalsAgainstPerGame: {
-          pref: homeTeamSummary?.goalsAgainstPerGame || 0,
-          opp: awayTeamSummary?.goalsAgainstPerGame || 0,
-        },
-        goalsForPerGame: {
-          pref: homeTeamSummary?.goalsForPerGame || 0,
-          opp: awayTeamSummary?.goalsForPerGame || 0,
-        },
-        faceoffPercentage: {
-          pref: homeTeamSummary?.faceoffWinPct || 0,
-          opp: awayTeamSummary?.faceoffWinPct || 0,
-        },
-      })
-      send(
-       `🔥 Get ready for an epic showdown! Tonight, it's the ${prefTeam?.name.default} going head-to-head with the ${oppTeam?.name.default} at ${currentGame.venue.default}. You won’t want to miss a second of the action! `,
-        currentGame,
-        [`./temp/game.png`],
-      );
-      const dfLines = await dailyfaceoffLines(prefTeam?.name.default || "");
-      if (dfLines.confirmed) {
+      console.log(`[${new Date().toISOString()}] Fetching referee details for ${config.app.script.teamName}`);
+      const refereeDetails = await fetchGameDetails(config.app.script.teamName);
+
+
+      //TODO:change to use function
+      const msUntilStart = new Date(currentGame!.startTimeUTC).getTime() - Date.now();
+      if (refereeDetails?.confirmed === false && msUntilStart > 30 * 60 * 1000) {
+        console.log(`[${new Date().toISOString()}] Referee details not confirmed, sleeping for ${config.app.script.pregame_sleep_time}ms`);
+        await sleep(config.app.script.pregame_sleep_time);
+      } else {
+        console.log(`[${new Date().toISOString()}] Referee details confirmed, proceeding with pregame activities`);
+
+        const formattedTime12Hr = convertUTCToLocalTime(
+          currentGame.startTimeUTC,
+          config.app.script.timeZone,
+        );
+
+        console.log(`[${new Date().toISOString()}] Generating pregame image`);
+        await preGameImage({
+          homeTeam: currentGame.homeTeam.name.default,
+          awayTeam: currentGame.awayTeam.name.default,
+          homeHashtag: teamHashtag(currentGame.homeTeam.name.default) || "",
+          awayHashtag: teamHashtag(currentGame.awayTeam.name.default) || "",
+          venue: currentGame.venue.default,
+          date: moment(currentGame.startTimeUTC).format("MMMM D"),
+          time: formattedTime12Hr,
+          homeLine1:
+            currentGame.gameType === 3
+              ? currentGame.homeTeam.record || ""
+              : `${homeTeamSummary?.wins}-${homeTeamSummary?.losses}-${homeTeamSummary?.otLosses}`,
+          homeLine2: "",
+          awayLine1:
+            currentGame.gameType === 3
+              ? currentGame.awayTeam.record || ""
+              : `${awayTeamSummary?.wins}-${awayTeamSummary?.losses}-${awayTeamSummary?.otLosses}`,
+          awayLine2: "",
+        });
+
+        console.log(`[${new Date().toISOString()}] Sending pregame announcement`);
         send(
-          `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)
+          `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
+                  \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
+          currentGame,
+          [`./temp/preGame.png`],
+        );
+
+        console.log(`[${new Date().toISOString()}] Generating game stats image`);
+        await gameImage({
+          shots: {
+            pref: homeTeamSummary?.shotsForPerGame || 0,
+            opp: awayTeamSummary?.shotsForPerGame || 0,
+          },
+          pentaltyKillPercentage: {
+            pref: homeTeamSummary?.penaltyKillPct || 0,
+            opp: awayTeamSummary?.penaltyKillPct || 0,
+          },
+          powerPlayPercentage: {
+            pref: homeTeamSummary?.powerPlayPct || 0,
+            opp: awayTeamSummary?.powerPlayPct || 0,
+          },
+          goalsAgainstPerGame: {
+            pref: homeTeamSummary?.goalsAgainstPerGame || 0,
+            opp: awayTeamSummary?.goalsAgainstPerGame || 0,
+          },
+          goalsForPerGame: {
+            pref: homeTeamSummary?.goalsForPerGame || 0,
+            opp: awayTeamSummary?.goalsForPerGame || 0,
+          },
+          faceoffPercentage: {
+            pref: homeTeamSummary?.faceoffWinPct || 0,
+            opp: awayTeamSummary?.faceoffWinPct || 0,
+          },
+        });
+
+        send(
+          `🔥 Get ready for an epic showdown! Tonight, it's the ${prefTeam?.name.default} going head-to-head with the ${oppTeam?.name.default} at ${currentGame.venue.default}. You won’t want to miss a second of the action! `,
+          currentGame,
+          [`./temp/game.png`],
+        );
+
+        const dfLines = await dailyfaceoffLines(prefTeam?.name.default || "");
+        if (dfLines.confirmed) {
+          console.log(`[${new Date().toISOString()}] Daily Faceoff lines last updated ${dfLines.lastUpdate}`);
+          send(
+            `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)
                     \n\n${groupedList(
                       dfLines.forwards.map((player) => getLastName(player)),
                       3,
@@ -187,14 +234,16 @@ const handlePregameState = async () => {
                       dfLines.goalies.map((player) => getLastName(player)),
                       1,
                     )}`,
-          currentGame,
-        );
-      }
-    
-      const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || "");
-      if (dfLinesOpps.confirmed) {
-        send(
-          `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
+            currentGame,
+          );
+        }
+
+        console.log(`[${new Date().toISOString()}] Fetching Daily Faceoff lines for ${oppTeam?.name.default}`);
+        const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || "");
+        if (dfLinesOpps.confirmed) {
+          console.log(`[${new Date().toISOString()}] Daily Faceoff lines confirmed for ${oppTeam?.name.default}`);
+          send(
+            `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
                     \n\n${groupedList(
                       dfLinesOpps.forwards.map((player) => getLastName(player)),
                       3,
@@ -205,33 +254,47 @@ const handlePregameState = async () => {
                       dfLinesOpps.goalies.map((player) => getLastName(player)),
                       1,
                     )}`,
-          currentGame,
+            currentGame,
+          );
+        } else {
+          console.log(`[${new Date().toISOString()}] Daily Faceoff lines not confirmed for ${oppTeam?.name.default}`);
+        }
+
+        console.log(`[${new Date().toISOString()}] Re-fetching referee details`);
+        const refereeDetails: GameDetails | undefined = await fetchGameDetails(
+          config.app.script.teamName,
         );
-      }
+        if (refereeDetails?.confirmed) {
+          console.log(`[${new Date().toISOString()}] Referee details confirmed, sending officials info`);
+          const referees = refereeDetails.referees
+            .map((referee) => `R: ${referee.name} (P/GM: ${referee.penaltygame})`)
+            .join("\n");
+          const linesmens = refereeDetails.linesmens
+            .map((linesman) => `L: ${linesman.name}`)
+            .join("\n");
 
-      const refereeDetails: GameDetails | undefined = await fetchGameDetails(
-        config.app.script.teamName,
-      );
-      if (refereeDetails?.confirmed) {
-        const referees = refereeDetails.referees
-          .map((referee) => `R: ${referee.name} (P/GM: ${referee.penaltygame})`)
-          .join("\n");
-        const linesmens = refereeDetails.linesmens
-          .map((linesman) => `L: ${linesman.name}`)
-          .join("\n");
-
-        send(
-          `The officials (via @ScoutingTheRefs)
+          send(
+            `The officials (via @ScoutingTheRefs)
                     \n\n${referees}\n${linesmens}
                     `,
-          currentGame,
-        );
-      }
+            currentGame,
+          );
+        } else {
+          console.log(`[${new Date().toISOString()}] Referee details not confirmed in second fetch`);
+        }
 
-      const sleepTime = new Date(currentGame.startTimeUTC);
-      await sleep(sleepTime.getTime() - Date.now());
-      sentEvents = [];
-      currentState = GameStates.INGAME;
+        const sleepTime = new Date(currentGame.startTimeUTC);
+        const sleepDuration = sleepTime.getTime() - Date.now();
+        console.log(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until game starts (${sleepTime.toISOString()})`);
+
+        await sleep(sleepDuration);
+        sentEvents = [];
+        currentState = GameStates.INGAME;
+        console.log(`[${new Date().toISOString()}] Transitioning to INGAME state`);
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error in PREGAME state:`, error);
+      await sleep(300000); // Sleep 5 minutes on error
     }
   }
 };
@@ -243,167 +306,215 @@ const handlePregameState = async () => {
  * Handles intermission state and game end state.
  */
 const handleInGameState = async () => {
-  const nhlScores: NHLScores = await fetchNHLScores(
-    getCurrentDateEasternTime(),
-  );
-  currentGame = nhlScores.games.find(
-    (game) =>
-      game.awayTeam.abbrev === config.app.script.team ||
-      game.homeTeam.abbrev === config.app.script.team,
-  );
-  prefTeam =
-    currentGame?.awayTeam.abbrev === config.app.script.team
-      ? currentGame.awayTeam
-      : currentGame?.homeTeam;
-  oppTeam =
-    currentGame?.awayTeam.abbrev === config.app.script.team
-      ? currentGame.homeTeam
-      : currentGame?.awayTeam;
-  const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
-  if (playByPlay.clock.inIntermission) {
-    if (!hasSentIntermission) {
-      hasSentIntermission = true;
-      const boxscore = await fetchBoxscore(String(currentGame?.id));
-      const gameLanding = await fetchGameLanding(String(currentGame?.id));
-      const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
-      const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
-      const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
-      const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
-      const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
-      const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
-      const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
-      const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
-      const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
-      const lineScores = transformGameLandingToLineScores(gameLanding);
-      
-      await intermissionImage({
-        pref: {
-          team: prefTeam?.name.default || "",
-          score: boxscore.summary.linescore.totals.home,
-          lineScores: lineScores.homeLineScores,
-        },
-        opp: {
-          team: oppTeam?.name.default || "",
-          score: boxscore.summary.linescore.totals.away,
-          lineScores: lineScores.awayLineScores,
-        },
-        shots: {
-          pref: boxscore.homeTeam.sog,
-          opp: boxscore.awayTeam.sog,
-        },
-
-        blockedShots: {
-          pref: Number(blockedShots?.homeValue) || 0,
-          opp: Number(blockedShots?.awayValue) || 0,
-        },
-        penalties: {
-          pref: Number(pims?.homeValue) || 0,
-          opp: Number(pims?.awayValue) || 0,
-        },
-        hits: {
-          pref: Number(hits?.homeValue) || 0,
-          opp: Number(hits?.awayValue) || 0,
-        },
-        faceoffPercentage: {
-          pref: Number(faceoffWinningPctg?.homeValue) || 0,
-          opp:  Number(faceoffWinningPctg?.awayValue) || 0,
-        },
-        giveaways: {
-          pref: Number(giveaways?.homeValue) || 0,
-          opp: Number(giveaways?.awayValue) || 0,
-        },
-        takeaways: {
-          pref: Number(takeaways?.homeValue) || 0,
-          opp: Number(takeaways?.awayValue) || 0,
-        },
-        powerPlay: {
-          pref: String(powerPlay?.homeValue) || "",
-          opp: String(powerPlay?.awayValue) || "",
-        },
-        powerPlayPctg:{
-          pref: Number(powerPlayPctg?.homeValue) || 0,
-          opp: Number(powerPlayPctg?.awayValue) || 0,
-        }
-      });
-
-      send(
-        `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
-                    \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
-                `,
-        currentGame!,
-        [`./temp/intermission.png`],
-      );
+  console.log(`[${new Date().toISOString()}] In INGAME state, fetching current game data`);
+  
+  try {
+    const nhlScores: NHLScores = await fetchNHLScores(
+      getCurrentDateEasternTime(),
+    );
+    currentGame = nhlScores.games.find(
+      (game) =>
+        game.awayTeam.abbrev === config.app.script.team ||
+        game.homeTeam.abbrev === config.app.script.team,
+    );
+    
+    if (!currentGame) {
+      console.error(`[${new Date().toISOString()}] Current game not found in NHL scores`);
+     
+      return;
     }
-    await sleep(config.app.script.intermission_sleep_time);
-  } else {
-    hasSentIntermission = false;
-    if (playByPlay.plays.length > 0) {
-      const plays = playByPlay.plays.filter(
-        (play) =>
-          play.sortOrder > lastEventID &&
-          (play.typeDescKey === "goal" ||
-            play.typeDescKey === "penalty" ||
-            play.typeDescKey === "period-start" ||
-            play.typeDescKey === "period-end" ||
-            play.typeDescKey === "game-end") &&
-          !sentEvents.includes(play.eventId),
-      );
-      lastEventID = plays[plays.length - 1]?.sortOrder || lastEventID;
-      plays.forEach((play) => {
-        sentEvents.push(play.eventId);
-        //TODO add type of goal
-        if (play.typeDescKey === "goal") {
-          const scoringTeam =
-            play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-              ? currentGame?.awayTeam
-              : currentGame?.homeTeam;
-          const scoringTeamsScore =
-            play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-              ? play.details?.awayScore
-              : play.details?.homeScore;
-          const scoringPlayer = playByPlay?.rosterSpots.find(
-            (player) => player.playerId === play.details?.scoringPlayerId,
-          );
+    
+    prefTeam =
+      currentGame?.awayTeam.abbrev === config.app.script.team
+        ? currentGame.awayTeam
+        : currentGame?.homeTeam;
+    oppTeam =
+      currentGame?.awayTeam.abbrev === config.app.script.team
+        ? currentGame.homeTeam
+        : currentGame?.awayTeam;
+        
+    console.log(`[${new Date().toISOString()}] Fetching play-by-play data for game ${currentGame.id}`);
+    const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
+    
+    if (playByPlay.clock.inIntermission) {
+      console.log(`[${new Date().toISOString()}] Game is in intermission`);
+      if (!hasSentIntermission) {
+        console.log(`[${new Date().toISOString()}] Sending intermission report`);
+        hasSentIntermission = true;
+        
+        const boxscore = await fetchBoxscore(String(currentGame?.id));
+        const gameLanding = await fetchGameLanding(String(currentGame?.id));
+        const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
+        
+       
+        
+        const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
+        const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
+        const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
+        const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
+        const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
+        const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
+        const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
+        const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
+        const lineScores = transformGameLandingToLineScores(gameLanding);
+        console.log(`[${new Date().toISOString()}] Generating intermission image`);
 
-          let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                    \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                            \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+        //TypeError: Cannot read properties of undefined (reading 'totals')
+        await intermissionImage({
+          pref: {
+            team: prefTeam?.name.default || "",
+            score: boxscore.summary.linescore.totals.home,
+            lineScores: lineScores.homeLineScores,
+          },
+          opp: {
+            team: oppTeam?.name.default || "",
+            score: boxscore.summary.linescore.totals.away,
+            lineScores: lineScores.awayLineScores,
+          },
+          shots: {
+            pref: boxscore.homeTeam.sog,
+            opp: boxscore.awayTeam.sog,
+          },
 
-          if (scoringTeam?.id !== prefTeam?.id) {
-            goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
-                        \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                                \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+          blockedShots: {
+            pref: Number(blockedShots?.homeValue) || 0,
+            opp: Number(blockedShots?.awayValue) || 0,
+          },
+          penalties: {
+            pref: Number(pims?.homeValue) || 0,
+            opp: Number(pims?.awayValue) || 0,
+          },
+          hits: {
+            pref: Number(hits?.homeValue) || 0,
+            opp: Number(hits?.awayValue) || 0,
+          },
+          faceoffPercentage: {
+            pref: Number(faceoffWinningPctg?.homeValue) || 0,
+            opp:  Number(faceoffWinningPctg?.awayValue) || 0,
+          },
+          giveaways: {
+            pref: Number(giveaways?.homeValue) || 0,
+            opp: Number(giveaways?.awayValue) || 0,
+          },
+          takeaways: {
+            pref: Number(takeaways?.homeValue) || 0,
+            opp: Number(takeaways?.awayValue) || 0,
+          },
+          powerPlay: {
+            pref: String(powerPlay?.homeValue) || "",
+            opp: String(powerPlay?.awayValue) || "",
+          },
+          powerPlayPctg:{
+            pref: Number(powerPlayPctg?.homeValue) || 0,
+            opp: Number(powerPlayPctg?.awayValue) || 0,
+          }
+        });
+
+        console.log(`[${new Date().toISOString()}] Sending intermission message`);
+        send(
+          `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
+                      \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+                  `,
+          currentGame!,
+          [`./temp/intermission.png`],
+        );
+      }
+      console.log(`[${new Date().toISOString()}] Sleeping for intermission duration: ${config.app.script.intermission_sleep_time}ms`);
+      await sleep(config.app.script.intermission_sleep_time);
+    } else {
+      hasSentIntermission = false;
+      if (playByPlay.plays.length > 0) {
+        const plays = playByPlay.plays.filter(
+          (play) =>
+            play.sortOrder > lastEventID &&
+            (play.typeDescKey === "goal" ||
+              play.typeDescKey === "penalty" ||
+              play.typeDescKey === "period-start" ||
+              play.typeDescKey === "period-end" ||
+              play.typeDescKey === "game-end") &&
+            !sentEvents.includes(play.eventId),
+        );
+        
+        if (plays.length > 0) {
+          console.log(`[${new Date().toISOString()}] Found ${plays.length} new events to process`);
+          
+        }
+        
+        lastEventID = plays[plays.length - 1]?.sortOrder || lastEventID;
+        plays.forEach((play) => {
+          sentEvents.push(play.eventId);
+          //TODO add type of goal
+          if (play.typeDescKey === "goal") {
+            console.log(`[${new Date().toISOString()}] Processing GOAL event: ${play.eventId}`);
+            const scoringTeam =
+              play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                ? currentGame?.awayTeam
+                : currentGame?.homeTeam;
+            const scoringTeamsScore =
+              play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                ? play.details?.awayScore
+                : play.details?.homeScore;
+            const scoringPlayer = playByPlay?.rosterSpots.find(
+              (player) => player.playerId === play.details?.scoringPlayerId,
+            );
+
+           
+
+            let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
+                      \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                              \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+
+            if (scoringTeam?.id !== prefTeam?.id) {
+              goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
+                          \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                                  \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+            }
+
+            send(goalMessage, currentGame!);
           }
 
-          send(goalMessage, currentGame!);
-        }
-
-        //TODO add type of penalty
-        else if (play.typeDescKey === "penalty") {
-          // Code for handling penalty
-          const penaltyTeam =
-            play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-              ? currentGame?.awayTeam
-              : currentGame?.homeTeam;
-          const penaltyPlayer = playByPlay?.rosterSpots.find(
-            (player) => player.playerId === play.details?.committedByPlayerId,
-          );
-          const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
-                        \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
-          send(penaltyMessage, currentGame!);
-        } else if (play.typeDescKey === "period-start") {
-          send(
-            `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
-            currentGame!,
-          );
-        }
-      });
+          //TODO add type of penalty
+          else if (play.typeDescKey === "penalty") {
+            console.log(`[${new Date().toISOString()}] Processing PENALTY event: ${play.eventId}`);
+            // Code for handling penalty
+            const penaltyTeam =
+              play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                ? currentGame?.awayTeam
+                : currentGame?.homeTeam;
+            const penaltyPlayer = playByPlay?.rosterSpots.find(
+              (player) => player.playerId === play.details?.committedByPlayerId,
+            );
+            
+          
+            
+            const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
+                          \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+            send(penaltyMessage, currentGame!);
+          } else if (play.typeDescKey === "period-start") {
+            console.log(`[${new Date().toISOString()}] Processing PERIOD-START event: ${play.eventId}`);
+          
+            
+            send(
+              `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
+              currentGame!,
+            );
+          }
+        });
+      }
+      console.log(`[${new Date().toISOString()}] Sleeping for live game duration: ${config.app.script.live_sleep_time}ms`);
+      await sleep(config.app.script.live_sleep_time);
     }
-    await sleep(config.app.script.live_sleep_time);
-  }
-  if (playByPlay.plays.some((play) => play.typeDescKey === "game-end")) {
-    currentState = GameStates.POSTGAME;
-    lastEventID = 0;
+    
+    if (playByPlay.plays.some((play) => play.typeDescKey === "game-end")) {
+      console.log(`[${new Date().toISOString()}] Game has ended, transitioning to POSTGAME state`);
+     
+      currentState = GameStates.POSTGAME;
+      lastEventID = 0;
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in INGAME state:`, error);
+   
+    await sleep(config.app.script.live_sleep_time); // Use live sleep time on error
   }
 };
 
@@ -414,89 +525,106 @@ const handleInGameState = async () => {
  * sends a message with the game result, and updates the current state to POSTGAMETHREESTARS.
  */
 const handlePostGameState = async () => {
-  const boxscore = await fetchBoxscore(String(currentGame!.id));
-
-  const awayScore = boxscore.summary.linescore.totals.away;
-  const homeScore = boxscore.summary.linescore.totals.home;
-  let winningTeam = currentGame?.awayTeam.name.default;
-  let losingTeam = currentGame?.homeTeam.name.default;
-
-  if (homeScore > awayScore) {
-    winningTeam = currentGame?.homeTeam.name.default;
-    losingTeam = currentGame?.awayTeam.name.default;
-  }
+  console.log(`[${new Date().toISOString()}] Entering POSTGAME state`);
   
-  const gameLanding = await fetchGameLanding(String(currentGame?.id));
-  const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
-  const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
-  const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
-  const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
-  const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
-  const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
-  const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
-  const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
-  const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
-  const lineScores = transformGameLandingToLineScores(gameLanding);
   
-  await postGameImage({
-    pref: {
-      team: prefTeam?.name.default || "",
-      score: boxscore.summary.linescore.totals.home,
-      lineScores: lineScores.homeLineScores,
-    },
-    opp: {
-      team: oppTeam?.name.default || "",
-      score: boxscore.summary.linescore.totals.away,
-      lineScores: lineScores.awayLineScores,
-    },
-    shots: {
-      pref: boxscore.homeTeam.sog,
-      opp: boxscore.awayTeam.sog,
-    },
+  try {
+    console.log(`[${new Date().toISOString()}] Fetching post-game data`);
+    const boxscore = await fetchBoxscore(String(currentGame!.id));
 
-    blockedShots: {
-      pref: Number(blockedShots?.homeValue) || 0,
-      opp: Number(blockedShots?.awayValue) || 0,
-    },
-    penalties: {
-      pref: Number(pims?.homeValue) || 0,
-      opp: Number(pims?.awayValue) || 0,
-    },
-    hits: {
-      pref: Number(hits?.homeValue) || 0,
-      opp: Number(hits?.awayValue) || 0,
-    },
-    faceoffPercentage: {
-      pref: Number(faceoffWinningPctg?.homeValue) || 0,
-      opp:  Number(faceoffWinningPctg?.awayValue) || 0,
-    },
-    giveaways: {
-      pref: Number(giveaways?.homeValue) || 0,
-      opp: Number(giveaways?.awayValue) || 0,
-    },
-    takeaways: {
-      pref: Number(takeaways?.homeValue) || 0,
-      opp: Number(takeaways?.awayValue) || 0,
-    },
-    powerPlay: {
-      pref: String(powerPlay?.homeValue) || "",
-      opp: String(powerPlay?.awayValue) || "",
-    },
-    powerPlayPctg:{
-      pref: Number(powerPlayPctg?.homeValue) || 0,
-      opp: Number(powerPlayPctg?.awayValue) || 0,
+    const awayScore = boxscore.summary.linescore.totals.away;
+    const homeScore = boxscore.summary.linescore.totals.home;
+    let winningTeam = currentGame?.awayTeam.name.default;
+    let losingTeam = currentGame?.homeTeam.name.default;
+
+    if (homeScore > awayScore) {
+      winningTeam = currentGame?.homeTeam.name.default;
+      losingTeam = currentGame?.awayTeam.name.default;
     }
-  });
+    
+    console.log(`[${new Date().toISOString()}] Game result: ${winningTeam} defeats ${losingTeam} ${Math.max(homeScore, awayScore)}-${Math.min(homeScore, awayScore)}`);
+    
+    
+    
+    const gameLanding = await fetchGameLanding(String(currentGame?.id));
+    const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
+    const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
+    const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
+    const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
+    const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
+    const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
+    const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
+    const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
+    const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
+    const lineScores = transformGameLandingToLineScores(gameLanding);
+    
+    console.log(`[${new Date().toISOString()}] Generating post-game image`);
+    await postGameImage({
+      pref: {
+        team: prefTeam?.name.default || "",
+        score: boxscore.summary.linescore.totals.home,
+        lineScores: lineScores.homeLineScores,
+      },
+      opp: {
+        team: oppTeam?.name.default || "",
+        score: boxscore.summary.linescore.totals.away,
+        lineScores: lineScores.awayLineScores,
+      },
+      shots: {
+        pref: boxscore.homeTeam.sog,
+        opp: boxscore.awayTeam.sog,
+      },
 
-  send(
-    `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
-            \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
-        `,
-    currentGame!,
-    [`./temp/postGame.png`],
-  );
+      blockedShots: {
+        pref: Number(blockedShots?.homeValue) || 0,
+        opp: Number(blockedShots?.awayValue) || 0,
+      },
+      penalties: {
+        pref: Number(pims?.homeValue) || 0,
+        opp: Number(pims?.awayValue) || 0,
+      },
+      hits: {
+        pref: Number(hits?.homeValue) || 0,
+        opp: Number(hits?.awayValue) || 0,
+      },
+      faceoffPercentage: {
+        pref: Number(faceoffWinningPctg?.homeValue) || 0,
+        opp:  Number(faceoffWinningPctg?.awayValue) || 0,
+      },
+      giveaways: {
+        pref: Number(giveaways?.homeValue) || 0,
+        opp: Number(giveaways?.awayValue) || 0,
+      },
+      takeaways: {
+        pref: Number(takeaways?.homeValue) || 0,
+        opp: Number(takeaways?.awayValue) || 0,
+      },
+      powerPlay: {
+        pref: String(powerPlay?.homeValue) || "",
+        opp: String(powerPlay?.awayValue) || "",
+      },
+      powerPlayPctg:{
+        pref: Number(powerPlayPctg?.homeValue) || 0,
+        opp: Number(powerPlayPctg?.awayValue) || 0,
+      }
+    });
 
-  currentState = GameStates.POSTGAMETHREESTARS;
+    console.log(`[${new Date().toISOString()}] Sending post-game message`);
+    send(
+      `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
+              \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+          `,
+      currentGame!,
+      [`./temp/postGame.png`],
+    );
+
+    currentState = GameStates.POSTGAMETHREESTARS;
+    console.log(`[${new Date().toISOString()}] Transitioning to POSTGAMETHREESTARS state`);
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in POSTGAME state:`, error);
+   
+    currentState = GameStates.POSTGAMETHREESTARS; // Continue to next state even on error
+  }
 };
 
 /**
@@ -506,23 +634,38 @@ const handlePostGameState = async () => {
  * If the three stars are not available, it waits for 60 seconds before proceeding.
  */
 const handlePostGameThreeStarsState = async () => {
-  const gameLanding = await fetchGameLanding(String(currentGame!.id));
-  if (
-    gameLanding?.summary.threeStars !== undefined &&
-    gameLanding?.summary.threeStars.length > 0
-  ) {
-    //TODO add full name and team abbreviation
-    const threeStars = gameLanding.summary.threeStars
-      .map((star) => `${starEmojis(star.star)}: ${star.name}`)
-      .join("\n");
-    send(
-      `Tonight's Three Stars
-            \n\n${threeStars}`,
-      currentGame!,
-    );
-    currentState = GameStates.POSTGAMEVID;
-  } else {
-    await sleep(60000);
+  console.log(`[${new Date().toISOString()}] Entering POSTGAMETHREESTARS state`);
+  
+  
+  try {
+    const gameLanding = await fetchGameLanding(String(currentGame!.id));
+    if (
+      gameLanding?.summary.threeStars !== undefined &&
+      gameLanding?.summary.threeStars.length > 0
+    ) {
+      console.log(`[${new Date().toISOString()}] Three stars available, sending message`);
+      //TODO add full name and team abbreviation
+      const threeStars = gameLanding.summary.threeStars
+        .map((star) => `${starEmojis(star.star)}: ${star.name}`)
+        .join("\n");
+        
+      
+      
+      send(
+        `Tonight's Three Stars
+              \n\n${threeStars}`,
+        currentGame!,
+      );
+      currentState = GameStates.POSTGAMEVID;
+      console.log(`[${new Date().toISOString()}] Transitioning to POSTGAMEVID state`);
+    } else {
+      console.log(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds`);
+      await sleep(60000);
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in POSTGAMETHREESTARS state:`, error);
+    
+    currentState = GameStates.POSTGAMEVID; // Continue to next state even on error
   }
 };
 
@@ -532,19 +675,34 @@ const handlePostGameThreeStarsState = async () => {
  * If no video is available, it waits for 60 seconds before transitioning to the ENDGAME state.
  */
 const handlePostGameVideoState = async () => {
-  const boxscore = await fetchBoxscore(String(currentGame!.id));
-  const video = boxscore?.gameVideo?.threeMinRecap;
-  if (video) {
-    const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format("M-D-YY")}-${video}`;
-    send(
-      `Check out the game recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
-            \n\n${videoUrl}`,
-      currentGame!,
-    );
-  } else {
-    await sleep(60000);
+  console.log(`[${new Date().toISOString()}] Entering POSTGAMEVID state`);
+  
+  
+  try {
+    const boxscore = await fetchBoxscore(String(currentGame!.id));
+    const video = boxscore?.gameVideo?.threeMinRecap;
+    if (video) {
+      console.log(`[${new Date().toISOString()}] Game recap video available: ${video}`);
+      const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format("M-D-YY")}-${video}`;
+      
+     
+      
+      send(
+        `Check out the game recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
+              \n\n${videoUrl}`,
+        currentGame!,
+      );
+    } else {
+      console.log(`[${new Date().toISOString()}] Game recap video not available yet, waiting 60 seconds`);
+      await sleep(60000);
+    }
+    currentState = GameStates.ENDGAME;
+    console.log(`[${new Date().toISOString()}] Transitioning to ENDGAME state`);
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in POSTGAMEVID state:`, error);
+   
+    currentState = GameStates.ENDGAME; // Continue to next state even on error
   }
-  currentState = GameStates.ENDGAME;
 };
 
 /**
@@ -553,8 +711,17 @@ const handlePostGameVideoState = async () => {
  * @returns {Promise<void>} A promise that resolves when the current state is set to "WAITING".
  */
 const handleEndGameState = async () => {
-  await sleep(25200000);
-  currentState = GameStates.WAITING;
+  console.log(`[${new Date().toISOString()}] Entering ENDGAME state, sleeping for 7 hours`);
+  
+  
+  try {
+    await sleep(25200000); // 7 hours
+    currentState = GameStates.WAITING;
+    console.log(`[${new Date().toISOString()}] Transitioning back to WAITING state`);
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in ENDGAME state:`, error);
+    
+  }
 };
 
 /**
@@ -562,24 +729,37 @@ const handleEndGameState = async () => {
  * @returns A Promise that resolves to void.
  */
 const main = async(): Promise<void> => {
+  console.log(`[${new Date().toISOString()}] NHL GameBot started`);
+
+  
   while (true) {
-    if (currentState === GameStates.WAITING) {
-      await handleWaitingState();
-    } else if (
-      currentState === GameStates.PREGAME &&
-      currentGame !== undefined
-    ) {
-      await handlePregameState();
-    } else if (currentState === GameStates.INGAME) {
-      await handleInGameState();
-    } else if (currentState === GameStates.POSTGAME) {
-      await handlePostGameState();
-    } else if (currentState === GameStates.POSTGAMETHREESTARS) {
-      await handlePostGameThreeStarsState();
-    } else if (currentState === GameStates.POSTGAMEVID) {
-      await handlePostGameVideoState();
-    } else if (currentState === GameStates.ENDGAME) {
-      await handleEndGameState();
+    try {
+      console.log(`[${new Date().toISOString()}] Current state: ${currentState}`);
+      
+      if (currentState === GameStates.WAITING) {
+        await handleWaitingState();
+      } else if (
+        currentState === GameStates.PREGAME &&
+        currentGame !== undefined
+      ) {
+        await handlePregameState();
+      } else if (currentState === GameStates.INGAME) {
+        await handleInGameState();
+      } else if (currentState === GameStates.POSTGAME) {
+        await handlePostGameState();
+      } else if (currentState === GameStates.POSTGAMETHREESTARS) {
+        await handlePostGameThreeStarsState();
+      } else if (currentState === GameStates.POSTGAMEVID) {
+        await handlePostGameVideoState();
+      } else if (currentState === GameStates.ENDGAME) {
+        await handleEndGameState();
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Unhandled error in main loop:`, error);
+     
+      
+      // Sleep for 5 minutes before retrying
+      await sleep(300000);
     }
   }
 };
@@ -634,5 +814,10 @@ function getGoalType(situationCode: string): 'ev' | 'pp' | 'sh' {
   }
 }
 
+// Start the bot
+console.log(`[${new Date().toISOString()}] Starting NHL GameBot...`);
+main().catch((error) => {
+  console.error(`[${new Date().toISOString()}] Fatal error in main function:`, error);
 
-main();
+  process.exit(1);
+});

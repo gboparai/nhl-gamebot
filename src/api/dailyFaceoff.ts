@@ -1,5 +1,6 @@
 import axios from "axios";
 import { load, CheerioAPI } from "cheerio";
+import { logObjectToFile } from "../logger";
 
 // Types
 export type  Lines = {
@@ -47,6 +48,7 @@ const TEAM_MAPPINGS: Record<string, string> = {
   kings: "los-angeles-kings",
   coyotes: "arizona-coyotes",
   "blue jackets": "columbus-blue-jackets",
+  kraken: "seattle-kraken",
 } as const;
 
 
@@ -150,6 +152,9 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
     };
 
     // Validate that we actually got some data
+    logObjectToFile(lines, `dailyfaceoff-${teamName.replace(/\s+/g, '-').toLowerCase()}-lines`);
+    logObjectToFile(html, `dailyfaceoff-${teamName.replace(/\s+/g, '-').toLowerCase()}-html`);
+
     if (!lines.forwards.length && !lines.defense.length && !lines.goalies.length) {
       console.warn(`No line data found for team: ${teamName}`);
       return { ...emptyLines, lastUpdate };

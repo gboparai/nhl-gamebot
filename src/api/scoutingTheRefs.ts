@@ -1,5 +1,6 @@
 import axios from "axios";
 import { load, CheerioAPI, Element } from "cheerio";
+import { logObjectToFile } from "../logger";
 
 
 
@@ -164,6 +165,9 @@ export async function fetchGameDetails(
   try {
     const posts = await fetchPostsData();
     const relevantPost = findRelevantPost(posts);
+
+    logObjectToFile(posts, "scoutingtherefs-posts");
+    logObjectToFile(relevantPost, "scoutingtherefs-posts");
 
     if (!relevantPost) {
       console.warn("No relevant game details found for today.");

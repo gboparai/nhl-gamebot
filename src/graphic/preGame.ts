@@ -164,7 +164,7 @@ export default async function preGame(params: PreGameParams): Promise<void> {
   });
 
   addText(ctx, {
-    text: `#${homeHashtag} #${awayHashtag}`,
+    text: `${homeHashtag} ${awayHashtag}`,
     x: canvasCenterX,
     y: 625,
     font: "48px RobotoBold",

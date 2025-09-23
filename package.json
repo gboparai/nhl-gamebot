@@ -2,9 +2,10 @@
   "name": "nhl-gamebot",
   "version": "1.0.0",
   "description": "",
-  "main": "src/ndex.ts",
+  "type": "module",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node --loader ts-node/esm src/index.ts",
+    "start": "tsx src/index.ts",
     "build": "tsc",
     "test": "jest"
   },
@@ -22,11 +23,12 @@
     "eslint-plugin-prettier": "^5.2.1",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.1",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5"
   },
   "dependencies": {
     "axios": "^1.6.5",
-    "canvas": "^2.11.2",
+    "canvas": "^3.2.0",
     "cheerio": "^1.0.0-rc.12",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.45",

@@ -1,6 +1,6 @@
 import { Game } from "../types";
 import config from "../../config.json";
-import TwitterApi, { TUploadableMedia } from "twitter-api-v2";
+import { TwitterApi, TUploadableMedia } from "twitter-api-v2";
 import { logObjectToFile } from "../logger";
 
 const twitter = new TwitterApi({

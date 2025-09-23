@@ -401,6 +401,34 @@ export type GameLanding = {
   };
   clock: Clock;
   gameVideo: GameVideo;
+  teamSeasonStats: {
+    contextLabel: string;
+    contextSeason: number;
+    awayTeam: {
+      ppPctg: number;
+      pkPctg: number;
+      faceoffWinningPctg: number;
+      goalsForPerGamePlayed: number;
+      goalsAgainstPerGamePlayed: number;
+      ppPctgRank: number;
+      pkPctgRank: number;
+      faceoffWinningPctgRank: number;
+      goalsForPerGamePlayedRank: number;
+      goalsAgainstPerGamePlayedRank: number;
+    };
+    homeTeam: {
+      ppPctg: number;
+      pkPctg: number;
+      faceoffWinningPctg: number;
+      goalsForPerGamePlayed: number;
+      goalsAgainstPerGamePlayed: number;
+      ppPctgRank: number;
+      pkPctgRank: number;
+      faceoffWinningPctgRank: number;
+      goalsForPerGamePlayedRank: number;
+      goalsAgainstPerGamePlayedRank: number;
+    };
+  };
 };
 
 //https://api-web.nhle.com/v1/gamecenter/2023020708/boxscore
