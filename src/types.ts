@@ -157,7 +157,7 @@ export type GameCenterRightRail = {
       }[];
     };
   };
-  linescore: {
+  linescore?: {
     byPeriod: {
       periodDescriptor: {
         number: number;
@@ -167,12 +167,20 @@ export type GameCenterRightRail = {
       away: number;
       home: number;
     }[];
+    shootout?: {
+      awayDecidingGoal: number;
+      awayConversions: number;
+      awayAttempts: number;
+      homeDecidingGoal: number;
+      homeConversions: number;
+      homeAttempts: number;
+    };
     totals: {
       away: number;
       home: number;
     };
   };
-  shotsByPeriod: {
+  shotsByPeriod?: {
     periodDescriptor: {
       number: number;
       periodType: string;
@@ -181,12 +189,46 @@ export type GameCenterRightRail = {
     away: number;
     home: number;
   }[];
-  teamGameStats: {
+  teamGameStats?: {
     category: string;
     awayValue: number | string;
     homeValue: number | string;
   }[];
-  gameReports: {
+  teamSeasonStats?: {
+    contextLabel: string;
+    contextSeason: number;
+    awayTeam: {
+      ppPctg: number;
+      pkPctg: number;
+      faceoffWinningPctg: number;
+      goalsForPerGamePlayed: number;
+      goalsAgainstPerGamePlayed: number;
+      ppPctgRank: number;
+      pkPctgRank: number;
+      faceoffWinningPctgRank: number;
+      goalsForPerGamePlayedRank: number;
+      goalsAgainstPerGamePlayedRank: number;
+    };
+    homeTeam: {
+      ppPctg: number;
+      pkPctg: number;
+      faceoffWinningPctg: number;
+      goalsForPerGamePlayed: number;
+      goalsAgainstPerGamePlayed: number;
+      ppPctgRank: number;
+      pkPctgRank: number;
+      faceoffWinningPctgRank: number;
+      goalsForPerGamePlayedRank: number;
+      goalsAgainstPerGamePlayedRank: number;
+    };
+  };
+  gameVideo?: {
+    threeMinRecap?: number;
+    threeMinRecapFr?: number;
+    condensedGame?: number;
+    condensedGameFr?: number;
+  };
+  gameReports?: {
     gameSummary: string;
     eventSummary: string;
     playByPlay: string;
@@ -194,6 +236,7 @@ export type GameCenterRightRail = {
     faceoffComparison: string;
     rosters: string;
     shotSummary: string;
+    shootoutSummary?: string;
     toiAway: string;
     toiHome: string;
   };

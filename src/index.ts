@@ -1,6 +1,5 @@
 import config from "../config.json";
 import {
-  fetchTeamSummaries,
   fetchGameLanding,
   fetchBoxscore,
   fetchPlayByPlay,
@@ -128,15 +127,12 @@ const handlePregameState = async () => {
 
   if (currentGame !== undefined) {
     try {
-      console.log(`[${new Date().toISOString()}] Fetching team summaries`);
-      const teamSummaries = await fetchTeamSummaries();
+      console.log(`[${new Date().toISOString()}] Fetching game center right rail data`);
+      const rightRail = await fetchGameCenterRightRail(String(currentGame!.id));
 
-      const homeTeamSummary = teamSummaries.data.find(
-        (team) => team.teamId === currentGame!.homeTeam.id,
-      );
-      const awayTeamSummary = teamSummaries.data.find(
-        (team) => team.teamId === currentGame!.awayTeam.id,
-      );
+      // Extract team season stats from right rail data
+      const homeTeamStats = rightRail.teamSeasonStats?.homeTeam;
+      const awayTeamStats = rightRail.teamSeasonStats?.awayTeam;
       
 
       console.log(`[${new Date().toISOString()}] Fetching referee details for ${config.app.script.teamName}`);
@@ -168,12 +164,12 @@ const handlePregameState = async () => {
           homeLine1:
             currentGame.gameType === 3
               ? currentGame.homeTeam.record || ""
-              : `${homeTeamSummary?.wins}-${homeTeamSummary?.losses}-${homeTeamSummary?.otLosses}`,
+              : "", // Right rail doesn't include W-L-OT record, would need to fetch from elsewhere
           homeLine2: "",
           awayLine1:
             currentGame.gameType === 3
               ? currentGame.awayTeam.record || ""
-              : `${awayTeamSummary?.wins}-${awayTeamSummary?.losses}-${awayTeamSummary?.otLosses}`,
+              : "", // Right rail doesn't include W-L-OT record, would need to fetch from elsewhere
           awayLine2: "",
         });
 
@@ -188,28 +184,28 @@ const handlePregameState = async () => {
         console.log(`[${new Date().toISOString()}] Generating game stats image`);
         await gameImage({
           shots: {
-            pref: homeTeamSummary?.shotsForPerGame || 0,
-            opp: awayTeamSummary?.shotsForPerGame || 0,
+            pref: homeTeamStats?.goalsForPerGamePlayed || 0, // Using goals for per game as closest equivalent to shots
+            opp: awayTeamStats?.goalsForPerGamePlayed || 0,
           },
           pentaltyKillPercentage: {
-            pref: homeTeamSummary?.penaltyKillPct || 0,
-            opp: awayTeamSummary?.penaltyKillPct || 0,
+            pref: homeTeamStats?.pkPctg || 0,
+            opp: awayTeamStats?.pkPctg || 0,
           },
           powerPlayPercentage: {
-            pref: homeTeamSummary?.powerPlayPct || 0,
-            opp: awayTeamSummary?.powerPlayPct || 0,
+            pref: homeTeamStats?.ppPctg || 0,
+            opp: awayTeamStats?.ppPctg || 0,
           },
           goalsAgainstPerGame: {
-            pref: homeTeamSummary?.goalsAgainstPerGame || 0,
-            opp: awayTeamSummary?.goalsAgainstPerGame || 0,
+            pref: homeTeamStats?.goalsAgainstPerGamePlayed || 0,
+            opp: awayTeamStats?.goalsAgainstPerGamePlayed || 0,
           },
           goalsForPerGame: {
-            pref: homeTeamSummary?.goalsForPerGame || 0,
-            opp: awayTeamSummary?.goalsForPerGame || 0,
+            pref: homeTeamStats?.goalsForPerGamePlayed || 0,
+            opp: awayTeamStats?.goalsForPerGamePlayed || 0,
           },
           faceoffPercentage: {
-            pref: homeTeamSummary?.faceoffWinPct || 0,
-            opp: awayTeamSummary?.faceoffWinPct || 0,
+            pref: homeTeamStats?.faceoffWinningPctg || 0,
+            opp: awayTeamStats?.faceoffWinningPctg || 0,
           },
         });
 
@@ -679,11 +675,12 @@ const handlePostGameVideoState = async () => {
   
   
   try {
+    const rightRail = await fetchGameCenterRightRail(String(currentGame!.id));
     const boxscore = await fetchBoxscore(String(currentGame!.id));
     
     // Note: gameVideo is no longer available in the new boxscore format
     // We could potentially get video information from another endpoint if needed
-    const video = boxscore?.gameVideo?.threeMinRecap; // boxscore?.gameVideo?.threeMinRecap is no longer available
+    const video = rightRail?.gameVideo?.threeMinRecap; 
     
     if (video) {
       console.log(`[${new Date().toISOString()}] Game recap video available: ${video}`);
