@@ -249,7 +249,10 @@ type Venue = {
 
 type TeamInfo = {
   id: number;
-  name: {
+  commonName?: { // Optional for backward compatibility
+    default: string;
+  };
+  name?: { // Optional for backward compatibility
     default: string;
   };
   abbrev: string;
@@ -257,9 +260,15 @@ type TeamInfo = {
     default: string;
     fr?: string;
   };
+  placeNameWithPreposition?: { // New optional field
+    default: string;
+    fr?: string;
+  };
   score: number;
   sog: number;
   logo: string;
+  darkLogo?: string; // New optional field
+  record?: string; // New optional field for team records
 };
 
 type PeriodDescriptor = {

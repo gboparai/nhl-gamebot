@@ -134,6 +134,23 @@ const handlePregameState = async () => {
       const homeTeamStats = rightRail.teamSeasonStats?.homeTeam;
       const awayTeamStats = rightRail.teamSeasonStats?.awayTeam;
       
+      // Fetch game landing data as fallback for team records
+      let homeTeamRecord = currentGame.homeTeam.record;
+      let awayTeamRecord = currentGame.awayTeam.record;
+      
+      if (!homeTeamRecord || !awayTeamRecord) {
+        console.log(`[${new Date().toISOString()}] Team records not available in NHL scores, fetching from game landing`);
+        try {
+          const gameLanding = await fetchGameLanding(String(currentGame!.id));
+          homeTeamRecord = homeTeamRecord || gameLanding.homeTeam.record || "";
+          awayTeamRecord = awayTeamRecord || gameLanding.awayTeam.record || "";
+        } catch (error) {
+          console.warn(`[${new Date().toISOString()}] Could not fetch game landing for team records:`, error);
+          homeTeamRecord = homeTeamRecord || "";
+          awayTeamRecord = awayTeamRecord || "";
+        }
+      }
+      
 
       console.log(`[${new Date().toISOString()}] Fetching referee details for ${config.app.script.teamName}`);
       const refereeDetails = await fetchGameDetails(config.app.script.teamName);
@@ -162,14 +179,10 @@ const handlePregameState = async () => {
           date: moment(currentGame.startTimeUTC).format("MMMM D"),
           time: formattedTime12Hr,
           homeLine1:
-            currentGame.gameType === 3
-              ? currentGame.homeTeam.record || ""
-              : "", // Right rail doesn't include W-L-OT record, would need to fetch from elsewhere
+           homeTeamRecord, // Use record from NHL scores endpoint or game landing fallback
           homeLine2: "",
           awayLine1:
-            currentGame.gameType === 3
-              ? currentGame.awayTeam.record || ""
-              : "", // Right rail doesn't include W-L-OT record, would need to fetch from elsewhere
+            awayTeamRecord, // Use record from NHL scores endpoint or game landing fallback
           awayLine2: "",
         });
 
