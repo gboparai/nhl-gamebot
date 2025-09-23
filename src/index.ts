@@ -179,10 +179,10 @@ const handlePregameState = async () => {
           date: moment(currentGame.startTimeUTC).format("MMMM D"),
           time: formattedTime12Hr,
           homeLine1:
-           homeTeamRecord, // Use record from NHL scores endpoint or game landing fallback
+           homeTeamRecord, 
           homeLine2: "",
           awayLine1:
-            awayTeamRecord, // Use record from NHL scores endpoint or game landing fallback
+            awayTeamRecord, 
           awayLine2: "",
         });
 
