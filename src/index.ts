@@ -363,12 +363,12 @@ const handleInGameState = async () => {
         await intermissionImage({
           pref: {
             team: prefTeam?.name.default || "",
-            score: boxscore.summary.linescore.totals.home,
+            score: boxscore.homeTeam.score,
             lineScores: lineScores.homeLineScores,
           },
           opp: {
             team: oppTeam?.name.default || "",
-            score: boxscore.summary.linescore.totals.away,
+            score: boxscore.awayTeam.score,
             lineScores: lineScores.awayLineScores,
           },
           shots: {
@@ -413,7 +413,7 @@ const handleInGameState = async () => {
         console.log(`[${new Date().toISOString()}] Sending intermission message`);
         send(
           `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
-                      \n\n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+                      \n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}
                   `,
           currentGame!,
           [`./temp/intermission.png`],
@@ -532,8 +532,8 @@ const handlePostGameState = async () => {
     console.log(`[${new Date().toISOString()}] Fetching post-game data`);
     const boxscore = await fetchBoxscore(String(currentGame!.id));
 
-    const awayScore = boxscore.summary.linescore.totals.away;
-    const homeScore = boxscore.summary.linescore.totals.home;
+    const awayScore = boxscore.awayTeam.score;
+    const homeScore = boxscore.homeTeam.score;
     let winningTeam = currentGame?.awayTeam.name.default;
     let losingTeam = currentGame?.homeTeam.name.default;
 
@@ -562,12 +562,12 @@ const handlePostGameState = async () => {
     await postGameImage({
       pref: {
         team: prefTeam?.name.default || "",
-        score: boxscore.summary.linescore.totals.home,
+        score: boxscore.homeTeam.score,
         lineScores: lineScores.homeLineScores,
       },
       opp: {
         team: oppTeam?.name.default || "",
-        score: boxscore.summary.linescore.totals.away,
+        score: boxscore.awayTeam.score,
         lineScores: lineScores.awayLineScores,
       },
       shots: {
@@ -612,7 +612,7 @@ const handlePostGameState = async () => {
     console.log(`[${new Date().toISOString()}] Sending post-game message`);
     send(
       `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
-              \n${currentGame?.homeTeam.name.default}: ${boxscore.summary.linescore.totals.home}\n${currentGame?.awayTeam.name.default}: ${boxscore.summary.linescore.totals.away}
+              \n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}
           `,
       currentGame!,
       [`./temp/postGame.png`],
@@ -680,10 +680,14 @@ const handlePostGameVideoState = async () => {
   
   try {
     const boxscore = await fetchBoxscore(String(currentGame!.id));
-    const video = boxscore?.gameVideo?.threeMinRecap;
+    
+    // Note: gameVideo is no longer available in the new boxscore format
+    // We could potentially get video information from another endpoint if needed
+    const video = boxscore?.gameVideo?.threeMinRecap; // boxscore?.gameVideo?.threeMinRecap is no longer available
+    
     if (video) {
       console.log(`[${new Date().toISOString()}] Game recap video available: ${video}`);
-      const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.name.default}-at-${boxscore.homeTeam.name.default}-${moment().format("M-D-YY")}-${video}`;
+      const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.commonName.default}-at-${boxscore.homeTeam.commonName.default}-${moment().format("M-D-YY")}-${video}`;
       
      
       

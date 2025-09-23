@@ -478,7 +478,7 @@ export type GameLanding = {
   };
 };
 
-//https://api-web.nhle.com/v1/gamecenter/2023020708/boxscore
+//https://api-web.nhle.com/v1/gamecenter/2025010016/boxscore
 export type Player = {
   playerId: number;
   sweaterNumber: number;
@@ -493,9 +493,35 @@ export type Player = {
   pim: number;
   hits: number;
   powerPlayGoals: number;
-  shots: number;
+  sog: number; // Changed from "shots" to "sog"
   faceoffWinningPctg: number;
   toi: string;
+  blockedShots: number; // New field
+  shifts: number; // New field
+  giveaways: number; // New field
+  takeaways: number; // New field
+};
+
+export type Goalie = {
+  playerId: number;
+  sweaterNumber: number;
+  name: {
+    default: string;
+  };
+  position: string;
+  evenStrengthShotsAgainst: string;
+  powerPlayShotsAgainst: string;
+  shorthandedShotsAgainst: string;
+  saveShotsAgainst: string;
+  savePctg: number;
+  evenStrengthGoalsAgainst: number;
+  powerPlayGoalsAgainst: number;
+  shorthandedGoalsAgainst: number;
+  goalsAgainst: number;
+  toi: string;
+  decision?: string; // Optional field for win/loss
+  shotsAgainst: number;
+  saves: number;
 };
 
 export type Boxscore = {
@@ -525,39 +551,46 @@ export type Boxscore = {
   periodDescriptor: {
     number: number;
     periodType: string;
+    maxRegulationPeriods?: number; // New optional field
   };
   regPeriods: number;
   awayTeam: {
     id: number;
-    name: {
+    commonName: { // Changed from "name" to "commonName"
       default: string;
     };
     abbrev: string;
     score: number;
     sog: number;
     logo: string;
+    darkLogo?: string; // New optional field
     placeName: {
       default: string;
+      fr?: string; // Optional French translation
     };
-    forwards: Player[];
-    defense: Player[];
-    goalies: Player[];
+    placeNameWithPreposition?: { // New optional field
+      default: string;
+      fr?: string;
+    };
   };
   homeTeam: {
     id: number;
-    name: {
+    commonName: { // Changed from "name" to "commonName"
       default: string;
     };
     abbrev: string;
     score: number;
     sog: number;
     logo: string;
+    darkLogo?: string; // New optional field
     placeName: {
       default: string;
+      fr?: string; // Optional French translation
     };
-    forwards: Player[];
-    defense: Player[];
-    goalies: Player[];
+    placeNameWithPreposition?: { // New optional field
+      default: string;
+      fr?: string;
+    };
   };
   clock: {
     timeRemaining: string;
@@ -569,139 +602,21 @@ export type Boxscore = {
     awayTeam: {
       forwards: Player[];
       defense: Player[];
-      goalies: Player[];
+      goalies: Goalie[]; // Changed from Player[] to Goalie[]
     };
     homeTeam: {
       forwards: Player[];
       defense: Player[];
-      goalies: Player[];
+      goalies: Goalie[]; // Changed from Player[] to Goalie[]
     };
   };
-  summary: {
-    linescore: {
-      byPeriod: {
-        periodDescriptor: {
-          number: number;
-          periodType: string;
-        };
-        away: number;
-        home: number;
-      }[];
-      totals: {
-        away: number;
-        home: number;
-      };
-    };
-    shotsByPeriod: {
-      periodDescriptor: {
-        number: number;
-        periodType: string;
-      };
-      away: number;
-      home: number;
-    }[];
-    teamGameStats: {
-      category: string;
-      awayValue: unknown;
-      homeValue: unknown;
-    }[];
-    seasonSeries: {
-      id: number;
-      season: number;
-      gameType: number;
-      gameDate: string;
-      startTimeUTC: string;
-      easternUTCOffset: string;
-      venueUTCOffset: string;
-      gameState: string;
-      gameScheduleState: string;
-      awayTeam: {
-        id: number;
-        abbrev: string;
-        logo: string;
-        score: number;
-      };
-      homeTeam: {
-        id: number;
-        abbrev: string;
-        logo: string;
-        score: number;
-      };
-      clock: {
-        timeRemaining: string;
-        secondsRemaining: number;
-        running: boolean;
-        inIntermission: boolean;
-      };
-      gameCenterLink: string;
-      periodDescriptor: {
-        number: number;
-        periodType: string;
-      };
-      gameOutcome: {
-        lastPeriodType: string;
-      };
-      otPeriods?: number;
-    }[];
-    seasonSeriesWins: {
-      awayTeamWins: number;
-      homeTeamWins: number;
-    };
-    gameReports: {
-      gameSummary: string;
-      eventSummary: string;
-      playByPlay: string;
-      faceoffSummary: string;
-      faceoffComparison: string;
-      rosters: string;
-      shotSummary: string;
-      shiftChart: string;
-      toiAway: string;
-      toiHome: string;
-    };
-    gameInfo: {
-      referees: {
-        default: string;
-      }[];
-      linesmen: {
-        default: string;
-      }[];
-      awayTeam: {
-        headCoach: {
-          default: string;
-        };
-        scratches: {
-          id: number;
-          firstName: {
-            default: string;
-          };
-          lastName: {
-            default: string;
-          };
-        }[];
-      };
-      homeTeam: {
-        headCoach: {
-          default: string;
-        };
-        scratches: {
-          id: number;
-          firstName: {
-            default: string;
-          };
-          lastName: {
-            default: string;
-          };
-        }[];
-      };
-    };
-  };
+  summary: {}; // Simplified to empty object as it appears to be empty in the new format
   gameOutcome: {
     lastPeriodType: string;
   };
-  gameVideo: {
+  gameVideo:{
     threeMinRecap: number;
-  };
+  }
 };
 
 //https://api-web.nhle.com/v1/score/2024-01-20
@@ -815,7 +730,7 @@ export type NHLScores = {
   games: Game[];
 };
 
-//https://api-web.nhle.com/v1/gamecenter/2023020708/play-by-play
+//https://api-web.nhle.com/v1/gamecenter/2025010016/boxscore
 type PlayByPlayAssists = {
   playerId: number;
   name: { default: string };
