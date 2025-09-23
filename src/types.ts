@@ -1,3 +1,44 @@
+// Configuration types
+export interface Config {
+  twitter: {
+    appId: string;
+    appKey: string;
+    appSecret: string;
+    accessToken: string;
+    accessSecret: string;
+    bearerToken: string;
+    apiKey: string;
+    apiSecret: string;
+    handle: string;
+    isActive: boolean;
+  };
+  bluesky: {
+    identifier: string;
+    password: string;
+    handle: string;
+    isActive: boolean;
+  };
+  app: {
+    script: {
+      team: string;
+      teamName: string;
+      timeZone: string;
+      preview_sleep_time: number;
+      pregame_sleep_time: number;
+      live_sleep_time: number;
+      intermission_sleep_time: number;
+      final_sleep_time: number;
+    };
+    services: {
+      dailyfaceoff: boolean;
+      hockeyStatCards: boolean;
+      scoutingTheRefs: boolean;
+    };
+    log_file_name: string;
+    debug: boolean;
+  };
+}
+
 // https://api.nhle.com/stats/rest/en/team/summary
 export type TeamSummary = {
   faceoffWinPct: number | null;

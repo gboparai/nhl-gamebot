@@ -27,6 +27,7 @@
     "tsx": "^4.20.5"
   },
   "dependencies": {
+    "@atproto/api": "^0.16.9",
     "axios": "^1.6.5",
     "canvas": "^3.2.0",
     "cheerio": "^1.0.0-rc.12",

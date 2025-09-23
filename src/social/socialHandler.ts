@@ -1,6 +1,9 @@
 import { sendTweet, uploadMedia } from "./twitter";
+import { sendBlueskyPost } from "./bluesky";
 import config from "../../config.json";
-import { Game } from "../types";
+import { Game, Config } from "../types";
+
+const typedConfig = config as Config;
 
 /**
  * Sends a tweet with optional media attachments.
@@ -13,10 +16,16 @@ export async function send(
   game?: Game,
   media?: string[],
 ): Promise<void> {
-  if (config.twitter.isActive) {
+  // Send to Twitter if active
+  if (typedConfig.twitter.isActive) {
     const mediaIds = media
       ? await Promise.all(media.map(uploadMedia))
       : undefined;
     await sendTweet(text, game, mediaIds);
+  }
+
+  // Send to Bluesky if active
+  if (typedConfig.bluesky.isActive) {
+    await sendBlueskyPost(text, game, media);
   }
 }
