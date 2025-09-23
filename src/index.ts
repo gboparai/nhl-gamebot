@@ -470,7 +470,7 @@ const handleInGameState = async () => {
                                   \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
             }
 
-            send(goalMessage, currentGame!);
+            send(goalMessage, currentGame!, undefined, true);
           }
 
           //TODO add type of penalty
@@ -489,14 +489,14 @@ const handleInGameState = async () => {
             
             const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
                           \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
-            send(penaltyMessage, currentGame!);
+            send(penaltyMessage, currentGame!, undefined, true);
           } else if (play.typeDescKey === "period-start") {
             console.log(`[${new Date().toISOString()}] Processing PERIOD-START event: ${play.eventId}`);
           
             
             send(
               `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
-              currentGame!,
+              currentGame!
             );
           }
         });
