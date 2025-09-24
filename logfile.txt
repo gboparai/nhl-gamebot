@@ -899,3 +899,39 @@ Tonight's Three Stars
 Error: Request failed with code 429
 "twitter-error"
 
+2025-09-24T04:29:19.005Z
+Error: Used disallowed intents
+"discord-auth-error"
+
+2025-09-24T04:29:19.208Z
+NHL GameBot TestPost
+"failed-discord-post"
+
+2025-09-24T04:29:19.393Z
+Error: Failed to authenticate with Discord
+"discord-error"
+
+2025-09-24T04:33:34.545Z
+Error [TokenInvalid]: An invalid token was provided.
+"discord-auth-error"
+
+2025-09-24T04:33:34.714Z
+NHL GameBot TestPost
+"failed-discord-post"
+
+2025-09-24T04:33:34.882Z
+Error: Failed to authenticate with Discord
+"discord-error"
+
+2025-09-24T04:36:45.964Z
+Error: Used disallowed intents
+"discord-auth-error"
+
+2025-09-24T04:36:46.146Z
+NHL GameBot TestPost
+"failed-discord-post"
+
+2025-09-24T04:36:46.329Z
+Error: Failed to authenticate with Discord
+"discord-error"
+

@@ -2,7 +2,7 @@ import { Client, GatewayIntentBits, TextChannel, AttachmentBuilder } from "disco
 import { Game, Config } from "../types";
 import config from "../../config.json";
 import { logObjectToFile } from "../logger";
-import { shouldRetry, retryOperation } from "./utils";
+import { retryOperation } from "./utils";
 
 const typedConfig = config as Config;
 
@@ -97,6 +97,7 @@ export async function sendDiscordMessage(
     }
 
     await channel.send(messageOptions);
+   
   };
 
   await retryOperation(operation, retries, 5000, "discord", text);

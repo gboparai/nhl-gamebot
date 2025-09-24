@@ -36,5 +36,7 @@ export async function send(
   // Send to Discord if active (always send regardless of extended flag)
   if (typedConfig.discord.isActive) {
     await sendDiscordMessage(text, game, media);
+
   }
+
 }

@@ -2,7 +2,7 @@ import { BskyAgent, RichText } from "@atproto/api";
 import { Game, Config } from "../types";
 import config from "../../config.json";
 import { logObjectToFile } from "../logger";
-import { shouldRetry, getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
+import { getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
 
 const typedConfig = config as Config;
 

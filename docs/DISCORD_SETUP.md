@@ -54,10 +54,10 @@ In your `config.json` file, update the Discord section:
 ```json
 {
   "discord": {
-    "botToken": "your-bot-token-here", // The bot token from Step 1
-    "channelId": "your-channel-id-here", // The channel ID from Step 2
-    "guildId": "your-guild-id-here", // The server ID from Step 2
-    "isActive": true // Set to true to enable Discord posting
+    "botToken": "your-bot-token-here",
+    "channelId": "your-channel-id-here",
+    "guildId": "your-guild-id-here",
+    "isActive": false
   }
 }
 ```
