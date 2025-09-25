@@ -2,7 +2,7 @@ import { Game } from "../types";
 import config from "../../config.json";
 import { TwitterApi, TUploadableMedia } from "twitter-api-v2";
 import { logObjectToFile } from "../logger";
-import { retryOperation, generateGameHashtags, teamHashtag } from "./utils";
+import {  generateGameHashtags, teamHashtag } from "./utils";
 
 const twitter = new TwitterApi({
   appKey: config.twitter.appKey,

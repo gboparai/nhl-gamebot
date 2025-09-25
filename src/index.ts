@@ -439,6 +439,7 @@ const handleInGameState = async () => {
               play.typeDescKey === "penalty" ||
               play.typeDescKey === "period-start" ||
               play.typeDescKey === "period-end" ||
+              play.typeDescKey === "stoppage" ||
               play.typeDescKey === "game-end") &&
             !sentEvents.includes(play.eventId)
         );
@@ -509,9 +510,20 @@ const handleInGameState = async () => {
                   (player) => player.playerId === play.details?.committedByPlayerId,
                 );
                 
+                // Get the player who drew the penalty
+                const drawnByPlayer = play.details?.drawnByPlayerId 
+                  ? playByPlay?.rosterSpots.find(
+                      (player) => player.playerId === play.details?.drawnByPlayerId,
+                    )
+                  : null;
+                
                 const penaltyType = (play.details?.descKey || "Unknown").replace(/-/g, ' ');
+                const drawnByText = drawnByPlayer 
+                  ? ` (drawn by ${drawnByPlayer.firstName.default} ${drawnByPlayer.lastName.default})`
+                  : '';
+                  
                 const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
-                              \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                              \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
               else if (play.typeDescKey === "period-start") {
@@ -519,6 +531,13 @@ const handleInGameState = async () => {
                   `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
                   currentGame!
                 );
+              }
+              else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout") {
+                const stoppageMessage = `Game Stoppage: TV Timeout at ${play.timeRemaining} in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                
+                ${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}
+                ${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
+                await send(stoppageMessage, currentGame!, undefined, true);
               }
               
               // Only mark as sent AFTER successful processing
@@ -661,11 +680,11 @@ const handlePostGameState = async () => {
  * Handles the post-game three stars state.
  * Fetches the game landing page and sends a message with the three stars if available.
  * Updates the current state to GameStates.POSTGAMEVID.
- * If the three stars are not available, it waits for 60 seconds before proceeding.
+ * If the three stars are not available, it waits for 60 seconds before checking again, up to 20 times.
+ * After 20 attempts, it transitions to the POSTGAMEVID state.
  */
 const handlePostGameThreeStarsState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering POSTGAMETHREESTARS state`);
-  
+  console.log(`[${new Date().toISOString()}] Entering POSTGAMETHREESTARS state (attempt ${threeStarsRetryCount + 1}/20)`);
   
   try {
     const gameLanding = await fetchGameLanding(String(currentGame!.id));
@@ -679,63 +698,99 @@ const handlePostGameThreeStarsState = async () => {
         .map((star) => `${starEmojis(star.star)}: ${star.name}`)
         .join("\n");
         
-      
-      
       send(
         `Tonight's Three Stars
               \n\n${threeStars}`,
         currentGame!,
       );
+      
+      // Reset retry counter and transition to video state
+      threeStarsRetryCount = 0;
       currentState = GameStates.POSTGAMEVID;
-      console.log(`[${new Date().toISOString()}] Transitioning to POSTGAMEVID state`);
+      console.log(`[${new Date().toISOString()}] Three stars found, transitioning to POSTGAMEVID state`);
     } else {
-      console.log(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds`);
-      await sleep(60000);
+      threeStarsRetryCount++;
+      if (threeStarsRetryCount >= 20) {
+        console.log(`[${new Date().toISOString()}] Three stars not available after 20 attempts, transitioning to POSTGAMEVID state`);
+        threeStarsRetryCount = 0; // Reset for next game
+        currentState = GameStates.POSTGAMEVID;
+      } else {
+        console.log(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds (attempt ${threeStarsRetryCount}/20)`);
+        await sleep(60000);
+      }
     }
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error in POSTGAMETHREESTARS state:`, error);
-    
+    threeStarsRetryCount = 0; // Reset on error
     currentState = GameStates.POSTGAMEVID; // Continue to next state even on error
   }
 };
 
+// Add retry counters for post-game states
+let videoRetryCount = 0;
+let threeStarsRetryCount = 0;
+
 /**
  * Handles the post-game video state.
  * Fetches the boxscore for the current game and sends the game recap video URL if available.
- * If no video is available, it waits for 60 seconds before transitioning to the ENDGAME state.
+ * If no video is available, it waits for 60 seconds before checking again, up to 60 times.
+ * After 60 attempts, it transitions to the ENDGAME state.
  */
 const handlePostGameVideoState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering POSTGAMEVID state`);
-  
+  console.log(`[${new Date().toISOString()}] Entering POSTGAMEVID state (attempt ${videoRetryCount + 1}/60)`);
   
   try {
     const rightRail = await fetchGameCenterRightRail(String(currentGame!.id));
     const boxscore = await fetchBoxscore(String(currentGame!.id));
     
-    // Note: gameVideo is no longer available in the new boxscore format
-    // We could potentially get video information from another endpoint if needed
-    const video = rightRail?.gameVideo?.threeMinRecap; 
+    // Check for both condensed game and recap video
+    const condensedVideo = rightRail?.gameVideo?.condensedGame;
+    const recapVideo = rightRail?.gameVideo?.threeMinRecap;
     
-    if (video) {
-      console.log(`[${new Date().toISOString()}] Game recap video available: ${video}`);
-      const videoUrl = `https://www.nhl.com/video/recap-${boxscore.awayTeam.commonName.default}-at-${boxscore.homeTeam.commonName.default}-${moment().format("M-D-YY")}-${video}`;
+    if (condensedVideo || recapVideo) {
+      console.log(`[${new Date().toISOString()}] Game video(s) available - Condensed: ${condensedVideo || 'None'}, Recap: ${recapVideo || 'None'}`);
       
-     
+      const awayTeamAbbrev = boxscore.awayTeam.abbrev.toLowerCase();
+      const homeTeamAbbrev = boxscore.homeTeam.abbrev.toLowerCase();
       
-      send(
-        `Check out the game recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
-              \n\n${videoUrl}`,
-        currentGame!,
-      );
+      // Send condensed game if available
+      if (condensedVideo) {
+        const condensedUrl = `https://www.nhl.com/video/topic/condensed-games/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
+        send(
+          `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
+                \n\n${condensedUrl}`,
+          currentGame!,
+        );
+      }
+      
+      // Send recap video if available (and different from condensed)
+      if (recapVideo) {
+        const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
+        send(
+          `Check out the recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
+                \n\n${recapUrl}`,
+          currentGame!,
+        );
+      }
+      
+      // Reset retry counter and transition to endgame
+      videoRetryCount = 0;
+      currentState = GameStates.ENDGAME;
+      console.log(`[${new Date().toISOString()}] Video(s) found and sent, transitioning to ENDGAME state`);
     } else {
-      console.log(`[${new Date().toISOString()}] Game recap video not available yet, waiting 60 seconds`);
-      await sleep(60000);
+      videoRetryCount++;
+      if (videoRetryCount >= 60) {
+        console.log(`[${new Date().toISOString()}] Game video not available after 60 attempts, transitioning to ENDGAME state`);
+        videoRetryCount = 0; // Reset for next game
+        currentState = GameStates.ENDGAME;
+      } else {
+        console.log(`[${new Date().toISOString()}] Game video not available yet, waiting 60 seconds (attempt ${videoRetryCount}/60)`);
+        await sleep(60000);
+      }
     }
-    currentState = GameStates.ENDGAME;
-    console.log(`[${new Date().toISOString()}] Transitioning to ENDGAME state`);
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error in POSTGAMEVID state:`, error);
-   
+    videoRetryCount = 0; // Reset on error
     currentState = GameStates.ENDGAME; // Continue to next state even on error
   }
 };
