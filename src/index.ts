@@ -55,7 +55,6 @@ let currentGame: Game | undefined;
 let prefTeam: Team | undefined;
 let oppTeam: Team | undefined;
 let hasSentIntermission: boolean = false;
-let lastEventID: number = 0;
 let sentEvents: number[] = [];
 
 /**
@@ -433,82 +432,105 @@ const handleInGameState = async () => {
     } else {
       hasSentIntermission = false;
       if (playByPlay.plays.length > 0) {
-        const plays = playByPlay.plays.filter(
+        // Filter for relevant event types that haven't been sent yet
+        const relevantPlays = playByPlay.plays.filter(
           (play) =>
-            play.sortOrder > lastEventID &&
             (play.typeDescKey === "goal" ||
               play.typeDescKey === "penalty" ||
               play.typeDescKey === "period-start" ||
               play.typeDescKey === "period-end" ||
               play.typeDescKey === "game-end") &&
-            !sentEvents.includes(play.eventId),
+            !sentEvents.includes(play.eventId)
         );
         
-        if (plays.length > 0) {
-          console.log(`[${new Date().toISOString()}] Found ${plays.length} new events to process`);
-          
-        }
+        // Sort by sortOrder to ensure chronological processing
+        const sortedPlays = relevantPlays.sort((a, b) => a.sortOrder - b.sortOrder);
         
-        lastEventID = plays[plays.length - 1]?.sortOrder || lastEventID;
-        plays.forEach((play) => {
-          sentEvents.push(play.eventId);
-          //TODO add type of goal
-          if (play.typeDescKey === "goal") {
-            console.log(`[${new Date().toISOString()}] Processing GOAL event: ${play.eventId}`);
-            const scoringTeam =
-              play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-                ? currentGame?.awayTeam
-                : currentGame?.homeTeam;
-            const scoringTeamsScore =
-              play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-                ? play.details?.awayScore
-                : play.details?.homeScore;
-            const scoringPlayer = playByPlay?.rosterSpots.find(
-              (player) => player.playerId === play.details?.scoringPlayerId,
-            );
+        if (sortedPlays.length > 0) {
+          console.log(`[${new Date().toISOString()}] Found ${sortedPlays.length} new events to process`);
+          
+          // Process each event in chronological order
+          for (const play of sortedPlays) {
+            console.log(`[${new Date().toISOString()}] Processing ${play.typeDescKey.toUpperCase()} event: ${play.eventId} (sortOrder: ${play.sortOrder})`);
+            
+            try {
+              if (play.typeDescKey === "goal") {
+                const scoringTeam =
+                  play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                    ? currentGame?.awayTeam
+                    : currentGame?.homeTeam;
+                const scoringTeamsScore =
+                  play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                    ? play.details?.awayScore
+                    : play.details?.homeScore;
+                const scoringPlayer = playByPlay?.rosterSpots.find(
+                  (player) => player.playerId === play.details?.scoringPlayerId,
+                );
 
-           
+                // Get assist information
+                const assists: string[] = [];
+                if (play.details?.assist1PlayerId) {
+                  const assist1Player = playByPlay?.rosterSpots.find(
+                    (player) => player.playerId === play.details?.assist1PlayerId,
+                  );
+                  if (assist1Player) {
+                    assists.push(`${assist1Player.firstName.default} ${assist1Player.lastName.default} (${play.details?.assist1PlayerTotal})`);
+                  }
+                }
+                if (play.details?.assist2PlayerId) {
+                  const assist2Player = playByPlay?.rosterSpots.find(
+                    (player) => player.playerId === play.details?.assist2PlayerId,
+                  );
+                  if (assist2Player) {
+                    assists.push(`${assist2Player.firstName.default} ${assist2Player.lastName.default} (${play.details?.assist2PlayerTotal})`);
+                  }
+                }
 
-            let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                      \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
-                              \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                const assistsText = assists.length > 0 ? `\nAssists: ${assists.join(', ')}` : '';
 
-            if (scoringTeam?.id !== prefTeam?.id) {
-              goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
-                          \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
+                          \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.${assistsText}
                                   \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+
+                if (scoringTeam?.id !== prefTeam?.id) {
+                  goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
+                              \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.${assistsText}
+                                      \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                }
+
+                await send(goalMessage, currentGame!, undefined, true);
+              }
+              else if (play.typeDescKey === "penalty") {
+                const penaltyTeam =
+                  play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                    ? currentGame?.awayTeam
+                    : currentGame?.homeTeam;
+                const penaltyPlayer = playByPlay?.rosterSpots.find(
+                  (player) => player.playerId === play.details?.committedByPlayerId,
+                );
+                
+                const penaltyType = (play.details?.descKey || "Unknown").replace(/-/g, ' ');
+                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
+                              \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                await send(penaltyMessage, currentGame!, undefined, true);
+              } 
+              else if (play.typeDescKey === "period-start") {
+                await send(
+                  `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
+                  currentGame!
+                );
+              }
+              
+              // Only mark as sent AFTER successful processing
+              sentEvents.push(play.eventId);
+              console.log(`[${new Date().toISOString()}] Successfully processed and marked ${play.typeDescKey} event ${play.eventId} as sent`);
+              
+            } catch (error) {
+              console.error(`[${new Date().toISOString()}] Error processing ${play.typeDescKey} event ${play.eventId}:`, error);
+              // Don't add to sentEvents if there was an error - let it retry next time
             }
-
-            send(goalMessage, currentGame!, undefined, true);
           }
-
-          //TODO add type of penalty
-          else if (play.typeDescKey === "penalty") {
-            console.log(`[${new Date().toISOString()}] Processing PENALTY event: ${play.eventId}`);
-            // Code for handling penalty
-            const penaltyTeam =
-              play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-                ? currentGame?.awayTeam
-                : currentGame?.homeTeam;
-            const penaltyPlayer = playByPlay?.rosterSpots.find(
-              (player) => player.playerId === play.details?.committedByPlayerId,
-            );
-            
-          
-            
-            const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
-                          \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
-            send(penaltyMessage, currentGame!, undefined, true);
-          } else if (play.typeDescKey === "period-start") {
-            console.log(`[${new Date().toISOString()}] Processing PERIOD-START event: ${play.eventId}`);
-          
-            
-            send(
-              `It's time for the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}. let's go ${prefTeam?.name.default}!`,
-              currentGame!
-            );
-          }
-        });
+        }
       }
       console.log(`[${new Date().toISOString()}] Sleeping for live game duration: ${config.app.script.live_sleep_time}ms`);
       await sleep(config.app.script.live_sleep_time);
@@ -518,7 +540,6 @@ const handleInGameState = async () => {
       console.log(`[${new Date().toISOString()}] Game has ended, transitioning to POSTGAME state`);
      
       currentState = GameStates.POSTGAME;
-      lastEventID = 0;
     }
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error in INGAME state:`, error);
