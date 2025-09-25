@@ -83,21 +83,21 @@ export default async function createGameImage(params: GameImageParams): Promise<
     height: 50,
 
     bars: [
-      {
-        overallLabel: "Shots",
-        segments: [
-          {
-            value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
-            label: String(params.shots.pref.toFixed(2)),
-            color: segment1Color,
-          },
-          {
-            value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
-            label: String(params.shots.opp.toFixed(2)),
-            color: segment2Color,
-          },
-        ],
-      },
+      // {
+      //   overallLabel: "Shots",
+      //   segments: [
+      //     {
+      //       value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
+      //       label: String(params.shots.pref.toFixed(2)),
+      //       color: segment1Color,
+      //     },
+      //     {
+      //       value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
+      //       label: String(params.shots.opp.toFixed(2)),
+      //       color: segment2Color,
+      //     },
+      //   ],
+      // },
       {
         overallLabel: "Power Play Percentage",
         segments: [
@@ -174,7 +174,7 @@ export default async function createGameImage(params: GameImageParams): Promise<
         ],
       },
     ],
-    overallLabelWidth: 200,
+    overallLabelWidth: 250,
     labelColor: "#ffffff",
     barSpacing: 20,
   };

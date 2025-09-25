@@ -24,7 +24,7 @@ export async function sendTweet(
 ): Promise<void> {
   const operation = async () => {
     if (media && media.length > 0) {
-      await twitter.v2.tweet(tweet, {
+      await twitter.v2.tweet(game? tweet+ getHashtags(game): tweet, {
         media: {
           media_ids: media,
         },

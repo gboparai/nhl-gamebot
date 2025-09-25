@@ -196,8 +196,8 @@ const handlePregameState = async () => {
         console.log(`[${new Date().toISOString()}] Generating game stats image`);
         await gameImage({
           shots: {
-            pref: homeTeamStats?.goalsForPerGamePlayed || 0, // Using goals for per game as closest equivalent to shots
-            opp: awayTeamStats?.goalsForPerGamePlayed || 0,
+            pref: 0, // Using goals for per game as closest equivalent to shots
+            opp:  0,
           },
           pentaltyKillPercentage: {
             pref: homeTeamStats?.pkPctg || 0,

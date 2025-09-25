@@ -64,8 +64,7 @@ export async function sendBlueskyPost(
 
     let postText = text;
     
-    // Add hashtags if game is provided and no media (to avoid duplicate hashtags)
-    if (game && (!media || media.length === 0)) {
+    if (game) {
       postText += getBlueskyHashtags(game);
     }
 
