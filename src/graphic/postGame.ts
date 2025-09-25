@@ -1,4 +1,5 @@
 import { createCanvas } from "canvas";
+import path from "path";
 import {
   addText,
   addImageAsBackground,
@@ -77,7 +78,7 @@ export default async function postGame(
 
   await loadCustomFont(
     {
-      fontPath: "./assets/fonts/Roboto-Bold.ttf",
+      fontPath: path.join(process.cwd(), "assets/fonts/Roboto-Bold.ttf"),
       family: "RobotoBold",
     },
     canvas,
@@ -85,7 +86,7 @@ export default async function postGame(
 
   await loadCustomFont(
     {
-      fontPath: "./assets/fonts/Roboto-Regular.ttf",
+      fontPath: path.join(process.cwd(), "assets/fonts/Roboto-Regular.ttf"),
       family: "RobotoRegular",
     },
     canvas,

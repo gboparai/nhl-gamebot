@@ -782,7 +782,7 @@ export type NHLScores = {
   games: Game[];
 };
 
-//https://api-web.nhle.com/v1/gamecenter/2025010016/boxscore
+//https://api-web.nhle.com/v1/gamecenter/2025010029/boxscore
 type PlayByPlayAssists = {
   playerId: number;
   name: { default: string };

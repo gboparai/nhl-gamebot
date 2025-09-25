@@ -12,20 +12,32 @@ let agent: BskyAgent | null = null;
  * Initialize and authenticate the Bluesky agent
  */
 async function initializeAgent(): Promise<void> {
-  if (!agent) {
-    agent = new BskyAgent({
-      service: "https://bsky.social",
-    });
-
+  // Check if we already have an authenticated agent
+  if (agent && agent.session?.accessJwt) {
     try {
-      await agent.login({
-        identifier: typedConfig.bluesky.identifier,
-        password: typedConfig.bluesky.password,
-      });
+      // Test if the session is still valid
+      await agent.getProfile({ actor: agent.session.did });
+      return; // Agent is still valid, no need to re-authenticate
     } catch (error) {
-      logObjectToFile("bluesky-auth-error", error as string);
-      throw new Error("Failed to authenticate with Bluesky");
+      console.log("Bluesky session expired, re-authenticating...");
     }
+  }
+
+  // Create a new agent
+  agent = new BskyAgent({
+    service: "https://bsky.social",
+  });
+
+  try {
+    await agent.login({
+      identifier: typedConfig.bluesky.identifier,
+      password: typedConfig.bluesky.password,
+    });
+    console.log("Bluesky agent authenticated successfully");
+  } catch (error) {
+    console.error("Bluesky authentication error:", error);
+    logObjectToFile("bluesky-auth-error", error as string);
+    throw new Error("Failed to authenticate with Bluesky");
   }
 }
 
@@ -101,6 +113,7 @@ export async function sendBlueskyPost(
  */
 export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
   try {
+    // Ensure we have an authenticated agent
     await initializeAgent();
     
     if (!agent) {
@@ -116,12 +129,28 @@ export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
     // Determine MIME type based on file extension
     const mimeType = getMimeType(mediaPath);
     
-    const uploadResponse = await agent.uploadBlob(uint8Array, {
-      encoding: mimeType,
-    });
+    let uploadResponse;
+    try {
+      uploadResponse = await agent.uploadBlob(uint8Array, {
+        encoding: mimeType,
+      });
+    } catch (uploadError: any) {
+      // If upload fails due to auth, try re-authenticating once
+      if (uploadError?.message?.includes('Authentication') || uploadError?.status === 401) {
+        console.log("Authentication failed during upload, re-authenticating...");
+        agent = null; // Force re-authentication
+        await initializeAgent();
+        
+        uploadResponse = await agent!.uploadBlob(uint8Array, {
+          encoding: mimeType,
+        });
+      } else {
+        throw uploadError;
+      }
+    }
 
     return {
-      alt: "Game graphic", // You can customize this alt text
+      alt: "Game graphic",
       image: uploadResponse.data.blob,
     };
     

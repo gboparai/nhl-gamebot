@@ -96,7 +96,7 @@ export function generateGameHashtags(
   const gameHashtag = `${prefix}${game.awayTeam.abbrev.toUpperCase()}vs${game.homeTeam.abbrev.toUpperCase()}`;
   
   if (format === "bluesky") {
-    return `\n\n${gameHashtag} ${homeHashtag} ${awayHashtag} #NHL #Hockey`;
+    return `\n\n${gameHashtag} ${homeHashtag} ${awayHashtag}`;
   } else {
     return `\n\n${gameHashtag}  ${homeHashtag} ${awayHashtag}`;
   }

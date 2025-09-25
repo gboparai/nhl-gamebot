@@ -30,13 +30,22 @@ export async function send(
 
   // Send to Bluesky if active (always send regardless of extended flag)
   if (typedConfig.bluesky.isActive) {
-    await sendBlueskyPost(text, game, media);
+    try {
+      await sendBlueskyPost(text, game, media);
+    } catch (error) {
+      console.error("Failed to send Bluesky post:", error);
+      // Don't throw error to prevent application crash
+    }
   }
 
   // Send to Discord if active (always send regardless of extended flag)
   if (typedConfig.discord.isActive) {
-    await sendDiscordMessage(text, game, media);
-
+    try {
+      await sendDiscordMessage(text, game, media);
+    } catch (error) {
+      console.error("Failed to send Discord message:", error);
+      // Don't throw error to prevent application crash
+    }
   }
 
 }

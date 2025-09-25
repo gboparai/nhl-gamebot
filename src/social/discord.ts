@@ -13,7 +13,16 @@ let isReady = false;
  * Initialize and authenticate the Discord client
  */
 async function initializeClient(): Promise<void> {
-  if (!client) {
+  if (!client || !isReady) {
+    // If client exists but not ready, destroy it first
+    if (client) {
+      try {
+        client.destroy();
+      } catch (error) {
+        console.warn("Error destroying existing Discord client:", error);
+      }
+    }
+    
     client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
@@ -22,6 +31,9 @@ async function initializeClient(): Promise<void> {
       ],
     });
 
+    isReady = false;
+
+    // Set up event handlers
     client.once('ready', () => {
       console.log(`Discord bot logged in as ${client?.user?.tag}!`);
       isReady = true;
@@ -30,16 +42,29 @@ async function initializeClient(): Promise<void> {
     client.on('error', (error) => {
       console.error('Discord client error:', error);
       logObjectToFile("discord-error", error.message);
+      isReady = false;
+    });
+
+    client.on('disconnect', () => {
+      console.warn('Discord client disconnected');
+      isReady = false;
     });
 
     try {
       await client.login(typedConfig.discord.botToken);
       
-      // Wait for the client to be ready
-      while (!isReady) {
+      // Wait for the client to be ready with timeout
+      const timeout = 10000; // 10 seconds
+      const startTime = Date.now();
+      while (!isReady && (Date.now() - startTime) < timeout) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
+      
+      if (!isReady) {
+        throw new Error("Discord client failed to become ready within timeout");
+      }
     } catch (error) {
+      console.error("Discord authentication error:", error);
       logObjectToFile("discord-auth-error", error as string);
       throw new Error("Failed to authenticate with Discord");
     }
