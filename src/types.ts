@@ -436,7 +436,9 @@ export type GameLanding = {
       playerId: number;
       teamAbbrev: string;
       headshot: string;
-      name: string;
+      name: {
+        default: string;
+      };
       sweaterNo: number;
       position: string;
       goals?: number;

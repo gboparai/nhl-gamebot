@@ -282,9 +282,7 @@ const handlePregameState = async () => {
             .join("\n");
 
           await send(
-            `The officials (via @ScoutingTheRefs)
-                    \n\n${referees}\n${linesmens}
-                    `,
+            `The officials (via @ScoutingTheRefs)\n\n${referees}\n${linesmens}`,
             currentGame,
           );
         } else {
@@ -420,9 +418,7 @@ const handleInGameState = async () => {
 
         console.log(`[${new Date().toISOString()}] Sending intermission message`);
         send(
-          `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}
-                      \n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}
-                  `,
+          `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
           currentGame!,
           [`./temp/intermission.png`],
         );
@@ -522,8 +518,7 @@ const handleInGameState = async () => {
                   ? ` (drawn by ${drawnByPlayer.firstName.default} ${drawnByPlayer.lastName.default})`
                   : '';
                   
-                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}
-                              \n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
               else if (play.typeDescKey === "period-start") {
@@ -661,9 +656,7 @@ const handlePostGameState = async () => {
 
     console.log(`[${new Date().toISOString()}] Sending post-game message`);
     send(
-      `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!
-              \n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}
-          `,
+      `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
       currentGame!,
       [`./temp/postGame.png`],
     );
@@ -696,12 +689,11 @@ const handlePostGameThreeStarsState = async () => {
       console.log(`[${new Date().toISOString()}] Three stars available, sending message`);
       //TODO add full name and team abbreviation
       const threeStars = gameLanding.summary.threeStars
-        .map((star) => `${starEmojis(star.star)}: ${star.name}`)
+        .map((star) => `${starEmojis(star.star)}: ${star.name.default}`)
         .join("\n");
         
       send(
-        `Tonight's Three Stars
-              \n\n${threeStars}`,
+        `Tonight's Three Stars\n\n${threeStars}`,
         currentGame!,
       );
       
@@ -758,8 +750,7 @@ const handlePostGameVideoState = async () => {
       if (condensedVideo) {
         const condensedUrl = `https://www.nhl.com/video/topic/condensed-games/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
         send(
-          `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
-                \n\n${condensedUrl}`,
+          `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
           currentGame!,
         );
       }
@@ -768,8 +759,7 @@ const handlePostGameVideoState = async () => {
       if (recapVideo) {
         const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
         send(
-          `Check out the recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:
-                \n\n${recapUrl}`,
+          `Check out the recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
           currentGame!,
         );
       }
