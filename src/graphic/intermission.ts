@@ -9,7 +9,8 @@ import {
   addSquareWithGoals,
   addTeamLogo,
   LineScore,
-  calculatePercentage
+  calculatePercentage,
+  getTeamColor
 } from "./utils";
 
 /**
@@ -109,8 +110,8 @@ export default async function intermission(
   });
 
   const barLength = 540;
-  const segment1Color = "rgba(0, 132, 61, 0.75)";
-  const segment2Color = "rgba(0, 32, 91, 0.75)";
+  const segment1Color = getTeamColor(params.pref.team ||'');
+  const segment2Color = getTeamColor(params.opp.team ||'');
 
   const barGraphOptions = {
     x: 40,

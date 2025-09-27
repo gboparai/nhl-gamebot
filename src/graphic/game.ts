@@ -7,9 +7,17 @@ import {
   loadCustomFont,
   drawStackedHorizontalBarGraph,
   calculatePercentage,
+  getTeamColor,
 } from "./utils";
+import { get } from "http";
 
 export type GameImageParams = {
+  pref: {
+    team: string;
+  };
+  opp: {
+    team: string;
+  };
   shots: {
     pref: number;
     opp: number;
@@ -74,8 +82,8 @@ export default async function createGameImage(params: GameImageParams): Promise<
   });
 
   const barLength = 700;
-  const segment1Color = "rgba(0, 132, 61, 0.75)";
-  const segment2Color = "rgba(0, 32, 91, 0.75)";
+  const segment1Color = getTeamColor(params.pref.team);
+  const segment2Color = getTeamColor(params.opp.team);
 
   const barGraphOptions = {
     x: 140,

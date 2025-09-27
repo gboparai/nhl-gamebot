@@ -187,14 +187,19 @@ const handlePregameState = async () => {
 
         console.log(`[${new Date().toISOString()}] Sending pregame announcement`);
         await send(
-          `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
-                  \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
+          `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.\n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
           currentGame,
           [`./temp/preGame.png`],
         );
 
         console.log(`[${new Date().toISOString()}] Generating game stats image`);
         await gameImage({
+          pref: {
+            team: currentGame.homeTeam.name.default,
+          },
+          opp: {
+            team: currentGame.awayTeam.name.default,
+          },
           shots: {
             pref: 0, // Using goals for per game as closest equivalent to shots
             opp:  0,
@@ -231,8 +236,7 @@ const handlePregameState = async () => {
         if (dfLines.confirmed) {
           console.log(`[${new Date().toISOString()}] Daily Faceoff lines last updated ${dfLines.lastUpdate}`);
           await send(
-            `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)
-                    \n\n${groupedList(
+            `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)\n\n${groupedList(
                       dfLines.forwards.map((player) => getLastName(player)),
                       3,
                     )}\n${groupedList(
@@ -251,8 +255,7 @@ const handlePregameState = async () => {
         if (dfLinesOpps.confirmed) {
           console.log(`[${new Date().toISOString()}] Daily Faceoff lines confirmed for ${oppTeam?.name.default}`);
           await send(
-            `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
-                    \n\n${groupedList(
+            `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)\n\n${groupedList(
                       dfLinesOpps.forwards.map((player) => getLastName(player)),
                       3,
                     )}\n${groupedList(
@@ -368,12 +371,12 @@ const handleInGameState = async () => {
         //TypeError: Cannot read properties of undefined (reading 'totals')
         await intermissionImage({
           pref: {
-            team: prefTeam?.name.default || "",
+            team: boxscore?.homeTeam.commonName.default || "",
             score: boxscore.homeTeam.score,
             lineScores: lineScores.homeLineScores,
           },
           opp: {
-            team: oppTeam?.name.default || "",
+            team:  boxscore?.homeTeam.commonName.default || "",
             score: boxscore.awayTeam.score,
             lineScores: lineScores.awayLineScores,
           },
@@ -486,7 +489,7 @@ const handleInGameState = async () => {
                 const assistsText = assists.length > 0 ? `\nAssists: ${assists.join(', ')}` : '';
 
                 let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                          \n ${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.${assistsText}
+                          \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.${assistsText}
                                   \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
 
                 if (scoringTeam?.id !== prefTeam?.id) {
@@ -522,10 +525,22 @@ const handleInGameState = async () => {
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
               else if (play.typeDescKey === "period-start") {
-                await send(
-                  `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
-                  currentGame!
-                );
+                // Include current score when announcing the start of a period.
+                try {
+                  const boxscoreNow = await fetchBoxscore(String(currentGame!.id));
+                  const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
+                  await send(
+                    `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n\n${scoreText}`,
+                    currentGame!
+                  );
+                } catch (err) {
+                  // If fetching the boxscore fails, fall back to the original message without score.
+                  console.warn(`[${new Date().toISOString()}] Failed to fetch boxscore for period-start message:`, err);
+                  await send(
+                    `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
+                    currentGame!
+                  );
+                }
               }
               else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout") {
                 const stoppageMessage = `Game Stoppage: TV Timeout at ${play.timeRemaining} in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
@@ -656,7 +671,7 @@ const handlePostGameState = async () => {
 
     console.log(`[${new Date().toISOString()}] Sending post-game message`);
     send(
-      `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
+      `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
       currentGame!,
       [`./temp/postGame.png`],
     );
@@ -850,6 +865,25 @@ const main = async(): Promise<void> => {
  * @param gameLanding - The GameLanding object to transform.
  * @returns An object containing homeLineScores and awayLineScores.
  */
+function formatPeriodLabel(period: number): string {
+  if (period === 1) return "1st";
+  if (period === 2) return "2nd";
+  if (period === 3) return "3rd";
+  if (period === 4) return "OT";
+  return `${period - 3}OT`; // e.g. 5 → "2OT", 6 → "3OT"
+}
+
+function formatPeriodTime(period: number, rawTime: string): string {
+  let [minutes, seconds] = rawTime.split(":");
+  if (!seconds) {
+    // Handle compact format like "754"
+    rawTime = rawTime.padStart(4, "0");
+    minutes = rawTime.slice(0, -2);
+    seconds = rawTime.slice(-2);
+  }
+  return `${formatPeriodLabel(period)} – ${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
+}
+
 function transformGameLandingToLineScores(gameLanding: GameLanding): {
   homeLineScores: LineScore[];
   awayLineScores: LineScore[];
@@ -860,10 +894,12 @@ function transformGameLandingToLineScores(gameLanding: GameLanding): {
   gameLanding.summary.scoring.forEach((periodGoal) => {
     periodGoal.goals.forEach((goal) => {
       const lineScore: LineScore = {
-        time: `${periodGoal.periodDescriptor.number}:${goal.timeInPeriod}`,
+        time: formatPeriodTime(periodGoal.periodDescriptor.number, goal.timeInPeriod),
         type: getGoalType(goal.situationCode),
         goalScorer: `${goal.firstName.default} ${goal.lastName.default}`,
-        assists: goal.assists.map(assist => `${assist.firstName.default} ${assist.lastName.default}`),
+        assists: goal.assists.map(
+          (assist) => `${assist.firstName.default} ${assist.lastName.default}`
+        ),
       };
 
       if (goal.teamAbbrev.default === gameLanding.homeTeam.abbrev) {
