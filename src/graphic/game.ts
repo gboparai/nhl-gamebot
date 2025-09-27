@@ -22,6 +22,10 @@ export type GameImageParams = {
     pref: number;
     opp: number;
   };
+  shotsAgainst: {
+    pref: number;
+    opp: number;
+  };
   goalsForPerGame: {
     pref: number;
     opp: number;
@@ -91,21 +95,36 @@ export default async function createGameImage(params: GameImageParams): Promise<
     height: 50,
 
     bars: [
-      // {
-      //   overallLabel: "Shots",
-      //   segments: [
-      //     {
-      //       value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
-      //       label: String(params.shots.pref.toFixed(2)),
-      //       color: segment1Color,
-      //     },
-      //     {
-      //       value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
-      //       label: String(params.shots.opp.toFixed(2)),
-      //       color: segment2Color,
-      //     },
-      //   ],
-      // },
+      {
+        overallLabel: "Shots For Per Game",
+        segments: [
+          {
+            value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
+            label: String(params.shots.pref.toFixed(2)),
+            color: segment1Color,
+          },
+          {
+            value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
+            label: String(params.shots.opp.toFixed(2)),
+            color: segment2Color,
+          },
+        ],
+      },
+      {
+        overallLabel: "Shots Against Per Game",
+        segments: [
+          {
+            value: calculatePercentage(params.shotsAgainst.pref, params.shotsAgainst.pref + params.shotsAgainst.opp) * barLength,
+            label: String(params.shotsAgainst.pref.toFixed(2)),
+            color: segment1Color,
+          },
+          {
+            value: calculatePercentage(params.shotsAgainst.opp, params.shotsAgainst.pref + params.shotsAgainst.opp) * barLength,
+            label: String(params.shotsAgainst.opp.toFixed(2)),
+            color: segment2Color,
+          },
+        ],
+      },
       {
         overallLabel: "Power Play Percentage",
         segments: [

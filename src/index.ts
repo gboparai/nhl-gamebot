@@ -4,7 +4,8 @@ import {
   fetchBoxscore,
   fetchPlayByPlay,
   fetchNHLScores,
-  fetchGameCenterRightRail
+  fetchGameCenterRightRail,
+  fetchTeamSummaries
 } from "./api/nhl";
 import { GameDetails, fetchGameDetails } from "./api/scoutingTheRefs";
 import {
@@ -128,6 +129,14 @@ const handlePregameState = async () => {
     try {
       console.log(`[${new Date().toISOString()}] Fetching game center right rail data`);
       const rightRail = await fetchGameCenterRightRail(String(currentGame!.id));
+      const teamSummaries = await fetchTeamSummaries();
+
+      const homeTeamSummary = teamSummaries.data.find(
+        (team) => team.teamId === currentGame!.homeTeam.id,
+      );
+      const awayTeamSummary = teamSummaries.data.find(
+        (team) => team.teamId === currentGame!.awayTeam.id,
+      );
 
       // Extract team season stats from right rail data
       const homeTeamStats = rightRail.teamSeasonStats?.homeTeam;
@@ -201,8 +210,12 @@ const handlePregameState = async () => {
             team: currentGame.awayTeam.name.default,
           },
           shots: {
-            pref: 0, // Using goals for per game as closest equivalent to shots
-            opp:  0,
+            pref: homeTeamSummary?.shotsForPerGame || 0, // Using goals for per game as closest equivalent to shots
+            opp:  awayTeamSummary?.shotsForPerGame || 0,
+          },
+          shotsAgainst:{
+            pref: homeTeamSummary?.shotsAgainstPerGame || 0, // Using goals for per game as closest equivalent to shots
+            opp:  awayTeamSummary?.shotsAgainstPerGame || 0,
           },
           pentaltyKillPercentage: {
             pref: homeTeamStats?.pkPctg || 0,
@@ -342,7 +355,7 @@ const handleInGameState = async () => {
         ? currentGame.homeTeam
         : currentGame?.awayTeam;
         
-    console.log(`[${new Date().toISOString()}] Fetching play-by-play data for game ${currentGame.id}`);
+
     const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
     
     if (playByPlay.clock.inIntermission) {
@@ -426,7 +439,7 @@ const handleInGameState = async () => {
           [`./temp/intermission.png`],
         );
       }
-      console.log(`[${new Date().toISOString()}] Sleeping for intermission duration: ${config.app.script.intermission_sleep_time}ms`);
+   
       await sleep(config.app.script.intermission_sleep_time);
     } else {
       hasSentIntermission = false;
@@ -455,6 +468,7 @@ const handleInGameState = async () => {
             
             try {
               if (play.typeDescKey === "goal") {
+                console.log('Play details:', play)
                 const scoringTeam =
                   play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
                     ? currentGame?.awayTeam
@@ -522,6 +536,7 @@ const handleInGameState = async () => {
                   : '';
                   
                 const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                console.log('Play details:', play)
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
               else if (play.typeDescKey === "period-start") {
@@ -529,6 +544,7 @@ const handleInGameState = async () => {
                 try {
                   const boxscoreNow = await fetchBoxscore(String(currentGame!.id));
                   const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
+                  console.log('Play details:', play)
                   await send(
                     `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n\n${scoreText}`,
                     currentGame!
@@ -561,7 +577,7 @@ const handleInGameState = async () => {
           }
         }
       }
-      console.log(`[${new Date().toISOString()}] Sleeping for live game duration: ${config.app.script.live_sleep_time}ms`);
+
       await sleep(config.app.script.live_sleep_time);
     }
     
