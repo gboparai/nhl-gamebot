@@ -99,6 +99,25 @@ export async function sendBlueskyPost(
       }
     }
 
+    // If there are no image embeds but the post text contains an external URL,
+    // include an external embed so Bluesky will generate a URL preview.
+    // Prefer the first URL found in the text.
+    if (!postData.embed) {
+      const urlMatch = richText.text.match(/https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+/i);
+      if (urlMatch) {
+        const externalUrl = urlMatch[0];
+        postData.embed = {
+          $type: "app.bsky.embed.external",
+          external: {
+            uri: externalUrl,
+            title: undefined,
+            description: undefined,
+            thumb: undefined,
+          },
+        };
+      }
+    }
+
     await agent.post(postData);
   };
 
