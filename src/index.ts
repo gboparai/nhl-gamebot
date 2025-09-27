@@ -188,10 +188,10 @@ const handlePregameState = async () => {
           time: formattedTime12Hr,
           homeLine1:
            homeTeamRecord, 
-          homeLine2: "",
+          homeLine2: `Season Series: ${rightRail.seasonSeriesWins.homeTeamWins}-${rightRail.seasonSeriesWins.awayTeamWins}`,
           awayLine1:
             awayTeamRecord, 
-          awayLine2: "",
+          awayLine2: `Season Series: ${rightRail.seasonSeriesWins.awayTeamWins}-${rightRail.seasonSeriesWins.homeTeamWins}`,
         });
 
         console.log(`[${new Date().toISOString()}] Sending pregame announcement`);
