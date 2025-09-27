@@ -292,10 +292,10 @@ const TEAM_IMAGES = {
 };
 
 const TEAM_COLORS = {
-  Ducks: "rgba(252, 76, 2, 0.75)",          // Orange
+   Ducks: "rgba(252, 76, 2, 0.75)",          // Orange
   Coyotes: "rgba(140, 38, 51, 0.75)",       // Brick Red
   Bruins: "rgba(252, 181, 20, 0.75)",       // Gold
-  Sabres: "rgba(0, 38, 84, 0.75)",          // Navy Blue
+  Sabres: "rgba(255, 184, 28, 0.75)",       // Yellow/Gold ✅
   Flames: "rgba(200, 16, 46, 0.75)",        // Red
   Hurricanes: "rgba(226, 24, 54, 0.75)",    // Red
   Blackhawks: "rgba(207, 10, 44, 0.75)",    // Red
@@ -303,9 +303,9 @@ const TEAM_COLORS = {
   BlueJackets: "rgba(0, 38, 84, 0.75)",     // Navy Blue
   Stars: "rgba(0, 104, 71, 0.75)",          // Green
   RedWings: "rgba(200, 16, 46, 0.75)",      // Red
-  Oilers: "rgba(4, 30, 66, 0.75)",          // Navy Blue
+  Oilers: "rgba(252, 76, 2, 0.75)",         // Orange ✅
   Panthers: "rgba(200, 16, 46, 0.75)",      // Red
-  Kings: "rgba(17, 17, 17, 0.75)",          // Black
+  Kings: "rgba(162, 170, 173, 0.75)",       // Silver/Gray ✅
   Wild: "rgba(2, 73, 48, 0.75)",            // Forest Green
   Canadiens: "rgba(175, 30, 45, 0.75)",     // Red
   Predators: "rgba(255, 184, 28, 0.75)",    // Gold
@@ -316,11 +316,11 @@ const TEAM_COLORS = {
   Flyers: "rgba(247, 73, 2, 0.75)",         // Orange
   Penguins: "rgba(255, 184, 28, 0.75)",     // Gold
   Sharks: "rgba(0, 109, 117, 0.75)",        // Teal
-  Kraken: "rgba(0, 22, 40, 0.75)",          // Deep Navy
+  Kraken: "rgba(109, 210, 230, 0.75)",      // Light Blue (Ice Blue) ✅
   Blues: "rgba(0, 47, 135, 0.75)",          // Blue
   Lightning: "rgba(0, 62, 126, 0.75)",      // Blue
   MapleLeafs: "rgba(0, 32, 91, 0.75)",      // Blue
-  Canucks: "rgba(0, 132, 61, 0.75)",        // Green ✅
+  Canucks: "rgba(0, 132, 61, 0.75)",        // Green
   GoldenKnights: "rgba(185, 151, 91, 0.75)",// Steel Gold
   Capitals: "rgba(200, 16, 46, 0.75)",      // Red
   Jets: "rgba(4, 30, 66, 0.75)",            // Navy Blue
