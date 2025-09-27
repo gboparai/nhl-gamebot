@@ -22,10 +22,15 @@ export async function send(
 ): Promise<void> {
   // Send to Twitter if active and not an extended message
   if (typedConfig.twitter.isActive && !extended) {
-    const mediaIds = media
-      ? await Promise.all(media.map(uploadMedia))
-      : undefined;
-    await sendTweet(text, game, mediaIds);
+     try {
+      const mediaIds = media
+        ? await Promise.all(media.map(uploadMedia))
+        : undefined;
+      await sendTweet(text, game, mediaIds);
+     } catch (error) {
+      console.error("Failed to send tweet:", error);
+      // Don't throw error to prevent application crash
+    }
   }
 
   // Send to Bluesky if active (always send regardless of extended flag)

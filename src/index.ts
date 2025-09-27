@@ -186,7 +186,7 @@ const handlePregameState = async () => {
         });
 
         console.log(`[${new Date().toISOString()}] Sending pregame announcement`);
-        send(
+        await send(
           `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.
                   \n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
           currentGame,
@@ -221,7 +221,7 @@ const handlePregameState = async () => {
           },
         });
 
-        send(
+        await send(
           `🔥 Get ready for an epic showdown! Tonight, it's the ${prefTeam?.name.default} going head-to-head with the ${oppTeam?.name.default} at ${currentGame.venue.default}. You won’t want to miss a second of the action! `,
           currentGame,
           [`./temp/game.png`],
@@ -230,7 +230,7 @@ const handlePregameState = async () => {
         const dfLines = await dailyfaceoffLines(prefTeam?.name.default || "");
         if (dfLines.confirmed) {
           console.log(`[${new Date().toISOString()}] Daily Faceoff lines last updated ${dfLines.lastUpdate}`);
-          send(
+          await send(
             `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)
                     \n\n${groupedList(
                       dfLines.forwards.map((player) => getLastName(player)),
@@ -250,7 +250,7 @@ const handlePregameState = async () => {
         const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || "");
         if (dfLinesOpps.confirmed) {
           console.log(`[${new Date().toISOString()}] Daily Faceoff lines confirmed for ${oppTeam?.name.default}`);
-          send(
+          await send(
             `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)
                     \n\n${groupedList(
                       dfLinesOpps.forwards.map((player) => getLastName(player)),
@@ -281,7 +281,7 @@ const handlePregameState = async () => {
             .map((linesman) => `L: ${linesman.name}`)
             .join("\n");
 
-          send(
+          await send(
             `The officials (via @ScoutingTheRefs)
                     \n\n${referees}\n${linesmens}
                     `,
@@ -656,6 +656,7 @@ const handlePostGameState = async () => {
         pref: Number(powerPlayPctg?.homeValue) || 0,
         opp: Number(powerPlayPctg?.awayValue) || 0,
       }
+      
     });
 
     console.log(`[${new Date().toISOString()}] Sending post-game message`);
