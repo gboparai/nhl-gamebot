@@ -36,7 +36,6 @@ import { teamHashtag } from "./social/utils";
 import { LineScore } from "./graphic/utils";
 
 
-
 /**
  * Represents the possible states of a game.
  */
@@ -57,6 +56,63 @@ let prefTeam: Team | undefined;
 let oppTeam: Team | undefined;
 let hasSentIntermission: boolean = false;
 let sentEvents: number[] = [];
+
+// Goal post tracking for highlight replies
+interface GoalPostInfo {
+  eventId: number;
+  gameId: number;
+  blueskyPost?: { uri: string; cid: string };
+  playerName: string;
+  teamName: string;
+  processed: boolean;
+}
+
+let goalPosts: GoalPostInfo[] = [];
+
+/**
+ * Checks for highlight URLs for stored goal posts and sends replies
+ */
+async function checkForHighlights(): Promise<void> {
+  if (!currentGame || goalPosts.length === 0) {
+    return;
+  }
+
+  try {
+    // Fetch latest play-by-play data to check for highlight URLs
+    const playByPlay = await fetchPlayByPlay(String(currentGame.id));
+    
+    for (const goalPost of goalPosts) {
+      if (goalPost.processed) {
+        continue;
+      }
+
+      // Find the corresponding goal in the latest data
+      const goal = playByPlay.plays.find(p => p.eventId === goalPost.eventId);
+
+
+      if (goal && goal.details?.highlightClipSharingUrl) {
+        console.log(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
+        
+        // Send highlight reply using the centralized send function
+        const highlightText = `HIGHLIGHT: ${goalPost.playerName} scores for the ${goalPost.teamName}!\n\n${goal.details.highlightClipSharingUrl}`;
+        
+        await send(
+          highlightText,
+          currentGame,
+          undefined,
+          true, // extended = true (don't send to Twitter)
+          goalPost.blueskyPost // Bluesky reply to original post
+        );
+        
+        // Mark as processed
+        goalPost.processed = true;
+        console.log(`Sent highlight reply for ${goalPost.playerName}`);
+      }
+    }
+  } catch (error) {
+    console.error("Error checking for highlights:", error);
+  }
+}
 
 /**
  * Handles the waiting state of the game.
@@ -311,6 +367,7 @@ const handlePregameState = async () => {
 
         await sleep(sleepDuration);
         sentEvents = [];
+        goalPosts = []; // Reset goal posts for new game
         currentState = GameStates.INGAME;
         console.log(`[${new Date().toISOString()}] Transitioning to INGAME state`);
       }
@@ -512,7 +569,20 @@ const handleInGameState = async () => {
                                       \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
                 }
 
-                await send(goalMessage, currentGame!, undefined, true);
+                const socialResponse = await send(goalMessage, currentGame!, undefined, true);
+                
+                // Store goal post info for potential highlight reply
+                if (socialResponse.blueskyPost && scoringPlayer) {
+                  goalPosts.push({
+                    eventId: play.eventId,
+                    gameId: currentGame!.id,
+                    blueskyPost: socialResponse.blueskyPost,
+                    playerName: `${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default}`,
+                    teamName: scoringTeam?.name.default || "",
+                    processed: false
+                  });
+                  console.log(`Stored goal post info for ${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default} (event ${play.eventId})`);
+                }
               }
               else if (play.typeDescKey === "penalty") {
                 const penaltyTeam =
@@ -578,6 +648,9 @@ const handleInGameState = async () => {
         }
       }
 
+      // Check for highlight URLs before sleeping
+      await checkForHighlights();
+      
       await sleep(config.app.script.live_sleep_time);
     }
     

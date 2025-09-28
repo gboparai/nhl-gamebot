@@ -818,6 +818,7 @@ type PlayByPlayGoal = {
   homeScore: number;
   strength: string;
   highlightClip: number;
+  highlightClipSharingUrl: string;
   highlightClipFr: number;
 };
 type Details = {
@@ -851,6 +852,7 @@ type Details = {
   assist2PlayerTotal?: number;
   awayScore?: number;
   homeScore?: number;
+  highlightClipSharingUrl?: string;
 };
 type Play = {
   eventId: number;
@@ -911,7 +913,6 @@ export type PlayByPlayGame = {
   gameOutcome: GameOutcome;
   plays: Play[];
   rosterSpots: PlayByPlayPlayer[];
-  goals: PlayByPlayGoal[];
 };
 
 export type ISODateString = string;

@@ -35,8 +35,6 @@ async function initializeAgent(): Promise<void> {
     });
     console.log("Bluesky agent authenticated successfully");
   } catch (error) {
-    console.error("Bluesky authentication error:", error);
-    logObjectToFile("bluesky-auth-error", error as string);
     throw new Error("Failed to authenticate with Bluesky");
   }
 }
@@ -47,14 +45,16 @@ async function initializeAgent(): Promise<void> {
  * @param game - Optional game object for hashtags.
  * @param media - Optional array of media file paths to attach to the post.
  * @param retries - Number of retry attempts.
- * @returns A promise that resolves when the post is sent.
+ * @param replyTo - Optional post to reply to.
+ * @returns A promise that resolves with post info when the post is sent.
  */
 export async function sendBlueskyPost(
   text: string,
   game?: Game,
   media?: string[],
   retries: number = 3,
-): Promise<void> {
+  replyTo?: { uri: string; cid: string },
+): Promise<{ uri: string; cid: string }> {
   const operation = async () => {
     await initializeAgent();
     
@@ -76,6 +76,14 @@ export async function sendBlueskyPost(
       text: richText.text,
       facets: richText.facets,
     };
+
+    // Add reply information if this is a reply
+    if (replyTo) {
+      postData.reply = {
+        root: replyTo,
+        parent: replyTo,
+      };
+    }
 
     // Handle media uploads if provided
     if (media && media.length > 0) {
@@ -118,11 +126,13 @@ export async function sendBlueskyPost(
       }
     }
 
-    await agent.post(postData);
+    const response = await agent.post(postData);
+    return { uri: response.uri, cid: response.cid };
   };
 
-  await retryOperation(operation, retries, 5000, "bluesky", text);
+  return await retryOperation(operation, retries, 5000, "bluesky", text);
 }
+
 
 /**
  * Uploads media to Bluesky.
