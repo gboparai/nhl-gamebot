@@ -258,7 +258,7 @@ export async function addTeamLogo(
 
 const TEAM_IMAGES = {
   Ducks: "AnaheimDucks.png",
-  Coyotes: "ArizonaCoyotes.png",
+  Mammoth: "UtahMammoth.png",
   Bruins: "BostonBruins.png",
   Sabres: "BuffaloSabres.png",
   Flames: "CalgaryFlames.png",
@@ -293,7 +293,7 @@ const TEAM_IMAGES = {
 
 const TEAM_COLORS = {
    Ducks: "rgba(252, 76, 2, 0.75)",          // Orange
-  Coyotes: "rgba(140, 38, 51, 0.75)",       // Brick Red
+    Mammoth: "rgba(70, 130, 180, 0.75)",      // Steel Blue
   Bruins: "rgba(252, 181, 20, 0.75)",       // Gold
   Sabres: "rgba(255, 184, 28, 0.75)",       // Yellow/Gold ✅
   Flames: "rgba(200, 16, 46, 0.75)",        // Red

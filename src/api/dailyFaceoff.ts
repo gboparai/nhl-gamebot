@@ -46,7 +46,7 @@ const TEAM_MAPPINGS: Record<string, string> = {
   ducks: "anaheim-ducks",
   sharks: "san-jose-sharks",
   kings: "los-angeles-kings",
-  coyotes: "arizona-coyotes",
+    mammoth: "utah-mammoth",
   "blue jackets": "columbus-blue-jackets",
   kraken: "seattle-kraken",
 } as const;

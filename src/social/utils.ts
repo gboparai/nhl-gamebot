@@ -127,7 +127,7 @@ export function validateMediaPaths(media: string[]): string[] {
 export function teamHashtag(team: string) {
   const TEAM_HASH_TAGS = {
     Ducks: "#FlyTogether",
-    Coyotes: "#Yotes",
+    Mammoth: "#GoMammoth",
     Bruins: "#NHLBruins",
     Sabres: "#LetsGoBuffalo",
     Flames: "#Flames",
