@@ -828,6 +828,7 @@ type Details = {
   yCoord?: number;
   zoneCode?: string;
   reason?: string;
+  secondayReason?: string;
   shotType?: string;
   shootingPlayerId?: number;
   goalieInNetId?: number;

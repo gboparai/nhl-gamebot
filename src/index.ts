@@ -558,7 +558,7 @@ const handleInGameState = async () => {
                   );
                 }
               }
-              else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout") {
+              else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout") {
                 const stoppageMessage = `Game Stoppage: TV Timeout at ${play.timeRemaining} in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
                 
                 ${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}
