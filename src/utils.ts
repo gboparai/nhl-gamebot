@@ -172,3 +172,16 @@ export function sleep(milliseconds: number): Promise<void> {
     setTimeout(resolve, milliseconds);
   });
 }
+
+/**
+ * Formats a period number into a human-readable string that properly handles overtime.
+ * @param period - The period number (1-3 for regulation, 4+ for overtime)
+ * @returns A formatted period string (e.g., "1st", "2nd", "3rd", "OT", "2OT", etc.)
+ */
+export function formatPeriodLabel(period: number): string {
+  if (period === 1) return "1st";
+  if (period === 2) return "2nd";
+  if (period === 3) return "3rd";
+  if (period === 4) return "OT";
+  return `${period - 3}OT`; // e.g. 5 → "2OT", 6 → "3OT"
+}

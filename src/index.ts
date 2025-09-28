@@ -24,7 +24,8 @@ import {
   starEmojis,
   groupedList,
   getLastName,
-  sleep
+  sleep,
+  formatPeriodLabel
 } from "./utils";
 import moment from "moment";
 import { dailyfaceoffLines } from "./api/dailyFaceoff";
@@ -491,7 +492,7 @@ const handleInGameState = async () => {
 
         console.log(`[${new Date().toISOString()}] Sending intermission message`);
         send(
-          `It's end of the ${ordinalSuffixOf(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
+          `It's end of the ${formatPeriodLabel(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
           currentGame!,
           [`./temp/intermission.png`],
         );
@@ -560,12 +561,12 @@ const handleInGameState = async () => {
                 const assistsText = assists.length > 0 ? `\nAssists: ${assists.join(', ')}` : '';
 
                 let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                          \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.${assistsText}
+                          \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
                                   \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
 
                 if (scoringTeam?.id !== prefTeam?.id) {
                   goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
-                              \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.${assistsText}
+                              \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
                                       \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
                 }
 
@@ -605,7 +606,7 @@ const handleInGameState = async () => {
                   ? ` (drawn by ${drawnByPlayer.firstName.default} ${drawnByPlayer.lastName.default})`
                   : '';
                   
-                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.`;
+                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
                 console.log('Play details:', play)
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
@@ -616,20 +617,20 @@ const handleInGameState = async () => {
                   const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
                   console.log('Play details:', play)
                   await send(
-                    `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n\n${scoreText}`,
+                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n\n${scoreText}`,
                     currentGame!
                   );
                 } catch (err) {
                   // If fetching the boxscore fails, fall back to the original message without score.
                   console.warn(`[${new Date().toISOString()}] Failed to fetch boxscore for period-start message:`, err);
                   await send(
-                    `It's time for the ${ordinalSuffixOf(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
+                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
                     currentGame!
                   );
                 }
               }
               else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout") {
-                const stoppageMessage = `Game Stoppage: TV Timeout at ${play.timeRemaining} in the ${ordinalSuffixOf(play.periodDescriptor.number)} period.
+                const stoppageMessage = `Game Stoppage: TV Timeout at ${play.timeRemaining} in the ${formatPeriodLabel(play.periodDescriptor.number)} period.
                 
                 ${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}
                 ${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
@@ -954,13 +955,6 @@ const main = async(): Promise<void> => {
  * @param gameLanding - The GameLanding object to transform.
  * @returns An object containing homeLineScores and awayLineScores.
  */
-function formatPeriodLabel(period: number): string {
-  if (period === 1) return "1st";
-  if (period === 2) return "2nd";
-  if (period === 3) return "3rd";
-  if (period === 4) return "OT";
-  return `${period - 3}OT`; // e.g. 5 → "2OT", 6 → "3OT"
-}
 
 function formatPeriodTime(period: number, rawTime: string): string {
   let [minutes, seconds] = rawTime.split(":");
