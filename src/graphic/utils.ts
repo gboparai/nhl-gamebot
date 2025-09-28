@@ -404,26 +404,57 @@ export function drawStackedHorizontalBarGraph(
 
     currentX += overallLabelWidth;
 
+    // Calculate total bar width and adjust segments to maintain total width while ensuring minimum visibility
+    const totalBarWidth = segments.reduce((sum, segment) => sum + segment.value, 0);
+    const minSegmentWidth = totalBarWidth * 0.1; // 10% minimum width
+    
+    // Calculate adjusted segments while preserving total width
+    const adjustedSegments = [];
+    let totalAdjustment = 0;
+    
+    // First pass: identify segments that need minimum width and calculate total adjustment needed
     for (const segment of segments) {
-      const { value, label, color } = segment;
+      if (segment.value < minSegmentWidth) {
+        totalAdjustment += minSegmentWidth - segment.value;
+        adjustedSegments.push({ ...segment, adjustedValue: minSegmentWidth });
+      } else {
+        adjustedSegments.push({ ...segment, adjustedValue: segment.value });
+      }
+    }
+    
+    // Second pass: redistribute the adjustment from larger segments proportionally
+    if (totalAdjustment > 0) {
+      const largerSegments = adjustedSegments.filter(s => s.value >= minSegmentWidth);
+      const totalLargerValue = largerSegments.reduce((sum, s) => sum + s.value, 0);
+      
+      if (totalLargerValue > 0) {
+        for (const segment of adjustedSegments) {
+          if (segment.value >= minSegmentWidth) {
+            const reductionRatio = segment.value / totalLargerValue;
+            segment.adjustedValue = Math.max(minSegmentWidth, segment.value - (totalAdjustment * reductionRatio));
+          }
+        }
+      }
+    }
+
+    for (const segment of adjustedSegments) {
+      const { label, color, adjustedValue } = segment;
 
       // Draw the segment
       ctx.fillStyle = color;
-      ctx.fillRect(currentX, currentY, value, height);
+      ctx.fillRect(currentX, currentY, adjustedValue, height);
 
       // Draw the label inside the segment
-
-      
       addText(ctx, {
         text: label,
-        x: currentX + value / 2,
+        x: currentX + adjustedValue / 2,
         y: currentY + height / 2,
         font: "16px RobotoBold",
         color: labelColor,
         textAlign: "center",
       });
 
-      currentX += value;
+      currentX += adjustedValue;
     }
     currentY += height + barSpacing;
   }
