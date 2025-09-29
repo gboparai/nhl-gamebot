@@ -18,7 +18,6 @@ import { send } from "./social/socialHandler";
 import {
   convertUTCToLocalTime,
   getCurrentDateEasternTime,
-  ordinalSuffixOf,
   goalEmojis,
   thumbsDownEmojis,
   starEmojis,
@@ -79,35 +78,60 @@ async function checkForHighlights(): Promise<void> {
   }
 
   try {
+    console.log(`[${new Date().toISOString()}] Checking for highlights`);
+    console.log("goalPosts length:", goalPosts.length);
+    console.log("goalPosts", goalPosts);
+    
+    if (goalPosts.length === 0) {
+      console.log("No goal posts to check for highlights");
+      return;
+    }
+    
     // Fetch latest play-by-play data to check for highlight URLs
     const playByPlay = await fetchPlayByPlay(String(currentGame.id));
+    console.log(`Play-by-play has ${playByPlay.plays.length} plays`);
     
     for (const goalPost of goalPosts) {
+      console.log(`Processing goalPost for ${goalPost.playerName} (eventId: ${goalPost.eventId}, processed: ${goalPost.processed})`);
+      
       if (goalPost.processed) {
+        console.log(`Skipping already processed goalPost for ${goalPost.playerName}`);
         continue;
       }
 
       // Find the corresponding goal in the latest data
       const goal = playByPlay.plays.find(p => p.eventId === goalPost.eventId);
+      console.log(`Found goal in play-by-play:`, goal ? `Yes (eventId: ${goal.eventId})` : "No");
 
+      if (goal) {
+        console.log(`Goal details for ${goalPost.playerName}:`, {
+          eventId: goal.eventId,
+          hasHighlightUrl: !!goal.details?.highlightClipSharingUrl,
+          highlightUrl: goal.details?.highlightClipSharingUrl || "Not available yet"
+        });
 
-      if (goal && goal.details?.highlightClipSharingUrl) {
-        console.log(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
-        
-        // Send highlight reply using the centralized send function
-        const highlightText = `HIGHLIGHT: ${goalPost.playerName} scores for the ${goalPost.teamName}!\n\n${goal.details.highlightClipSharingUrl}`;
-        
-        await send(
-          highlightText,
-          currentGame,
-          undefined,
-          true, // extended = true (don't send to Twitter)
-          goalPost.blueskyPost // Bluesky reply to original post
-        );
-        
-        // Mark as processed
-        goalPost.processed = true;
-        console.log(`Sent highlight reply for ${goalPost.playerName}`);
+        if (goal.details?.highlightClipSharingUrl) {
+          console.log(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
+          
+          // Send highlight reply using the centralized send function
+          const highlightText = `HIGHLIGHT: ${goalPost.playerName} scores for the ${goalPost.teamName}!\n\n${goal.details.highlightClipSharingUrl}`;
+          
+          await send(
+            highlightText,
+            currentGame,
+            undefined,
+            true, // extended = true (don't send to Twitter)
+            goalPost.blueskyPost // Bluesky reply to original post
+          );
+          
+          // Mark as processed
+          goalPost.processed = true;
+          console.log(`Sent highlight reply for ${goalPost.playerName}`);
+        } else {
+          console.log(`No highlight URL available yet for ${goalPost.playerName}`);
+        }
+      } else {
+        console.log(`Could not find goal with eventId ${goalPost.eventId} in play-by-play data`);
       }
     }
   } catch (error) {
@@ -447,7 +471,7 @@ const handleInGameState = async () => {
             lineScores: lineScores.homeLineScores,
           },
           opp: {
-            team:  boxscore?.homeTeam.commonName.default || "",
+            team:  boxscore?.awayTeam.commonName.default || "",
             score: boxscore.awayTeam.score,
             lineScores: lineScores.awayLineScores,
           },
@@ -601,12 +625,12 @@ const handleInGameState = async () => {
                     )
                   : null;
                 
-                const penaltyType = (play.details?.descKey || "Unknown").replace(/-/g, ' ');
+     
                 const drawnByText = drawnByPlayer 
                   ? ` (drawn by ${drawnByPlayer.firstName.default} ${drawnByPlayer.lastName.default})`
                   : '';
                   
-                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes for ${penaltyType}${drawnByText} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
+                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes ${drawnByText} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
                 console.log('Play details:', play)
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
@@ -617,7 +641,7 @@ const handleInGameState = async () => {
                   const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
                   console.log('Play details:', play)
                   await send(
-                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n\n${scoreText}`,
+                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n${scoreText}`,
                     currentGame!
                   );
                 } catch (err) {
@@ -710,12 +734,12 @@ const handlePostGameState = async () => {
     console.log(`[${new Date().toISOString()}] Generating post-game image`);
     await postGameImage({
       pref: {
-        team: prefTeam?.name.default || "",
+        team: boxscore.homeTeam.commonName.default || "",
         score: boxscore.homeTeam.score,
         lineScores: lineScores.homeLineScores,
       },
       opp: {
-        team: oppTeam?.name.default || "",
+        team: boxscore.awayTeam.commonName.default || "",
         score: boxscore.awayTeam.score,
         lineScores: lineScores.awayLineScores,
       },

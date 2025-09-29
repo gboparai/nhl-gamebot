@@ -3,10 +3,96 @@ import { Game, Config } from "../types";
 import config from "../../config.json";
 import { logObjectToFile } from "../logger";
 import { getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
+import axios from "axios";
 
 const typedConfig = config as Config;
 
 let agent: BskyAgent | null = null;
+
+/**
+ * Fetches metadata (title, description, and thumbnail) from a URL
+ * @param url - The URL to fetch metadata from
+ * @returns Object containing title, description, and thumbnail
+ */
+async function fetchUrlMetadata(url: string): Promise<{ title: string; description: string; thumb?: any }> {
+  try {
+    const response = await axios.get(url, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    const html = response.data;
+    
+    // Extract title from <title> tag or Open Graph title
+    const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+                        html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["'][^>]*>/i);
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    let title = ogTitleMatch ? ogTitleMatch[1].trim() : (titleMatch ? titleMatch[1].trim() : "NHL Highlight");
+    
+    // Extract description from Open Graph description or meta description tag
+    const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+                       html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["'][^>]*>/i);
+    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+                     html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i);
+    let description = ogDescMatch ? ogDescMatch[1].trim() : (descMatch ? descMatch[1].trim() : "NHL Video Highlight");
+    
+    // Extract thumbnail from Open Graph image
+    const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+                        html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["'][^>]*>/i);
+    let thumbnailUrl = ogImageMatch ? ogImageMatch[1].trim() : null;
+    
+    // Clean up strings - remove extra whitespace and decode HTML entities
+    title = title.replace(/\s+/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    description = description.replace(/\s+/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    
+    let thumb = undefined;
+    if (thumbnailUrl) {
+      try {
+        // Make thumbnail URL absolute if it's relative
+        if (thumbnailUrl.startsWith('//')) {
+          thumbnailUrl = 'https:' + thumbnailUrl;
+        } else if (thumbnailUrl.startsWith('/')) {
+          const urlObj = new URL(url);
+          thumbnailUrl = `${urlObj.protocol}//${urlObj.host}${thumbnailUrl}`;
+        }
+        
+        // Fetch and upload the thumbnail to Bluesky
+        const thumbResponse = await axios.get(thumbnailUrl, {
+          responseType: 'arraybuffer',
+          timeout: 5000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        
+        if (agent) {
+          const thumbBuffer = Buffer.from(thumbResponse.data);
+          const thumbUint8Array = new Uint8Array(thumbBuffer);
+          const mimeType = thumbResponse.headers['content-type'] || 'image/jpeg';
+          
+          const uploadResponse = await agent.uploadBlob(thumbUint8Array, {
+            encoding: mimeType,
+          });
+          
+          thumb = uploadResponse.data.blob;
+        }
+      } catch (thumbError) {
+        console.warn(`Failed to fetch/upload thumbnail from ${thumbnailUrl}:`, thumbError);
+      }
+    }
+    
+    return { title, description, thumb };
+  } catch (error) {
+    console.warn(`Failed to fetch metadata for ${url}:`, error);
+    // Fallback to default values
+    return { 
+      title: "NHL Highlight",
+      description: "NHL Video Highlight"
+    };
+  }
+}
 
 /**
  * Initialize and authenticate the Bluesky agent
@@ -114,13 +200,17 @@ export async function sendBlueskyPost(
       const urlMatch = richText.text.match(/https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+/i);
       if (urlMatch) {
         const externalUrl = urlMatch[0];
+        
+        // Fetch the title and description from the URL
+        const urlMetadata = await fetchUrlMetadata(externalUrl);
+        
         postData.embed = {
           $type: "app.bsky.embed.external",
           external: {
             uri: externalUrl,
-            title: undefined,
-            description: undefined,
-            thumb: undefined,
+            title: urlMetadata.title,
+            description: urlMetadata.description,
+            thumb: urlMetadata.thumb,
           },
         };
       }
