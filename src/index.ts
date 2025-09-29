@@ -838,6 +838,7 @@ const handlePostGameThreeStarsState = async () => {
         currentState = GameStates.POSTGAMEVID;
       } else {
         console.log(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds (attempt ${threeStarsRetryCount}/20)`);
+        await checkForHighlights();
         await sleep(60000);
       }
     }
@@ -905,6 +906,7 @@ const handlePostGameVideoState = async () => {
         currentState = GameStates.ENDGAME;
       } else {
         console.log(`[${new Date().toISOString()}] Game video not available yet, waiting 60 seconds (attempt ${videoRetryCount}/60)`);
+        await checkForHighlights();
         await sleep(60000);
       }
     }
