@@ -34,6 +34,12 @@ export interface Config {
       live_sleep_time: number;
       intermission_sleep_time: number;
       final_sleep_time: number;
+      waiting_no_game_sleep_time?: number;
+      error_retry_sleep_time?: number;
+      three_stars_retry_sleep_time?: number;
+      video_retry_sleep_time?: number;
+      endgame_sleep_time?: number;
+      main_loop_error_sleep_time?: number;
     };
     services: {
       dailyfaceoff: boolean;

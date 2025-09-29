@@ -190,7 +190,7 @@ const handleWaitingState = async () => {
       console.log(`[${new Date().toISOString()}] No game found for ${config.app.script.team}, sleeping for 7 hours`);
       
       
-      await sleep(25200000);
+      await sleep(config.app.script.waiting_no_game_sleep_time ?? 25200000); // 7 hours
     }
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error in WAITING state:`, error);
@@ -398,7 +398,7 @@ const handlePregameState = async () => {
       }
     } catch (error) {
       console.error(`[${new Date().toISOString()}] Error in PREGAME state:`, error);
-      await sleep(300000); // Sleep 5 minutes on error
+      await sleep(config.app.script.error_retry_sleep_time ?? 300000); // Sleep on error
     }
   }
 };
@@ -839,7 +839,7 @@ const handlePostGameThreeStarsState = async () => {
       } else {
         console.log(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds (attempt ${threeStarsRetryCount}/20)`);
         await checkForHighlights();
-        await sleep(60000);
+        await sleep(config.app.script.three_stars_retry_sleep_time ?? 60000);
       }
     }
   } catch (error) {
@@ -870,13 +870,42 @@ const handlePostGameVideoState = async () => {
     const condensedVideo = rightRail?.gameVideo?.condensedGame;
     const recapVideo = rightRail?.gameVideo?.threeMinRecap;
     
-    if (condensedVideo || recapVideo) {
-      console.log(`[${new Date().toISOString()}] Game video(s) available - Condensed: ${condensedVideo || 'None'}, Recap: ${recapVideo || 'None'}`);
+    console.log(`[${new Date().toISOString()}] Video status - Condensed: ${condensedVideo || 'None'}, Recap: ${recapVideo || 'None'}`);
+    
+    // Check if both videos are available or if we've reached the retry limit
+    const bothVideosAvailable = condensedVideo && recapVideo;
+    
+    if (bothVideosAvailable) {
+      console.log(`[${new Date().toISOString()}] Both videos available, sending both`);
       
       const awayTeamAbbrev = boxscore.awayTeam.abbrev.toLowerCase();
       const homeTeamAbbrev = boxscore.homeTeam.abbrev.toLowerCase();
       
-      // Send condensed game if available
+      // Send condensed game
+      const condensedUrl = `https://www.nhl.com/video/topic/condensed-games/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
+      send(
+        `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
+        currentGame!,
+      );
+      
+      // Send recap video
+      const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
+      send(
+        `Check out the recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
+        currentGame!,
+      );
+      
+      // Reset retry counter and transition to endgame
+      videoRetryCount = 0;
+      currentState = GameStates.ENDGAME;
+      console.log(`[${new Date().toISOString()}] Both videos found and sent, transitioning to ENDGAME state`);
+    } else if (videoRetryCount >= 60) {
+      console.log(`[${new Date().toISOString()}] Maximum retry attempts reached. Sending available videos if any.`);
+      
+      const awayTeamAbbrev = boxscore.awayTeam.abbrev.toLowerCase();
+      const homeTeamAbbrev = boxscore.homeTeam.abbrev.toLowerCase();
+      
+      // Send whatever videos are available
       if (condensedVideo) {
         const condensedUrl = `https://www.nhl.com/video/topic/condensed-games/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
         send(
@@ -885,7 +914,6 @@ const handlePostGameVideoState = async () => {
         );
       }
       
-      // Send recap video if available (and different from condensed)
       if (recapVideo) {
         const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
         send(
@@ -894,21 +922,14 @@ const handlePostGameVideoState = async () => {
         );
       }
       
-      // Reset retry counter and transition to endgame
-      videoRetryCount = 0;
+      videoRetryCount = 0; // Reset for next game
       currentState = GameStates.ENDGAME;
-      console.log(`[${new Date().toISOString()}] Video(s) found and sent, transitioning to ENDGAME state`);
+      console.log(`[${new Date().toISOString()}] Sent available videos after max retries, transitioning to ENDGAME state`);
     } else {
       videoRetryCount++;
-      if (videoRetryCount >= 60) {
-        console.log(`[${new Date().toISOString()}] Game video not available after 60 attempts, transitioning to ENDGAME state`);
-        videoRetryCount = 0; // Reset for next game
-        currentState = GameStates.ENDGAME;
-      } else {
-        console.log(`[${new Date().toISOString()}] Game video not available yet, waiting 60 seconds (attempt ${videoRetryCount}/60)`);
-        await checkForHighlights();
-        await sleep(60000);
-      }
+      console.log(`[${new Date().toISOString()}] Waiting for both videos, attempt ${videoRetryCount}/60`);
+      await checkForHighlights();
+      await sleep(config.app.script.video_retry_sleep_time ?? 60000);
     }
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error in POSTGAMEVID state:`, error);
@@ -927,7 +948,7 @@ const handleEndGameState = async () => {
   
   
   try {
-    await sleep(25200000); // 7 hours
+    await sleep(config.app.script.endgame_sleep_time ?? 25200000); // 7 hours
     currentState = GameStates.WAITING;
     console.log(`[${new Date().toISOString()}] Transitioning back to WAITING state`);
   } catch (error) {
@@ -970,8 +991,8 @@ const main = async(): Promise<void> => {
       console.error(`[${new Date().toISOString()}] Unhandled error in main loop:`, error);
      
       
-      // Sleep for 5 minutes before retrying
-      await sleep(300000);
+      // Sleep before retrying
+      await sleep(config.app.script.main_loop_error_sleep_time ?? 300000);
     }
   }
 };
