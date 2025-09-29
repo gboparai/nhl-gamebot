@@ -1,0 +1,23 @@
+name: Deploy to Google Cloud VM
+
+on:
+  push:
+    branches: [ main ]  # Change to 'master' if that's your branch name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy and restart bot
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        script: |
+          cd ~/nhl-gamebot
+          git pull origin main
+          npm ci
+          npm run build
+          pm2 restart nhl-gamebot || pm2 start dist/index.js --name "nhl-gamebot"
