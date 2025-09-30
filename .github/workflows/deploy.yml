@@ -2,7 +2,7 @@ name: Deploy to Google Cloud VM
 
 on:
   push:
-    branches: [ main ]  # Change to 'master' if that's your branch name
+    branches: [ master ]  # Change to 'master' if that's your branch name
 
 jobs:
   deploy:
@@ -17,7 +17,7 @@ jobs:
         key: ${{ secrets.VM_SSH_KEY }}
         script: |
           cd ~/nhl-gamebot
-          git pull origin main
+          git pull origin master
           npm ci
           npm run build
           pm2 restart nhl-gamebot || pm2 start dist/index.js --name "nhl-gamebot"
