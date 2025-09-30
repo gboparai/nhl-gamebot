@@ -6,9 +6,10 @@ An automated bot for posting NHL game updates to social media platforms.
 
 - 🐦 **Twitter Integration**: Post game updates, scores, and media to Twitter
 - 🦋 **Bluesky Integration**: Cross-post to Bluesky with proper hashtag handling
+- 💬 **Discord Integration**: Send game updates and graphics to Discord channels
 - 🏒 **Game Tracking**: Automatic game detection and updates
-- 📊 **Statistics**: Integration with various hockey statistics services
 - 🖼️ **Media Support**: Automatic graphic generation and posting
+- 🎥 **Automatic Video Posting**: Detect and post highlight videos automatically
 - ⚡ **Real-time Updates**: Live game monitoring and posting
 
 ## Social Media Platforms
@@ -16,6 +17,7 @@ An automated bot for posting NHL game updates to social media platforms.
 ### Twitter
 
 Traditional Twitter API integration with media upload support.
+Limited Posting due to 17 post per 24 hours limit
 
 ### Bluesky
 
@@ -24,27 +26,26 @@ Full Bluesky integration with:
 - Proper hashtag detection using AT Protocol facets
 - Rich text support
 - Media upload capabilities
-- **⚠️ Warning**: Special handling for text containing hashtags due to platform differences
 
 ## Quick Start
 
 1. Clone the repository
 2. Install dependencies: `npm install`
 3. Configure your social media credentials in `config.json`
-4. Build the project: `npm run build`
-5. Start the bot: `npm start`
+4. Start the bot: `npm start`
 
 ## Configuration
 
 See the following documentation for detailed setup:
 
+- [App Setup Guide](./docs/APP_SETUP.md)
 - [Bluesky Setup Guide](./docs/BLUESKY_SETUP.md)
-- [Bluesky Hashtag Examples](./docs/BLUESKY_HASHTAG_EXAMPLES.md)
+- [Discord Setup Guide](./docs/DISCORD_SETUP.md)
+- [Twitter Setup Guide](./docs/TWITTER_SETUP.md)
 
 ## Development
 
 - `npm start` - Run the bot
-- `npm run build` - Build TypeScript
 - `npm test` - Run tests
 
 ## License

@@ -37,7 +37,6 @@
     },
     "services": {
       "dailyfaceoff": true,
-      "hockeyStatCards": true,
       "scoutingTheRefs": true
     },
     "log_file_name": "nhl-gamebot.log",

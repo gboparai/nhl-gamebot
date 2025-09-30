@@ -35,11 +35,13 @@ This guide explains how to set up Twitter (X) integration for the NHL GameBot.
 3. Generate the following credentials:
 
    **API Key and Secret:**
+
    - Click "Regenerate" under "Consumer Keys"
    - Copy the **API Key** (this is your `appKey`)
    - Copy the **API Key Secret** (this is your `appSecret`)
 
    **Access Token and Secret:**
+
    - Scroll down to "Authentication Tokens"
    - Click "Generate" under "Access Token and Secret"
    - Make sure permissions are set to **"Read and Write"**
@@ -75,6 +77,7 @@ In your `config.json` file, update the Twitter section:
 ### Media Support
 
 Twitter supports:
+
 - Images (JPEG, PNG, GIF, WebP)
 - Up to 4 images per tweet
 - Alt text for accessibility
@@ -85,14 +88,11 @@ Twitter supports:
 - Standard tweets: 280 characters
 - With media: Character count includes media URL (approximately 23 characters)
 
-
-
-
-
 ### Rate Limiting
 
 **Error: "Rate limit exceeded"**
-- Twitter has posting limits 17 requests / 24 hours for free tier
+
+- Twitter's free tier limits the post endpoint to 17 requests / 24 hours
 
 ### Media Upload Errors
 
@@ -103,10 +103,6 @@ Twitter supports:
   - Videos: 512MB max
 - Verify supported formats (JPEG, PNG, GIF, WebP, MP4, MOV)
 
-
-
 ## API Version
 
 This integration uses **Twitter API v2** with the `twitter-api-v2` npm package.
-
-
