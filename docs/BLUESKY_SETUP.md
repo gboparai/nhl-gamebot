@@ -32,30 +32,6 @@ In your `config.json` file, update the Bluesky section:
 }
 ```
 
-## Important Notes
-
-### Hashtag Handling
-
-Bluesky handles hashtags differently than Twitter:
-
-- **Twitter**: Hashtags are appended as text and processed by the platform
-- **Bluesky**: Hashtags are detected using "facets" which identify hashtag ranges in the text
-
-The bot automatically:
-
-- Detects hashtags in your text using Bluesky's RichText feature
-- Properly formats team hashtags and NHL-related tags
-- Handles hashtag conflicts when media is attached
-
-### Warning: Text with Hashtags
-
-⚠️ **Important**: When your text already contains hashtags, be aware that:
-
-1. The bot will detect existing hashtags and preserve them
-2. Additional team hashtags will be added for games (unless media is attached)
-3. Hashtags in Bluesky are case-sensitive and must start with `#`
-4. Maximum post length is 300 characters (shorter than Twitter's 280)
-
 ### Media Support
 
 Bluesky supports:
@@ -72,9 +48,6 @@ The Bluesky integration includes:
 - Comprehensive error logging
 - Graceful degradation if Bluesky is unavailable
 
-## Usage
-
-The bot will automatically post to both Twitter and Bluesky when both are enabled. No code changes required - just update your configuration!
 
 ## Troubleshooting
 

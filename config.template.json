@@ -1,14 +1,9 @@
 {
   "twitter": {
-    "appId": "YOUR_TWITTER_APP_ID",
     "appKey": "YOUR_TWITTER_APP_KEY",
     "appSecret": "YOUR_TWITTER_APP_SECRET",
     "accessToken": "YOUR_TWITTER_ACCESS_TOKEN",
     "accessSecret": "YOUR_TWITTER_ACCESS_SECRET",
-    "bearerToken": "YOUR_TWITTER_BEARER_TOKEN",
-    "apiKey": "YOUR_TWITTER_API_KEY",
-    "apiSecret": "YOUR_TWITTER_API_SECRET",
-    "handle": "@your_twitter_handle",
     "isActive": true
   },
   "bluesky": {

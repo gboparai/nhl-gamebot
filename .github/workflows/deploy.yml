@@ -18,6 +18,6 @@ jobs:
         script: |
           cd ~/nhl-gamebot
           git pull origin master
-          npm ci
+          npm install
           pm2 restart nhl-gamebot || pm2 start npm --name "nhl-gamebot" -- run start
           pm2 save
