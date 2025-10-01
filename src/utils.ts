@@ -127,7 +127,7 @@ export function getLastName(fullName: string): string {
   const nameParts = fullName.trim().split(" ");
 
   // Concatenate all parts except the last one to form the last name
-  const lastName = nameParts.slice(1).join(" ");
+  const lastName = nameParts.slice(1).join(" ").trim();
 
   return lastName;
 }

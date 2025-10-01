@@ -7,7 +7,7 @@ export function nstAbbreviation(teamName: string): string {
   teamName = teamName.replace("é", "e");
   const nssTeams: { [key: string]: string } = {
     "Anaheim Ducks": "ANA",
-        "Utah Mammoth": "UTA",
+    "Utah Mammoth": "UTA",
     "Boston Bruins": "BOS",
     "Buffalo Sabres": "BUF",
     "Carolina Hurricanes": "CAR",

@@ -1,3 +1,4 @@
+import { lookup } from "mime-types";
 import { Game } from "../types";
 import { logObjectToFile } from "../logger";
 
@@ -24,22 +25,9 @@ export function shouldRetry(error: unknown): boolean {
  * @param filePath - The path to the file.
  * @returns The MIME type string.
  */
-export function getMimeType(filePath: string): string {
-  const extension = filePath.toLowerCase().split('.').pop();
-  
-  switch (extension) {
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg';
-    case 'png':
-      return 'image/png';
-    case 'gif':
-      return 'image/gif';
-    case 'webp':
-      return 'image/webp';
-    default:
-      return 'image/jpeg'; // Default fallback
-  }
+export function getMimeType(filePath: string): string | undefined {
+  const mimeType = lookup(filePath);
+  return (typeof mimeType === "string" ? mimeType : null) ?? undefined;
 }
 
 /**
