@@ -1,4 +1,6 @@
 import moment from "moment-timezone";
+import { GameLanding } from "./types";
+import { LineScore } from "./graphic/utils";
 
 /**
  * Returns the ordinal suffix of a given number.
@@ -184,4 +186,76 @@ export function formatPeriodLabel(period: number): string {
   if (period === 3) return "3rd";
   if (period === 4) return "OT";
   return `${period - 3}OT`; // e.g. 5 → "2OT", 6 → "3OT"
+}
+
+
+/**
+ * Transforms a GameLanding object into home and away LineScores.
+ * @param gameLanding - The GameLanding object to transform.
+ * @returns An object containing homeLineScores and awayLineScores.
+ */
+
+export function formatPeriodTime(period: number, rawTime: string): string {
+  let [minutes, seconds] = rawTime.split(":");
+  if (!seconds) {
+    // Handle compact format like "754"
+    rawTime = rawTime.padStart(4, "0");
+    minutes = rawTime.slice(0, -2);
+    seconds = rawTime.slice(-2);
+  }
+  return `${formatPeriodLabel(period)} – ${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
+}
+
+
+/**
+ * Transforms a GameLanding object into arrays of LineScores for both home and away teams.
+ * Each LineScore contains the time, type, goal scorer, and assists for each goal.
+ * @param gameLanding - The GameLanding object to transform.
+ * @returns An object with homeLineScores and awayLineScores arrays.
+ */
+export function transformGameLandingToLineScores(gameLanding: GameLanding): {
+  homeLineScores: LineScore[];
+  awayLineScores: LineScore[];
+} {
+  const homeLineScores: LineScore[] = [];
+  const awayLineScores: LineScore[] = [];
+
+  gameLanding.summary.scoring.forEach((periodGoal) => {
+    periodGoal.goals.forEach((goal) => {
+      const lineScore: LineScore = {
+        time: formatPeriodTime(periodGoal.periodDescriptor.number, goal.timeInPeriod),
+        type: getGoalType(goal.situationCode),
+        goalScorer: `${goal.firstName.default} ${goal.lastName.default}`,
+        assists: goal.assists.map(
+          (assist) => `${assist.firstName.default} ${assist.lastName.default}`
+        ),
+      };
+
+      if (goal.teamAbbrev.default === gameLanding.homeTeam.abbrev) {
+        homeLineScores.push(lineScore);
+      } else {
+        awayLineScores.push(lineScore);
+      }
+    });
+  });
+
+  return { homeLineScores, awayLineScores };
+}
+
+/**
+ * Determines the type of a goal based on the given situation code.
+ * @param situationCode - The situation code representing the goal type.
+ * @returns The type of the goal: 'ev' for even strength, 'pp' for power play, 'sh' for short-handed.
+ */
+function getGoalType(situationCode: string): 'ev' | 'pp' | 'sh' {
+  switch (situationCode) {
+    case 'ev':
+      return 'ev';
+    case 'pp':
+      return 'pp';
+    case 'sh':
+      return 'sh';
+    default:
+      return 'ev'; // Default to even strength if unknown
+  }
 }

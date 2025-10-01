@@ -10,7 +10,6 @@ import {
 import { GameDetails, fetchGameDetails } from "./api/scoutingTheRefs";
 import {
   Game,
-  GameLanding,
   NHLScores,
   Team,
 } from "./types";
@@ -24,7 +23,8 @@ import {
   groupedList,
   getLastName,
   sleep,
-  formatPeriodLabel
+  formatPeriodLabel,
+  transformGameLandingToLineScores
 } from "./utils";
 import moment from "moment";
 import { dailyfaceoffLines } from "./api/dailyFaceoff";
@@ -33,7 +33,6 @@ import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
 import { teamHashtag } from "./social/utils";
-import { LineScore } from "./graphic/utils";
 
 
 /**
@@ -68,6 +67,15 @@ interface GoalPostInfo {
 }
 
 let goalPosts: GoalPostInfo[] = [];
+
+// Setter functions for testing
+function setCurrentState(state: GameStates) { currentState = state; }
+function setCurrentGame(game: Game | undefined) { currentGame = game; }
+function setPrefTeam(team: Team | undefined) { prefTeam = team; }
+function setOppTeam(team: Team | undefined) { oppTeam = team; }
+function setHasSentIntermission(sent: boolean) { hasSentIntermission = sent; }
+function setSentEvents(events: number[]) { sentEvents = events; }
+function setGoalPosts(posts: GoalPostInfo[]) { goalPosts = posts; }
 
 /**
  * Checks for highlight URLs for stored goal posts and sends replies
@@ -997,74 +1005,37 @@ const main = async(): Promise<void> => {
   }
 };
 
-/**
- * Transforms a GameLanding object into home and away LineScores.
- * @param gameLanding - The GameLanding object to transform.
- * @returns An object containing homeLineScores and awayLineScores.
- */
-
-function formatPeriodTime(period: number, rawTime: string): string {
-  let [minutes, seconds] = rawTime.split(":");
-  if (!seconds) {
-    // Handle compact format like "754"
-    rawTime = rawTime.padStart(4, "0");
-    minutes = rawTime.slice(0, -2);
-    seconds = rawTime.slice(-2);
-  }
-  return `${formatPeriodLabel(period)} – ${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
-}
-
-function transformGameLandingToLineScores(gameLanding: GameLanding): {
-  homeLineScores: LineScore[];
-  awayLineScores: LineScore[];
-} {
-  const homeLineScores: LineScore[] = [];
-  const awayLineScores: LineScore[] = [];
-
-  gameLanding.summary.scoring.forEach((periodGoal) => {
-    periodGoal.goals.forEach((goal) => {
-      const lineScore: LineScore = {
-        time: formatPeriodTime(periodGoal.periodDescriptor.number, goal.timeInPeriod),
-        type: getGoalType(goal.situationCode),
-        goalScorer: `${goal.firstName.default} ${goal.lastName.default}`,
-        assists: goal.assists.map(
-          (assist) => `${assist.firstName.default} ${assist.lastName.default}`
-        ),
-      };
-
-      if (goal.teamAbbrev.default === gameLanding.homeTeam.abbrev) {
-        homeLineScores.push(lineScore);
-      } else {
-        awayLineScores.push(lineScore);
-      }
-    });
-  });
-
-  return { homeLineScores, awayLineScores };
-}
-
-/**
- * Determines the type of a goal based on the given situation code.
- * @param situationCode - The situation code representing the goal type.
- * @returns The type of the goal: 'ev' for even strength, 'pp' for power play, 'sh' for short-handed.
- */
-function getGoalType(situationCode: string): 'ev' | 'pp' | 'sh' {
-  switch (situationCode) {
-    case 'ev':
-      return 'ev';
-    case 'pp':
-      return 'pp';
-    case 'sh':
-      return 'sh';
-    default:
-      return 'ev'; // Default to even strength if unknown
-  }
-}
-
 // Start the bot
+
 console.log(`[${new Date().toISOString()}] Starting NHL GameBot...`);
 main().catch((error) => {
   console.error(`[${new Date().toISOString()}] Fatal error in main function:`, error);
-
   process.exit(1);
 });
+
+// Export internal state and handlers for testing
+export {
+  GameStates,
+  currentState,
+  currentGame,
+  prefTeam,
+  oppTeam,
+  hasSentIntermission,
+  sentEvents,
+  goalPosts,
+  setCurrentState,
+  setCurrentGame,
+  setPrefTeam,
+  setOppTeam,
+  setHasSentIntermission,
+  setSentEvents,
+  setGoalPosts,
+  checkForHighlights,
+  handleWaitingState,
+  handlePregameState,
+  handleInGameState,
+  handlePostGameState,
+  handlePostGameThreeStarsState,
+  handlePostGameVideoState,
+  handleEndGameState
+};
