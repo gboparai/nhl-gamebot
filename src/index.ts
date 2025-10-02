@@ -87,7 +87,7 @@ async function checkForHighlights(): Promise<void> {
 
   try {
     console.log(`[${new Date().toISOString()}] Checking for highlights`);
-    console.log("goalPosts length:", goalPosts.length);
+
     console.log("goalPosts", goalPosts);
     
     if (goalPosts.length === 0) {
@@ -118,7 +118,7 @@ async function checkForHighlights(): Promise<void> {
           highlightUrl: goal.details?.highlightClipSharingUrl || "Not available yet"
         });
 
-        if (goal.details?.highlightClipSharingUrl) {
+        if (goal.details?.highlightClipSharingUrl && goal.details?.highlightClipSharingUrl !== 'https://nhl.com/video/') {
           console.log(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
           
           // Send highlight reply using the centralized send function
@@ -135,11 +135,7 @@ async function checkForHighlights(): Promise<void> {
           // Mark as processed
           goalPost.processed = true;
           console.log(`Sent highlight reply for ${goalPost.playerName}`);
-        } else {
-          console.log(`No highlight URL available yet for ${goalPost.playerName}`);
-        }
-      } else {
-        console.log(`Could not find goal with eventId ${goalPost.eventId} in play-by-play data`);
+        } 
       }
     }
   } catch (error) {
@@ -529,7 +525,7 @@ const handleInGameState = async () => {
           [`./temp/intermission.png`],
         );
       }
-   
+      await checkForHighlights();
       await sleep(config.app.script.intermission_sleep_time);
     } else {
       hasSentIntermission = false;
@@ -638,7 +634,7 @@ const handleInGameState = async () => {
                   ? ` (drawn by ${drawnByPlayer.firstName.default} ${drawnByPlayer.lastName.default})`
                   : '';
                   
-                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes ${drawnByText} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
+                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes${drawnByText} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
                 console.log('Play details:', play)
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
@@ -662,10 +658,7 @@ const handleInGameState = async () => {
                 }
               }
               else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout") {
-                const stoppageMessage = `Game Stoppage: TV Timeout at ${play.timeRemaining} in the ${formatPeriodLabel(play.periodDescriptor.number)} period.
-                
-                ${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}
-                ${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
+                const stoppageMessage = `Game Stoppage: TV Timeout with ${play.timeRemaining} remaining in the ${formatPeriodLabel(play.periodDescriptor.number)} period. \n\n${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}\n${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
                 await send(stoppageMessage, currentGame!, undefined, true);
               }
               
@@ -890,7 +883,7 @@ const handlePostGameVideoState = async () => {
       const homeTeamAbbrev = boxscore.homeTeam.abbrev.toLowerCase();
       
       // Send condensed game
-      const condensedUrl = `https://www.nhl.com/video/topic/condensed-games/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
+      const condensedUrl = `https://www.nhl.com/video/topic/condensed-game/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
       send(
         `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
         currentGame!,
@@ -915,7 +908,7 @@ const handlePostGameVideoState = async () => {
       
       // Send whatever videos are available
       if (condensedVideo) {
-        const condensedUrl = `https://www.nhl.com/video/topic/condensed-games/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
+        const condensedUrl = `https://www.nhl.com/video/topic/condensed-game/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
         send(
           `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
           currentGame!,

@@ -106,7 +106,6 @@ export function addSquareWithGoals(
   ctx.font = "14px RobotoRegular";
   ctx.textAlign = "left";
   const lineHeight = 20;
-  const maxLines = Math.floor((height - 2 * yPadding) / lineHeight);
   let currentLine = 0;
   for (const lineItem of lineItems) {
     const words = lineItem.split(" ");
@@ -116,31 +115,23 @@ export function addSquareWithGoals(
       const metrics = ctx.measureText(testLine);
       const testWidth = metrics.width;
       if (testWidth > width - 2 * xPadding) {
-        if (currentLine < maxLines) {
-          ctx.fillText(
-            line.trim(),
-            x + xPadding,
-            y + yPadding + currentLine * lineHeight,
-          );
-          line = `${word} `;
-          currentLine++;
-        } else {
-          break;
-        }
+        ctx.fillText(
+          line.trim(),
+          x + xPadding,
+          y + yPadding + currentLine * lineHeight,
+        );
+        line = `${word} `;
+        currentLine++;
       } else {
         line = testLine;
       }
     }
-    if (currentLine < maxLines) {
-      ctx.fillText(
-        line.trim(),
-        x + xPadding,
-        y + yPadding + currentLine * lineHeight,
-      );
-      currentLine++;
-    } else {
-      break;
-    }
+    ctx.fillText(
+      line.trim(),
+      x + xPadding,
+      y + yPadding + currentLine * lineHeight,
+    );
+    currentLine++;
   }
 }
 

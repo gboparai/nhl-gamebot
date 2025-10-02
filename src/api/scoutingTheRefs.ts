@@ -1,10 +1,9 @@
 import axios from "axios";
 import { load, CheerioAPI, Element } from "cheerio";
-import { logObjectToFile } from "../logger";
 
 
 
-type WordPressPost = {
+export type WordPressPost = {
   id: number;
   date: string;
   categories: number[];
@@ -39,7 +38,7 @@ const REFS_CATEGORY_ID = 921;
  * @param dateString - The date string to check.
  * @returns A boolean indicating whether the date is today or not.
  */
-function isToday(dateString: string): boolean {
+export function isToday(dateString: string): boolean {
   const date = new Date(dateString);
   const today = new Date();
   return (
@@ -56,7 +55,7 @@ function isToday(dateString: string): boolean {
  * @param careerGames - The number of games played in the entire career.
  * @returns The total number of games played.
  */
-function calculateTotalGames(seasonGames: string, careerGames: string): number {
+export function calculateTotalGames(seasonGames: string, careerGames: string): number {
   const season = parseInt(seasonGames) || 0;
   const career = parseInt(careerGames) || 0;
   return season + career;
@@ -69,7 +68,7 @@ function calculateTotalGames(seasonGames: string, careerGames: string): number {
  * @param includesPenalties - Optional. Indicates whether penalty game data should be included.
  * @returns An array of Referee objects containing the extracted official data.
  */
-function extractOfficialData(
+export function extractOfficialData(
   $: CheerioAPI,
   row: Element,
   includesPenalties = false
@@ -119,7 +118,7 @@ function extractOfficialData(
  * Fetches posts data from the WordPress API.
  * @returns A promise that resolves to an array of WordPressPost objects.
  */
-async function fetchPostsData(): Promise<WordPressPost[]> {
+export async function fetchPostsData(): Promise<WordPressPost[]> {
   try {
     const response = await axios.get<WordPressPost[]>(API_URL);
     return response.data;
@@ -137,7 +136,7 @@ async function fetchPostsData(): Promise<WordPressPost[]> {
  * @param posts - An array of WordPress posts.
  * @returns The relevant WordPress post, or null if no relevant post is found.
  */
-function findRelevantPost(posts: WordPressPost[]): WordPressPost | null {
+export function findRelevantPost(posts: WordPressPost[]): WordPressPost | null {
   return (
     posts.find(
       (post) =>
@@ -166,8 +165,6 @@ export async function fetchGameDetails(
     const posts = await fetchPostsData();
     const relevantPost = findRelevantPost(posts);
 
-    logObjectToFile(posts, "scoutingtherefs-posts");
-    logObjectToFile(relevantPost, "scoutingtherefs-posts");
 
     if (!relevantPost) {
       console.warn("No relevant game details found for today.");

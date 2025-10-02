@@ -1,7 +1,6 @@
 import { BskyAgent, RichText } from "@atproto/api";
 import { Game, Config } from "../types";
 import config from "../../config.json";
-import { logObjectToFile } from "../logger";
 import { getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
 import axios from "axios";
 

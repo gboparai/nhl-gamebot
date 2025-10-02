@@ -1,6 +1,6 @@
 import axios from "axios";
 import { load, CheerioAPI } from "cheerio";
-import { logObjectToFile } from "../logger";
+
 
 // Types
 export type  Lines = {
@@ -11,7 +11,7 @@ export type  Lines = {
   lastUpdate?: string;
 }
 
-type TeamPosition = 'forwards' | 'defense' | 'goalies';
+export type TeamPosition = 'forwards' | 'defense' | 'goalies';
 
 // Constants
 const BASE_URL = "https://www.dailyfaceoff.com/teams";
@@ -57,7 +57,7 @@ const TEAM_MAPPINGS: Record<string, string> = {
  * @param teamName - The team name to be converted.
  * @returns The converted team name.
  */
-function convertTeamName(teamName: string): string {
+export function convertTeamName(teamName: string): string {
   const lowerCaseTeamName = teamName.toLowerCase();
   return TEAM_MAPPINGS[lowerCaseTeamName] || teamName;
 }
@@ -68,9 +68,9 @@ function convertTeamName(teamName: string): string {
  * @param $ - The CheerioAPI object representing the parsed HTML.
  * @returns The last update timestamp as a string.
  */
-function extractLastUpdate($: CheerioAPI): string {
+export function extractLastUpdate($: CheerioAPI): string {
   const lastUpdateElement = $(".text-white:contains('Last updated:')");
-  return lastUpdateElement.text().split(": ")[1]?.replace("@", "").trim() || "";
+  return lastUpdateElement.text().split(": ")[1]?.replace("@ ", "").trim() || "";
 }
 
 /**
@@ -80,7 +80,7 @@ function extractLastUpdate($: CheerioAPI): string {
  * @param position - The position of the team.
  * @returns An array of player names.
  */
-function extractPlayerNames($: CheerioAPI, position: TeamPosition): string[] {
+export function extractPlayerNames($: CheerioAPI, position: TeamPosition): string[] {
   return $(`#${position}`)
     .parent()
     .parent()
@@ -95,7 +95,7 @@ function extractPlayerNames($: CheerioAPI, position: TeamPosition): string[] {
  * @param {string} teamName - The name of the team.
  * @returns {string} The URL for the team's line combinations.
  */
-function buildTeamUrl(teamName: string): string {
+export function buildTeamUrl(teamName: string): string {
   const convertedName = convertTeamName(teamName.toLowerCase());
   return `${BASE_URL}/${convertedName}/line-combinations/`;
 }
@@ -107,7 +107,7 @@ function buildTeamUrl(teamName: string): string {
  * @returns A promise that resolves to the fetched team page as a string.
  * @throws If there is an error while fetching the team page.
  */
-async function fetchTeamPage(url: string): Promise<string> {
+export async function fetchTeamPage(url: string): Promise<string> {
   try {
     const response = await axios.get(url, {
       headers: {
@@ -150,11 +150,7 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
       goalies: extractPlayerNames($, 'goalies'),
       lastUpdate
     };
-
-    // Validate that we actually got some data
-    logObjectToFile(lines, `dailyfaceoff-${teamName.replace(/\s+/g, '-').toLowerCase()}-lines`);
-    logObjectToFile(html, `dailyfaceoff-${teamName.replace(/\s+/g, '-').toLowerCase()}-html`);
-
+    
     if (!lines.forwards.length && !lines.defense.length && !lines.goalies.length) {
       console.warn(`No line data found for team: ${teamName}`);
       return { ...emptyLines, lastUpdate };
