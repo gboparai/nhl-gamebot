@@ -21,11 +21,20 @@ Limited Posting due to 17 post per 24 hours limit
 
 ### Bluesky
 
-Full Bluesky integration with:
+Bluesky integration with:
 
 - Proper hashtag detection using AT Protocol facets
 - Rich text support
 - Media upload capabilities
+
+### Discord
+
+Discord integration with:
+
+- Channel posting capabilities
+- Rich text support using Markdown
+- Ability to send messages to specific channels using the `channelId` configuration option
+
 
 ## Quick Start
 

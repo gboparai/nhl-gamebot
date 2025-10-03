@@ -47,7 +47,7 @@ export async function send(
   }
 
   // Send to Discord if active (always send regardless of extended flag)
-  if (typedConfig.discord.isActive && !blueskyReplyTo) {
+  if (typedConfig.discord.isActive ) {
     try {
       await sendDiscordMessage(text, game, media);
     } catch (error) {
