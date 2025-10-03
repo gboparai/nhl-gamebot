@@ -885,14 +885,14 @@ const handlePostGameVideoState = async () => {
       // Send condensed game
       const condensedUrl = `https://www.nhl.com/video/topic/condensed-game/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
       send(
-        `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
+        `Check out the condensed game of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
         currentGame!,
       );
       
       // Send recap video
       const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
       send(
-        `Check out the recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
+        `Check out the recap of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
         currentGame!,
       );
       
@@ -910,7 +910,7 @@ const handlePostGameVideoState = async () => {
       if (condensedVideo) {
         const condensedUrl = `https://www.nhl.com/video/topic/condensed-game/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
         send(
-          `Check out the condensed game for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
+          `Check out the condensed game of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
           currentGame!,
         );
       }
@@ -918,7 +918,7 @@ const handlePostGameVideoState = async () => {
       if (recapVideo) {
         const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
         send(
-          `Check out the recap for tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
+          `Check out the recap of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
           currentGame!,
         );
       }
