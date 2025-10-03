@@ -531,15 +531,23 @@ const handleInGameState = async () => {
       hasSentIntermission = false;
       if (playByPlay.plays.length > 0) {
         // Filter for relevant event types that haven't been sent yet
+        
         const relevantPlays = playByPlay.plays.filter(
-          (play) =>
-            (play.typeDescKey === "goal" ||
+          (play) => {
+            if ( play.typeDescKey === "penalty" && (!play.details?.descKey || ['minor', 'major'].includes(play.details?.descKey ?? ''))) {
+              console.log(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId}`);
+              sentEvents.push(play.eventId);
+              return false;
+            }
+            return (
+              play.typeDescKey === "goal" ||
               play.typeDescKey === "penalty" ||
               play.typeDescKey === "period-start" ||
               play.typeDescKey === "period-end" ||
               play.typeDescKey === "stoppage" ||
-              play.typeDescKey === "game-end") &&
-            !sentEvents.includes(play.eventId)
+              play.typeDescKey === "game-end"
+            ) && !sentEvents.includes(play.eventId);
+          }
         );
         
         // Sort by sortOrder to ensure chronological processing
@@ -588,20 +596,34 @@ const handleInGameState = async () => {
 
                 const assistsText = assists.length > 0 ? `\nAssists: ${assists.join(', ')}` : '';
 
-                let goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                          \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
-                                  \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                const goalie = playByPlay?.rosterSpots.find(
+                  (player) => player.playerId === play.details?.goalieInNetId,
+                );
 
-                if (scoringTeam?.id !== prefTeam?.id) {
-                  goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
-                              \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
-                                      \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                let goalMessage = '';
+                if(play.periodDescriptor.periodType === "SO"){
+                  let shootoutMessage = `🎯 SHOOTOUT GOAL! ${scoringTeam?.name.default} 🎯\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} scores on ${goalie?.firstName.default} ${goalie?.lastName.default}!`;
+                  
+                  if (scoringTeam?.id !== prefTeam?.id) {
+                    shootoutMessage = `😞 ${scoringTeam?.name.default} scores in the shootout ${thumbsDownEmojis(1)}\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} beats ${goalie?.firstName.default} ${goalie?.lastName.default}.`;
+                  }
+                }
+                else{
+                  goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
+                            \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
+                                    \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+
+                  if (scoringTeam?.id !== prefTeam?.id) {
+                    goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
+                                \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
+                                        \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
+                  }
                 }
 
                 const socialResponse = await send(goalMessage, currentGame!, undefined, true);
                 
                 // Store goal post info for potential highlight reply
-                if (socialResponse.blueskyPost && scoringPlayer) {
+                if (socialResponse.blueskyPost && scoringPlayer && play.periodDescriptor.periodType === "SO") {
                   goalPosts.push({
                     eventId: play.eventId,
                     gameId: currentGame!.id,
@@ -614,28 +636,50 @@ const handleInGameState = async () => {
                 }
               }
               else if (play.typeDescKey === "penalty") {
-                const penaltyTeam =
-                  play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
-                    ? currentGame?.awayTeam
-                    : currentGame?.homeTeam;
+                // Skip placeholder penalties (minor/major without details)
+                const penaltyTeam = play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
+                  ? currentGame?.awayTeam
+                  : currentGame?.homeTeam;
+
+                  const drawnTeam = play.details?.eventOwnerTeamId !== currentGame?.awayTeam.id
+                  ? currentGame?.awayTeam
+                  : currentGame?.homeTeam;
+                  
                 const penaltyPlayer = playByPlay?.rosterSpots.find(
                   (player) => player.playerId === play.details?.committedByPlayerId,
                 );
                 
-                // Get the player who drew the penalty
+                // Get the player who drew the penalty (if any)
                 const drawnByPlayer = play.details?.drawnByPlayerId 
                   ? playByPlay?.rosterSpots.find(
                       (player) => player.playerId === play.details?.drawnByPlayerId,
                     )
                   : null;
                 
-     
+                // Format penalty type (convert from kebab-case to Title Case)
+                const penaltyType = play.details?.descKey
+                  ? play.details.descKey
+                      .split('-')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ')
+                  : '';
+                                
+                // Format drawn by text
                 const drawnByText = drawnByPlayer 
                   ? ` (drawn by ${drawnByPlayer.firstName.default} ${drawnByPlayer.lastName.default})`
                   : '';
-                  
-                const penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes${drawnByText} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
-                console.log('Play details:', play)
+                
+                let penaltyMessage = '';
+                
+                if (play.details?.typeCode === 'PS') {
+                  // Penalty shot message
+                  penaltyMessage = `Penalty Shot ${drawnTeam?.name.default}\n\n${drawnByPlayer?.firstName.default} ${drawnByPlayer?.lastName.default} awarded a penalty shot with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
+                } else {
+                  // Regular penalty message
+                  penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes${drawnByText} for ${penaltyType} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
+                }
+                
+                console.log(`[${new Date().toISOString()}] Sending penalty message:`, penaltyMessage);
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
               else if (play.typeDescKey === "period-start") {
