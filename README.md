@@ -2,6 +2,8 @@
 
 An automated bot for posting NHL game updates to social media platforms.
 
+See the bot in action on https://bsky.app/profile/canucksgamebot.bsky.social
+
 ## Features
 
 - 🐦 **Twitter Integration**: Post game updates, scores, and media to Twitter
