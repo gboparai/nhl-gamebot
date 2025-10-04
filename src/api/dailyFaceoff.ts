@@ -1,5 +1,6 @@
 import axios from "axios";
 import { load, CheerioAPI } from "cheerio";
+import { logger } from "../logger";
 
 
 // Types
@@ -152,13 +153,13 @@ export async function dailyfaceoffLines(teamName: string): Promise<Lines> {
     };
     
     if (!lines.forwards.length && !lines.defense.length && !lines.goalies.length) {
-      console.warn(`No line data found for team: ${teamName}`);
+      logger.warn(`No line data found for team: ${teamName}`);
       return { ...emptyLines, lastUpdate };
     }
 
     return lines;
   } catch (error) {
-    console.error(
+    logger.error(
       "Error fetching lines data:",
       error instanceof Error ? error.message : "Unknown error"
     );

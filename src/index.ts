@@ -33,6 +33,7 @@ import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
 import { teamHashtag } from "./social/utils";
+import { logger } from "./logger";
 
 
 /**
@@ -82,7 +83,7 @@ function setGoalPosts(posts: GoalPostInfo[]) { goalPosts = posts; }
  */
 async function checkForHighlights(): Promise<void> {
   if (!currentGame ) {
-      console.log("No current game, skipping highlight check");
+      logger.info("No current game, skipping highlight check");
     return;
   }
 
@@ -90,7 +91,7 @@ async function checkForHighlights(): Promise<void> {
 
     
     if (goalPosts.length === 0) {
-      console.log("No goal posts to check for highlights");
+      logger.info("No goal posts to check for highlights");
       return;
     }
     
@@ -99,26 +100,26 @@ async function checkForHighlights(): Promise<void> {
 
     
     for (const goalPost of goalPosts) {
-      console.log(`Processing goalPost for ${goalPost.playerName} (eventId: ${goalPost.eventId}, processed: ${goalPost.processed})`);
+      logger.info(`Processing goalPost for ${goalPost.playerName} (eventId: ${goalPost.eventId}, processed: ${goalPost.processed})`);
       
       if (goalPost.processed) {
-        console.log(`Skipping already processed goalPost for ${goalPost.playerName}`);
+        logger.info(`Skipping already processed goalPost for ${goalPost.playerName}`);
         continue;
       }
 
       // Find the corresponding goal in the latest data
       const goal = playByPlay.plays.find(p => p.eventId === goalPost.eventId);
-      console.log(`Found goal in play-by-play:`, goal ? `Yes (eventId: ${goal.eventId})` : "No");
+      logger.info(`Found goal in play-by-play:`, goal ? `Yes (eventId: ${goal.eventId})` : "No");
 
       if (goal) {
-        console.log(`Goal details for ${goalPost.playerName}:`, {
+        logger.info(`Goal details for ${goalPost.playerName}:`, {
           eventId: goal.eventId,
           hasHighlightUrl: !!goal.details?.highlightClipSharingUrl,
           highlightUrl: goal.details?.highlightClipSharingUrl || "Not available yet"
         });
 
         if (goal.details?.highlightClipSharingUrl && goal.details?.highlightClipSharingUrl !== 'https://nhl.com/video/') {
-          console.log(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
+          logger.info(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
           
           // Send highlight reply using the centralized send function
           const highlightText = `HIGHLIGHT: ${goalPost.playerName} scores for the ${goalPost.teamName}!\n\n${goal.details.highlightClipSharingUrl}`;
@@ -133,12 +134,12 @@ async function checkForHighlights(): Promise<void> {
           
           // Mark as processed
           goalPost.processed = true;
-          console.log(`Sent highlight reply for ${goalPost.playerName}`);
+          logger.info(`Sent highlight reply for ${goalPost.playerName}`);
         } 
       }
     }
   } catch (error) {
-    console.error("Error checking for highlights:", error);
+    logger.error("Error checking for highlights:", error);
   }
 }
 
@@ -149,11 +150,11 @@ async function checkForHighlights(): Promise<void> {
  * If there is no current game, it waits for 7 hours before checking again.
  */
 const handleWaitingState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering WAITING state`);
+  logger.info(`[${new Date().toISOString()}] Entering WAITING state`);
   
   
   try {
-    console.log(`[${new Date().toISOString()}] Fetching NHL scores for ${getCurrentDateLocalTime(config.app.script.timeZone)}`);
+    logger.info(`[${new Date().toISOString()}] Fetching NHL scores for ${getCurrentDateLocalTime(config.app.script.timeZone)}`);
     const nhlScores: NHLScores = await fetchNHLScores(
       getCurrentDateLocalTime(config.app.script.timeZone),
     );
@@ -167,7 +168,7 @@ const handleWaitingState = async () => {
     );
 
     if (currentGame !== undefined) {
-      console.log(`[${new Date().toISOString()}] Found game: ${currentGame.awayTeam.abbrev} @ ${currentGame.homeTeam.abbrev} at ${currentGame.startTimeUTC}`);
+      logger.info(`[${new Date().toISOString()}] Found game: ${currentGame.awayTeam.abbrev} @ ${currentGame.homeTeam.abbrev} at ${currentGame.startTimeUTC}`);
       
       prefTeam =
         currentGame.awayTeam.abbrev === config.app.script.team
@@ -184,19 +185,19 @@ const handleWaitingState = async () => {
       sleepTime.setHours(sleepTime.getHours() - 1);
       const sleepDuration = sleepTime.getTime() - Date.now();
       
-      console.log(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until pregame (${sleepTime.toISOString()})`);
+      logger.info(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until pregame (${sleepTime.toISOString()})`);
       
       await sleep(sleepDuration);
       currentState = GameStates.PREGAME;
-      console.log(`[${new Date().toISOString()}] Transitioning to PREGAME state`);
+      logger.info(`[${new Date().toISOString()}] Transitioning to PREGAME state`);
     } else {
-      console.log(`[${new Date().toISOString()}] No game found for ${config.app.script.team}, sleeping for 7 hours`);
+      logger.info(`[${new Date().toISOString()}] No game found for ${config.app.script.team}, sleeping for 7 hours`);
       
       
       await sleep(config.app.script.waiting_no_game_sleep_time ?? 25200000); // 7 hours
     }
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in WAITING state:`, error);
+    logger.error(`[${new Date().toISOString()}] Error in WAITING state:`, error);
    
   }
 };
@@ -207,11 +208,11 @@ const handleWaitingState = async () => {
  * @returns {Promise<void>} A promise that resolves when the pregame state is handled.
  */
 const handlePregameState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering PREGAME state`);
+  logger.info(`[${new Date().toISOString()}] Entering PREGAME state`);
 
   if (currentGame !== undefined) {
     try {
-      console.log(`[${new Date().toISOString()}] Fetching game center right rail data`);
+      logger.info(`[${new Date().toISOString()}] Fetching game center right rail data`);
       const rightRail = await fetchGameCenterRightRail(String(currentGame!.id));
       const teamSummaries = await fetchTeamSummaries();
 
@@ -231,37 +232,37 @@ const handlePregameState = async () => {
       let awayTeamRecord = currentGame.awayTeam.record;
       
       if (!homeTeamRecord || !awayTeamRecord) {
-        console.log(`[${new Date().toISOString()}] Team records not available in NHL scores, fetching from game landing`);
+        logger.info(`[${new Date().toISOString()}] Team records not available in NHL scores, fetching from game landing`);
         try {
           const gameLanding = await fetchGameLanding(String(currentGame!.id));
           homeTeamRecord = homeTeamRecord || gameLanding.homeTeam.record || "";
           awayTeamRecord = awayTeamRecord || gameLanding.awayTeam.record || "";
         } catch (error) {
-          console.warn(`[${new Date().toISOString()}] Could not fetch game landing for team records:`, error);
+          logger.warn(`[${new Date().toISOString()}] Could not fetch game landing for team records:`, error);
           homeTeamRecord = homeTeamRecord || "";
           awayTeamRecord = awayTeamRecord || "";
         }
       }
       
 
-      console.log(`[${new Date().toISOString()}] Fetching referee details for ${config.app.script.teamName}`);
+      logger.info(`[${new Date().toISOString()}] Fetching referee details for ${config.app.script.teamName}`);
       const refereeDetails = await fetchGameDetails(config.app.script.teamName);
 
 
       //TODO:change to use function
       const msUntilStart = new Date(currentGame!.startTimeUTC).getTime() - Date.now();
       if (refereeDetails?.confirmed === false && msUntilStart > 30 * 60 * 1000) {
-        console.log(`[${new Date().toISOString()}] Referee details not confirmed, sleeping for ${config.app.script.pregame_sleep_time}ms`);
+        logger.info(`[${new Date().toISOString()}] Referee details not confirmed, sleeping for ${config.app.script.pregame_sleep_time}ms`);
         await sleep(config.app.script.pregame_sleep_time);
       } else {
-        console.log(`[${new Date().toISOString()}] Referee details confirmed, proceeding with pregame activities`);
+        logger.info(`[${new Date().toISOString()}] Referee details confirmed, proceeding with pregame activities`);
 
         const formattedTime12Hr = convertUTCToLocalTime(
           currentGame.startTimeUTC,
           config.app.script.timeZone,
         );
 
-        console.log(`[${new Date().toISOString()}] Generating pregame image`);
+        logger.info(`[${new Date().toISOString()}] Generating pregame image`);
         await preGameImage({
           homeTeam: currentGame.homeTeam.name.default,
           awayTeam: currentGame.awayTeam.name.default,
@@ -278,14 +279,14 @@ const handlePregameState = async () => {
           awayLine2: `Season Series: ${rightRail.seasonSeriesWins.awayTeamWins}-${rightRail.seasonSeriesWins.homeTeamWins}`,
         });
 
-        console.log(`[${new Date().toISOString()}] Sending pregame announcement`);
+        logger.info(`[${new Date().toISOString()}] Sending pregame announcement`);
         await send(
           `Tune in tonight when the ${prefTeam?.name.default} take on the ${oppTeam?.name.default} at ${currentGame.venue.default}.\n\n🕢 ${formattedTime12Hr}\n📺 ${currentGame.tvBroadcasts.map((broadcast) => broadcast.network).join(", ")}`,
           currentGame,
           [`./temp/preGame.png`],
         );
 
-        console.log(`[${new Date().toISOString()}] Generating game stats image`);
+        logger.info(`[${new Date().toISOString()}] Generating game stats image`);
         await gameImage({
           pref: {
             team: currentGame.homeTeam.name.default,
@@ -331,7 +332,7 @@ const handlePregameState = async () => {
 
         const dfLines = await dailyfaceoffLines(prefTeam?.name.default || "");
         if (dfLines.confirmed) {
-          console.log(`[${new Date().toISOString()}] Daily Faceoff lines last updated ${dfLines.lastUpdate}`);
+          logger.info(`[${new Date().toISOString()}] Daily Faceoff lines last updated ${dfLines.lastUpdate}`);
           await send(
             `Projected lines for the ${prefTeam?.name.default} (via @DailyFaceoff)\n\n${groupedList(
                       dfLines.forwards.map((player) => getLastName(player)),
@@ -347,10 +348,10 @@ const handlePregameState = async () => {
           );
         }
 
-        console.log(`[${new Date().toISOString()}] Fetching Daily Faceoff lines for ${oppTeam?.name.default}`);
+        logger.info(`[${new Date().toISOString()}] Fetching Daily Faceoff lines for ${oppTeam?.name.default}`);
         const dfLinesOpps = await dailyfaceoffLines(oppTeam?.name.default || "");
         if (dfLinesOpps.confirmed) {
-          console.log(`[${new Date().toISOString()}] Daily Faceoff lines confirmed for ${oppTeam?.name.default}`);
+          logger.info(`[${new Date().toISOString()}] Daily Faceoff lines confirmed for ${oppTeam?.name.default}`);
           await send(
             `Projected lines for the ${oppTeam?.name.default} (via @DailyFaceoff)\n\n${groupedList(
                       dfLinesOpps.forwards.map((player) => getLastName(player)),
@@ -365,15 +366,15 @@ const handlePregameState = async () => {
             currentGame,
           );
         } else {
-          console.log(`[${new Date().toISOString()}] Daily Faceoff lines not confirmed for ${oppTeam?.name.default}`);
+          logger.info(`[${new Date().toISOString()}] Daily Faceoff lines not confirmed for ${oppTeam?.name.default}`);
         }
 
-        console.log(`[${new Date().toISOString()}] Re-fetching referee details`);
+        logger.info(`[${new Date().toISOString()}] Re-fetching referee details`);
         const refereeDetails: GameDetails | undefined = await fetchGameDetails(
           config.app.script.teamName,
         );
         if (refereeDetails?.confirmed) {
-          console.log(`[${new Date().toISOString()}] Referee details confirmed, sending officials info`);
+          logger.info(`[${new Date().toISOString()}] Referee details confirmed, sending officials info`);
           const referees = refereeDetails.referees
             .map((referee) => `R: ${referee.name} (P/GM: ${referee.penaltygame})`)
             .join("\n");
@@ -386,21 +387,21 @@ const handlePregameState = async () => {
             currentGame,
           );
         } else {
-          console.log(`[${new Date().toISOString()}] Referee details not confirmed in second fetch`);
+          logger.info(`[${new Date().toISOString()}] Referee details not confirmed in second fetch`);
         }
 
         const sleepTime = new Date(currentGame.startTimeUTC);
         const sleepDuration = sleepTime.getTime() - Date.now();
-        console.log(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until game starts (${sleepTime.toISOString()})`);
+        logger.info(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until game starts (${sleepTime.toISOString()})`);
 
         await sleep(sleepDuration);
         sentEvents = [];
         goalPosts = []; // Reset goal posts for new game
         currentState = GameStates.INGAME;
-        console.log(`[${new Date().toISOString()}] Transitioning to INGAME state`);
+        logger.info(`[${new Date().toISOString()}] Transitioning to INGAME state`);
       }
     } catch (error) {
-      console.error(`[${new Date().toISOString()}] Error in PREGAME state:`, error);
+      logger.error(`[${new Date().toISOString()}] Error in PREGAME state:`, error);
       await sleep(config.app.script.error_retry_sleep_time ?? 300000); // Sleep on error
     }
   }
@@ -413,7 +414,7 @@ const handlePregameState = async () => {
  * Handles intermission state and game end state.
  */
 const handleInGameState = async () => {
-  console.log(`[${new Date().toISOString()}] In INGAME state, fetching current game data`);
+  logger.info(`[${new Date().toISOString()}] In INGAME state, fetching current game data`);
   
   try {
     const nhlScores: NHLScores = await fetchNHLScores(
@@ -426,7 +427,7 @@ const handleInGameState = async () => {
     );
     
     if (!currentGame) {
-      console.error(`[${new Date().toISOString()}] Current game not found in NHL scores`);
+      logger.error(`[${new Date().toISOString()}] Current game not found in NHL scores`);
      
       return;
     }
@@ -444,9 +445,9 @@ const handleInGameState = async () => {
     const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
     
     if (playByPlay.clock.inIntermission) {
-      console.log(`[${new Date().toISOString()}] Game is in intermission`);
+      logger.info(`[${new Date().toISOString()}] Game is in intermission`);
       if (!hasSentIntermission) {
-        console.log(`[${new Date().toISOString()}] Sending intermission report`);
+        logger.info(`[${new Date().toISOString()}] Sending intermission report`);
         hasSentIntermission = true;
         
         const boxscore = await fetchBoxscore(String(currentGame?.id));
@@ -464,7 +465,7 @@ const handleInGameState = async () => {
         const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
         const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
         const lineScores = transformGameLandingToLineScores(gameLanding);
-        console.log(`[${new Date().toISOString()}] Generating intermission image`);
+        logger.info(`[${new Date().toISOString()}] Generating intermission image`);
 
         //TypeError: Cannot read properties of undefined (reading 'totals')
         await intermissionImage({
@@ -517,7 +518,7 @@ const handleInGameState = async () => {
           }
         });
 
-        console.log(`[${new Date().toISOString()}] Sending intermission message`);
+        logger.info(`[${new Date().toISOString()}] Sending intermission message`);
         await send(
           `It's end of the ${formatPeriodLabel(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
           currentGame!,
@@ -535,8 +536,8 @@ const handleInGameState = async () => {
           (play) => {
             // Skip placeholder penalties that don't have proper details
             if (play.typeDescKey === "penalty" && (!play.details?.typeCode || !play.details?.committedByPlayerId || play.details?.descKey === "minor")) {
-              console.log(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId} (missing typeCode or committedByPlayerId)`);
-              console.log(play);
+              logger.info(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId} (missing typeCode or committedByPlayerId)`,play);
+          
               sentEvents.push(play.eventId);
               return false;
             }
@@ -545,7 +546,7 @@ const handleInGameState = async () => {
               play.typeDescKey === "penalty" ||
               play.typeDescKey === "period-start" ||
               play.typeDescKey === "period-end" ||
-              play.typeDescKey === "stoppage" ||
+              (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout"))||
               play.typeDescKey === "game-end"
             ) && !sentEvents.includes(play.eventId);
           }
@@ -555,15 +556,15 @@ const handleInGameState = async () => {
         const sortedPlays = relevantPlays.sort((a, b) => a.sortOrder - b.sortOrder);
         
         if (sortedPlays.length > 0) {
-          console.log(`[${new Date().toISOString()}] Found ${sortedPlays.length} new events to process`);
+          logger.info(`[${new Date().toISOString()}] Found ${sortedPlays.length} new events to process`);
           
           // Process each event in chronological order
           for (const play of sortedPlays) {
-            console.log(`[${new Date().toISOString()}] Processing ${play.typeDescKey.toUpperCase()} event: ${play.eventId} (sortOrder: ${play.sortOrder})`);
+            logger.info(`[${new Date().toISOString()}] Processing ${play.typeDescKey.toUpperCase()} event: ${play.eventId} (sortOrder: ${play.sortOrder})`);
             
             try {
               if (play.typeDescKey === "goal") {
-                console.log('Play details:', play)
+                logger.info('Play details:', play)
                 const scoringTeam =
                   play.details?.eventOwnerTeamId === currentGame?.awayTeam.id
                     ? currentGame?.awayTeam
@@ -633,7 +634,7 @@ const handleInGameState = async () => {
                     teamName: scoringTeam?.name.default || "",
                     processed: false
                   });
-                  console.log(`Stored goal post info for ${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default} (event ${play.eventId})`);
+                  logger.info(`Stored goal post info for ${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default} (event ${play.eventId})`);
                 }
               }
               else if (play.typeDescKey === "penalty") {
@@ -680,7 +681,7 @@ const handleInGameState = async () => {
                   penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes${drawnByText} for ${penaltyType} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
                 }
                 
-                console.log(`[${new Date().toISOString()}] Sending penalty message:`, penaltyMessage);
+                logger.info(`[${new Date().toISOString()}] Sending penalty message:`, penaltyMessage);
                 await send(penaltyMessage, currentGame!, undefined, true);
               } 
               else if (play.typeDescKey === "period-start") {
@@ -688,14 +689,14 @@ const handleInGameState = async () => {
                 try {
                   const boxscoreNow = await fetchBoxscore(String(currentGame!.id));
                   const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
-                  console.log('Play details:', play)
+                  logger.info('Play details:', play)
                   await send(
                     `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n${scoreText}`,
                     currentGame!
                   );
                 } catch (err) {
                   // If fetching the boxscore fails, fall back to the original message without score.
-                  console.warn(`[${new Date().toISOString()}] Failed to fetch boxscore for period-start message:`, err);
+                  logger.warn(`[${new Date().toISOString()}] Failed to fetch boxscore for period-start message:`, err);
                   await send(
                     `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
                     currentGame!
@@ -709,10 +710,10 @@ const handleInGameState = async () => {
               
               // Only mark as sent AFTER successful processing
               sentEvents.push(play.eventId);
-              console.log(`[${new Date().toISOString()}] Successfully processed and marked ${play.typeDescKey} event ${play.eventId} as sent`);
+              logger.info(`[${new Date().toISOString()}] Successfully processed and marked ${play.typeDescKey} event ${play.eventId} as sent`);
               
             } catch (error) {
-              console.error(`[${new Date().toISOString()}] Error processing ${play.typeDescKey} event ${play.eventId}:`, error);
+              logger.error(`[${new Date().toISOString()}] Error processing ${play.typeDescKey} event ${play.eventId}:`, error);
               // Don't add to sentEvents if there was an error - let it retry next time
             }
           }
@@ -726,12 +727,12 @@ const handleInGameState = async () => {
     }
     
     if (playByPlay.plays.some((play) => play.typeDescKey === "game-end")) {
-      console.log(`[${new Date().toISOString()}] Game has ended, transitioning to POSTGAME state`);
+      logger.info(`[${new Date().toISOString()}] Game has ended, transitioning to POSTGAME state`);
      
       currentState = GameStates.POSTGAME;
     }
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in INGAME state:`, error);
+    logger.error(`[${new Date().toISOString()}] Error in INGAME state:`, error);
    
     await sleep(config.app.script.live_sleep_time); // Use live sleep time on error
   }
@@ -744,11 +745,11 @@ const handleInGameState = async () => {
  * sends a message with the game result, and updates the current state to POSTGAMETHREESTARS.
  */
 const handlePostGameState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering POSTGAME state`);
+  logger.info(`[${new Date().toISOString()}] Entering POSTGAME state`);
   
   
   try {
-    console.log(`[${new Date().toISOString()}] Fetching post-game data`);
+    logger.info(`[${new Date().toISOString()}] Fetching post-game data`);
     const boxscore = await fetchBoxscore(String(currentGame!.id));
 
     const awayScore = boxscore.awayTeam.score;
@@ -761,7 +762,7 @@ const handlePostGameState = async () => {
       losingTeam = currentGame?.awayTeam.name.default;
     }
     
-    console.log(`[${new Date().toISOString()}] Game result: ${winningTeam} defeats ${losingTeam} ${Math.max(homeScore, awayScore)}-${Math.min(homeScore, awayScore)}`);
+    logger.info(`[${new Date().toISOString()}] Game result: ${winningTeam} defeats ${losingTeam} ${Math.max(homeScore, awayScore)}-${Math.min(homeScore, awayScore)}`);
     
     
     
@@ -777,7 +778,7 @@ const handlePostGameState = async () => {
     const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
     const lineScores = transformGameLandingToLineScores(gameLanding);
     
-    console.log(`[${new Date().toISOString()}] Generating post-game image`);
+    logger.info(`[${new Date().toISOString()}] Generating post-game image`);
     await postGameImage({
       pref: {
         team: boxscore.homeTeam.commonName.default || "",
@@ -829,7 +830,7 @@ const handlePostGameState = async () => {
       
     });
 
-    console.log(`[${new Date().toISOString()}] Sending post-game message`);
+    logger.info(`[${new Date().toISOString()}] Sending post-game message`);
     await send(
       `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
       currentGame!,
@@ -837,9 +838,9 @@ const handlePostGameState = async () => {
     );
 
     currentState = GameStates.POSTGAMETHREESTARS;
-    console.log(`[${new Date().toISOString()}] Transitioning to POSTGAMETHREESTARS state`);
+    logger.info(`[${new Date().toISOString()}] Transitioning to POSTGAMETHREESTARS state`);
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in POSTGAME state:`, error);
+    logger.error(`[${new Date().toISOString()}] Error in POSTGAME state:`, error);
    
     currentState = GameStates.POSTGAMETHREESTARS; // Continue to next state even on error
   }
@@ -853,7 +854,7 @@ const handlePostGameState = async () => {
  * After 20 attempts, it transitions to the POSTGAMEVID state.
  */
 const handlePostGameThreeStarsState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering POSTGAMETHREESTARS state (attempt ${threeStarsRetryCount + 1}/20)`);
+  logger.info(`[${new Date().toISOString()}] Entering POSTGAMETHREESTARS state (attempt ${threeStarsRetryCount + 1}/20)`);
   
   try {
     const gameLanding = await fetchGameLanding(String(currentGame!.id));
@@ -861,7 +862,7 @@ const handlePostGameThreeStarsState = async () => {
       gameLanding?.summary.threeStars !== undefined &&
       gameLanding?.summary.threeStars.length > 0
     ) {
-      console.log(`[${new Date().toISOString()}] Three stars available, sending message`);
+      logger.info(`[${new Date().toISOString()}] Three stars available, sending message`);
      
       const threeStars = gameLanding.summary.threeStars
         .map((star) => `${starEmojis(star.star)}: ${star.name.default}`)
@@ -875,21 +876,21 @@ const handlePostGameThreeStarsState = async () => {
       // Reset retry counter and transition to video state
       threeStarsRetryCount = 0;
       currentState = GameStates.POSTGAMEVID;
-      console.log(`[${new Date().toISOString()}] Three stars found, transitioning to POSTGAMEVID state`);
+      logger.info(`[${new Date().toISOString()}] Three stars found, transitioning to POSTGAMEVID state`);
     } else {
       threeStarsRetryCount++;
       if (threeStarsRetryCount >= 20) {
-        console.log(`[${new Date().toISOString()}] Three stars not available after 20 attempts, transitioning to POSTGAMEVID state`);
+        logger.info(`[${new Date().toISOString()}] Three stars not available after 20 attempts, transitioning to POSTGAMEVID state`);
         threeStarsRetryCount = 0; // Reset for next game
         currentState = GameStates.POSTGAMEVID;
       } else {
-        console.log(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds (attempt ${threeStarsRetryCount}/20)`);
+        logger.info(`[${new Date().toISOString()}] Three stars not available yet, waiting 60 seconds (attempt ${threeStarsRetryCount}/20)`);
         await checkForHighlights();
         await sleep(config.app.script.three_stars_retry_sleep_time ?? 60000);
       }
     }
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in POSTGAMETHREESTARS state:`, error);
+    logger.error(`[${new Date().toISOString()}] Error in POSTGAMETHREESTARS state:`, error);
     threeStarsRetryCount = 0; // Reset on error
     currentState = GameStates.POSTGAMEVID; // Continue to next state even on error
   }
@@ -906,7 +907,7 @@ let threeStarsRetryCount = 0;
  * After 60 attempts, it transitions to the ENDGAME state.
  */
 const handlePostGameVideoState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering POSTGAMEVID state (attempt ${videoRetryCount + 1}/60)`);
+  logger.info(`[${new Date().toISOString()}] Entering POSTGAMEVID state (attempt ${videoRetryCount + 1}/60)`);
   
   try {
     const rightRail = await fetchGameCenterRightRail(String(currentGame!.id));
@@ -916,13 +917,13 @@ const handlePostGameVideoState = async () => {
     const condensedVideo = rightRail?.gameVideo?.condensedGame;
     const recapVideo = rightRail?.gameVideo?.threeMinRecap;
     
-    console.log(`[${new Date().toISOString()}] Video status - Condensed: ${condensedVideo || 'None'}, Recap: ${recapVideo || 'None'}`);
+    logger.info(`[${new Date().toISOString()}] Video status - Condensed: ${condensedVideo || 'None'}, Recap: ${recapVideo || 'None'}`);
     
     // Check if both videos are available or if we've reached the retry limit
     const bothVideosAvailable = condensedVideo && recapVideo;
     
     if (bothVideosAvailable) {
-      console.log(`[${new Date().toISOString()}] Both videos available, sending both`);
+      logger.info(`[${new Date().toISOString()}] Both videos available, sending both`);
       
       const awayTeamAbbrev = boxscore.awayTeam.abbrev.toLowerCase();
       const homeTeamAbbrev = boxscore.homeTeam.abbrev.toLowerCase();
@@ -944,9 +945,9 @@ const handlePostGameVideoState = async () => {
       // Reset retry counter and transition to endgame
       videoRetryCount = 0;
       currentState = GameStates.ENDGAME;
-      console.log(`[${new Date().toISOString()}] Both videos found and sent, transitioning to ENDGAME state`);
+      logger.info(`[${new Date().toISOString()}] Both videos found and sent, transitioning to ENDGAME state`);
     } else if (videoRetryCount >= 60) {
-      console.log(`[${new Date().toISOString()}] Maximum retry attempts reached. Sending available videos if any.`);
+      logger.info(`[${new Date().toISOString()}] Maximum retry attempts reached. Sending available videos if any.`);
       
       const awayTeamAbbrev = boxscore.awayTeam.abbrev.toLowerCase();
       const homeTeamAbbrev = boxscore.homeTeam.abbrev.toLowerCase();
@@ -970,15 +971,15 @@ const handlePostGameVideoState = async () => {
       
       videoRetryCount = 0; // Reset for next game
       currentState = GameStates.ENDGAME;
-      console.log(`[${new Date().toISOString()}] Sent available videos after max retries, transitioning to ENDGAME state`);
+      logger.info(`[${new Date().toISOString()}] Sent available videos after max retries, transitioning to ENDGAME state`);
     } else {
       videoRetryCount++;
-      console.log(`[${new Date().toISOString()}] Waiting for both videos, attempt ${videoRetryCount}/60`);
+      logger.info(`[${new Date().toISOString()}] Waiting for both videos, attempt ${videoRetryCount}/60`);
       await checkForHighlights();
       await sleep(config.app.script.video_retry_sleep_time ?? 60000);
     }
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in POSTGAMEVID state:`, error);
+    logger.error(`[${new Date().toISOString()}] Error in POSTGAMEVID state:`, error);
     videoRetryCount = 0; // Reset on error
     currentState = GameStates.ENDGAME; // Continue to next state even on error
   }
@@ -990,15 +991,15 @@ const handlePostGameVideoState = async () => {
  * @returns {Promise<void>} A promise that resolves when the current state is set to "WAITING".
  */
 const handleEndGameState = async () => {
-  console.log(`[${new Date().toISOString()}] Entering ENDGAME state, sleeping for 7 hours`);
+  logger.info(`[${new Date().toISOString()}] Entering ENDGAME state, sleeping for 7 hours`);
   
   
   try {
     await sleep(config.app.script.endgame_sleep_time ?? 25200000); // 7 hours
     currentState = GameStates.WAITING;
-    console.log(`[${new Date().toISOString()}] Transitioning back to WAITING state`);
+    logger.info(`[${new Date().toISOString()}] Transitioning back to WAITING state`);
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in ENDGAME state:`, error);
+    logger.error(`[${new Date().toISOString()}] Error in ENDGAME state:`, error);
     
   }
 };
@@ -1008,12 +1009,12 @@ const handleEndGameState = async () => {
  * @returns A Promise that resolves to void.
  */
 const main = async(): Promise<void> => {
-  console.log(`[${new Date().toISOString()}] NHL GameBot started`);
+  logger.info(`[${new Date().toISOString()}] NHL GameBot started`);
 
   
   while (true) {
     try {
-      console.log(`[${new Date().toISOString()}] Current state: ${currentState}`);
+      logger.info(`[${new Date().toISOString()}] Current state: ${currentState}`);
       
       if (currentState === GameStates.WAITING) {
         await handleWaitingState();
@@ -1034,7 +1035,7 @@ const main = async(): Promise<void> => {
         await handleEndGameState();
       }
     } catch (error) {
-      console.error(`[${new Date().toISOString()}] Unhandled error in main loop:`, error);
+      logger.error(`[${new Date().toISOString()}] Unhandled error in main loop:`, error);
      
       
       // Sleep before retrying
@@ -1045,9 +1046,9 @@ const main = async(): Promise<void> => {
 
 // Start the bot
 
-console.log(`[${new Date().toISOString()}] Starting NHL GameBot...`);
+logger.info(`[${new Date().toISOString()}] Starting NHL GameBot...`);
 main().catch((error) => {
-  console.error(`[${new Date().toISOString()}] Fatal error in main function:`, error);
+  logger.error(`[${new Date().toISOString()}] Fatal error in main function:`, error);
   process.exit(1);
 });
 

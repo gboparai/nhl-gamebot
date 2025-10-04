@@ -1,7 +1,6 @@
 import axios from "axios";
 import { load, CheerioAPI, Element } from "cheerio";
-
-
+import { logger } from "../logger";
 
 export type WordPressPost = {
   id: number;
@@ -123,7 +122,7 @@ export async function fetchPostsData(): Promise<WordPressPost[]> {
     const response = await axios.get<WordPressPost[]>(API_URL);
     return response.data;
   } catch (error) {
-    console.error("Error fetching posts:", error instanceof Error ? error.message : "Unknown error");
+    logger.error("Error fetching posts:", error instanceof Error ? error.message : "Unknown error");
     return [];
   }
 }
@@ -167,7 +166,7 @@ export async function fetchGameDetails(
 
 
     if (!relevantPost) {
-      console.warn("No relevant game details found for today.");
+      logger.warn("No relevant game details found for today.");
       return emptyGameDetails;
     }
 
@@ -178,7 +177,7 @@ export async function fetchGameDetails(
       .next("table");
 
     if (!game.length) {
-      console.warn(`No game details found for team: ${prefTeamFullName}`);
+      logger.warn(`No game details found for team: ${prefTeamFullName}`);
       return emptyGameDetails;
     }
 
@@ -190,7 +189,7 @@ export async function fetchGameDetails(
       .filter((_, el) => $(el).text().toLowerCase().trim() === "linespersons");
 
     if (!refereesRow.length || !linesmenRow.length) {
-      console.warn("Could not find referee or linesman data in the game table");
+      logger.warn("Could not find referee or linesman data in the game table");
       return emptyGameDetails;
     }
 
@@ -202,7 +201,7 @@ export async function fetchGameDetails(
 
     return gameDetails;
   } catch (error) {
-    console.error(
+    logger.error(
       "Error fetching game details:",
       error instanceof Error ? error.message : "Unknown error"
     );

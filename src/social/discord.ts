@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits, TextChannel, AttachmentBuilder } from "discord.js";
 import { Game, Config } from "../types";
 import config from "../../config.json";
-import { logObjectToFile } from "../logger";
+import { logger } from "../logger";
 import { retryOperation } from "./utils";
 
 const typedConfig = config as Config;
@@ -19,7 +19,7 @@ async function initializeClient(): Promise<void> {
       try {
         client.destroy();
       } catch (error) {
-        console.warn("Error destroying existing Discord client:", error);
+        logger.warn("Error destroying existing Discord client:", error);
       }
     }
     
@@ -35,18 +35,17 @@ async function initializeClient(): Promise<void> {
 
     // Set up event handlers
     client.once('ready', () => {
-      console.log(`Discord bot logged in as ${client?.user?.tag}!`);
+      logger.info(`Discord bot logged in as ${client?.user?.tag}!`);
       isReady = true;
     });
 
     client.on('error', (error) => {
-      console.error('Discord client error:', error);
-      logObjectToFile("discord-error", error.message);
+      logger.error('Discord client error:', error);
       isReady = false;
     });
 
     client.on('disconnect', () => {
-      console.warn('Discord client disconnected');
+      logger.warn('Discord client disconnected');
       isReady = false;
     });
 
@@ -64,8 +63,7 @@ async function initializeClient(): Promise<void> {
         throw new Error("Discord client failed to become ready within timeout");
       }
     } catch (error) {
-      console.error("Discord authentication error:", error);
-      logObjectToFile("discord-auth-error", error as string);
+      logger.error("Discord authentication error:", error);
       throw new Error("Failed to authenticate with Discord");
     }
   }
@@ -109,7 +107,7 @@ export async function sendDiscordMessage(
           try {
             return new AttachmentBuilder(mediaPath);
           } catch (error) {
-            console.error(`Failed to create attachment for ${mediaPath}:`, error);
+            logger.error(`Failed to create attachment for ${mediaPath}:`, error);
             return null;
           }
         })

@@ -8,6 +8,7 @@ import {
   GameCenterRightRail,
   ISODateString,
 } from "../types";
+import { logger } from "../logger";
 
 const BASE_URL = "https://api-web.nhle.com/v1";
 
@@ -47,7 +48,7 @@ export async function fetchTeamSummaries() {
 
     if (isEmpty(data)) {
       // Try last season as a fallback
-      console.warn(`Team summaries for season ${seasonId} returned empty — falling back to previous season`);
+      logger.warn(`Team summaries for season ${seasonId} returned empty — falling back to previous season`);
       const startYear = parseInt(seasonId.slice(0, 4), 10);
       const prevStart = startYear - 1;
       const prevSeasonId = `${prevStart}${prevStart + 1}`;
@@ -56,18 +57,18 @@ export async function fetchTeamSummaries() {
         response = await axios.get(prevUrl);
         data = response.data;
         if (isEmpty(data)) {
-          console.warn(`Fallback to previous season ${prevSeasonId} also returned empty`);
+          logger.warn(`Fallback to previous season ${prevSeasonId} also returned empty`);
         } else {
-          console.log(`Fetched team summaries for previous season ${prevSeasonId}`);
+          logger.info(`Fetched team summaries for previous season ${prevSeasonId}`);
         }
       } catch (err) {
-        console.warn(`Error fetching team summaries for previous season ${prevSeasonId}:`, err);
+        logger.warn(`Error fetching team summaries for previous season ${prevSeasonId}:`, err);
       }
     }
 
     return data as TeamSummaries;
   } catch (error) {
-    console.error("Error fetching team summaries:", error);
+    logger.error("Error fetching team summaries:", error);
     throw error;
   }
 }
@@ -85,7 +86,7 @@ export async function fetchGameLanding(gameID: string) {
     );
     return response.data as GameLanding;
   } catch (error) {
-    console.error("Error fetching game landing data:", error);
+    logger.error("Error fetching game landing data:", error);
     throw error;
   }
 }
@@ -103,7 +104,7 @@ export async function fetchBoxscore(gameID: string) {
     );
     return response.data as Boxscore;
   } catch (error) {
-    console.error("Error fetching boxscore data:", error);
+    logger.error("Error fetching boxscore data:", error);
     throw error;
   }
 }
@@ -121,7 +122,7 @@ export async function fetchPlayByPlay(gameID: string) {
     );
     return response.data as PlayByPlayGame;
   } catch (error) {
-    console.error("Error fetching play-by-play data:", error);
+    logger.error("Error fetching play-by-play data:", error);
     throw error;
   }
 }
@@ -137,7 +138,7 @@ export async function fetchNHLScores(date: ISODateString) {
     const response = await axios.get(`${BASE_URL}/score/${date}`);
     return response.data as NHLScores;
   } catch (error) {
-    console.error("Error fetching NHL scores:", error);
+    logger.error("Error fetching NHL scores:", error);
     throw error;
   }
 }
@@ -155,7 +156,7 @@ export async function fetchGameCenterRightRail(gameID: string) {
     );
     return response.data as GameCenterRightRail;
   } catch (error) {
-    console.error("Error fetching game center right rail data:", error);
+    logger.error("Error fetching game center right rail data:", error);
     throw error;
   }
 }

@@ -30,3 +30,4 @@ config.json
 temp/
 logfile.txt
 package-lock.json
+logfile.log

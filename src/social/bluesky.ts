@@ -3,6 +3,7 @@ import { Game, Config } from "../types";
 import config from "../../config.json";
 import { getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
 import axios from "axios";
+import { logger } from "../logger";
 
 const typedConfig = config as Config;
 
@@ -78,13 +79,13 @@ async function fetchUrlMetadata(url: string): Promise<{ title: string; descripti
           thumb = uploadResponse.data.blob;
         }
       } catch (thumbError) {
-        console.warn(`Failed to fetch/upload thumbnail from ${thumbnailUrl}:`, thumbError);
+        logger.warn(`Failed to fetch/upload thumbnail from ${thumbnailUrl}:`, thumbError);
       }
     }
     
     return { title, description, thumb };
   } catch (error) {
-    console.warn(`Failed to fetch metadata for ${url}:`, error);
+    logger.warn(`Failed to fetch metadata for ${url}:`, error);
     // Fallback to default values
     return { 
       title: "NHL Highlight",
@@ -104,7 +105,7 @@ async function initializeAgent(): Promise<void> {
       await agent.getProfile({ actor: agent.session.did });
       return; // Agent is still valid, no need to re-authenticate
     } catch (error) {
-      console.log("Bluesky session expired, re-authenticating...");
+      logger.info("Bluesky session expired, re-authenticating...");
     }
   }
 
@@ -118,7 +119,7 @@ async function initializeAgent(): Promise<void> {
       identifier: typedConfig.bluesky.identifier,
       password: typedConfig.bluesky.password,
     });
-    console.log("Bluesky agent authenticated successfully");
+    logger.info("Bluesky agent authenticated successfully");
   } catch (error) {
     throw new Error("Failed to authenticate with Bluesky");
   }
@@ -177,7 +178,7 @@ export async function sendBlueskyPost(
           try {
             return await uploadBlueskyMedia(mediaPath);
           } catch (error) {
-            console.error(`Failed to upload media ${mediaPath}:`, error);
+            logger.error(`Failed to upload media ${mediaPath}:`, error);
             return null;
           }
         })
@@ -254,7 +255,7 @@ export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
     } catch (uploadError: any) {
       // If upload fails due to auth, try re-authenticating once
       if (uploadError?.message?.includes('Authentication') || uploadError?.status === 401) {
-        console.log("Authentication failed during upload, re-authenticating...");
+        logger.info("Authentication failed during upload, re-authenticating...");
         agent = null; // Force re-authentication
         await initializeAgent();
         
@@ -272,7 +273,7 @@ export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
     };
     
   } catch (error: unknown) {
-    console.error("Error uploading media to Bluesky:", (error as Error).message);
+    logger.error("Error uploading media to Bluesky:", (error as Error).message);
     throw error;
   }
 }

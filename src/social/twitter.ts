@@ -1,7 +1,7 @@
 import { Game } from "../types";
 import config from "../../config.json";
 import { TwitterApi, TUploadableMedia } from "twitter-api-v2";
-import { logObjectToFile } from "../logger";
+import { logger } from "../logger";
 import {  generateGameHashtags, teamHashtag } from "./utils";
 
 const twitter = new TwitterApi({
@@ -41,8 +41,8 @@ export async function sendTweet(
   try {
     await operation();
   } catch (error: unknown) {
-    logObjectToFile("failed-tweet", tweet);
-    logObjectToFile("twitter-error", error as string);
+    logger.error(`Failed to send tweet: ${tweet}`);
+    logger.error(`Twitter API error: ${(error as Error).message}`);
 
     if ((error as Error).message.includes("403") && retries > 0) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -63,7 +63,7 @@ export async function uploadMedia(media: TUploadableMedia): Promise<string> {
     const mediaData = await twitter.v1.uploadMedia(media, {}, true);
     return mediaData.media_id_string;
   } catch (error: unknown) {
-    console.error("Error uploading media:", (error as Error).message as string);
+    logger.error("Error uploading media:", (error as Error).message as string);
     return "";
   }
 }

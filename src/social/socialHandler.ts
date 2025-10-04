@@ -3,6 +3,8 @@ import { sendBlueskyPost } from "./bluesky";
 import { sendDiscordMessage } from "./discord";
 import config from "../../config.json";
 import { Game, Config } from "../types";
+import { logger } from "../logger";
+import fs from "fs";
 
 const typedConfig = config as Config;
 
@@ -30,7 +32,7 @@ export async function send(
         : undefined;
       await sendTweet(text, game, mediaIds);
     } catch (error) {
-      console.error("Failed to send tweet:", error);
+      logger.error("Failed to send tweet", error);
       // Don't throw error to prevent application crash
     }
   }
@@ -41,7 +43,7 @@ export async function send(
     try {
       blueskyPost = await sendBlueskyPost(text, game, media, 3, blueskyReplyTo);
     } catch (error) {
-      console.error("Failed to send Bluesky post:", error);
+      logger.error("Failed to send Bluesky post", error);
       // Don't throw error to prevent application crash
     }
   }
@@ -51,7 +53,29 @@ export async function send(
     try {
       await sendDiscordMessage(text, game, media);
     } catch (error) {
-      console.error("Failed to send Discord message:", error);
+      logger.error("Failed to send Discord message", error);
+      // Don't throw error to prevent application crash
+    }
+  }
+  if (typedConfig.fileOutput.isActive) {
+    try {
+      const timestamp = new Date().toISOString();
+      const logEntry = {
+        timestamp,
+        text,
+        game: game ? {
+          id: game.id,
+          awayTeam: game.awayTeam.abbrev,
+          homeTeam: game.homeTeam.abbrev,
+        } : undefined,
+        media,
+        extended,
+        blueskyReplyTo,
+      };
+      const logLine = `${JSON.stringify(logEntry)}\n`;
+      fs.appendFileSync(typedConfig.fileOutput.filePath, logLine);
+    } catch (error) {
+      logger.error("Failed to log message to file", error);
       // Don't throw error to prevent application crash
     }
   }

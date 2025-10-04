@@ -18,6 +18,10 @@
     "guildId": "your_discord_guild_id",
     "isActive": true
   },
+  "fileOutput": {
+    "filePath": "./sent_messages.log",
+    "isActive": false
+  },
   "app": {
     "script": {
       "team": "YOUR_TEAM_ABBREV",

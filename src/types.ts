@@ -24,6 +24,10 @@ export interface Config {
     guildId: string;
     isActive: boolean;
   };
+  fileOutput: {
+    filePath: string;
+    isActive: boolean;
+  };
   app: {
     script: {
       team: string;

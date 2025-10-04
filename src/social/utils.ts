@@ -1,6 +1,6 @@
 import { lookup } from "mime-types";
 import { Game } from "../types";
-import { logObjectToFile } from "../logger";
+import { logger } from "../logger";
 
 /**
  * Determines if an error should trigger a retry.
@@ -50,16 +50,16 @@ export async function retryOperation<T>(
     return await operation();
   } catch (error: unknown) {
     if (content) {
-      logObjectToFile(`failed-${context}-post`, content);
+      logger.debug(`Failed ${context} post content`, content);
     }
-    logObjectToFile(`${context}-error`, error as string);
+    logger.error(`${context} operation error`, error);
 
     // Retry logic for temporary failures
     if (retries > 0 && shouldRetry(error)) {
       await new Promise((resolve) => setTimeout(resolve, delay));
       return retryOperation(operation, retries - 1, delay, context, content);
     } else {
-      console.error(`Failed to execute ${context} operation:`, error);
+      logger.error(`Failed to execute ${context} operation`, error);
       throw error;
     }
   }
@@ -101,7 +101,7 @@ export function validateMediaPaths(media: string[]): string[] {
     try {
       return fs.existsSync(mediaPath);
     } catch (error) {
-      console.error(`Invalid media path: ${mediaPath}`, error);
+      logger.error(`Invalid media path: ${mediaPath}`, error);
       return false;
     }
   });

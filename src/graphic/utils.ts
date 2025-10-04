@@ -5,6 +5,7 @@ import {
   registerFont,
 } from "canvas";
 import fs from "fs";
+import { logger } from "../logger";
 
 
 /**
@@ -42,7 +43,7 @@ export async function saveCanvasImage(
     const stream = canvas.createPNGStream();
     stream.pipe(outputStream);
     outputStream.on("finish", () => {
-      console.log(`Image saved to ${outputImagePath}`);
+      logger.info(`Image saved to ${outputImagePath}`);
       resolve();
     });
     outputStream.on("error", (err) => {
@@ -241,7 +242,7 @@ export async function addTeamLogo(
     const logoImage = await loadImage(logoPath);
     ctx.drawImage(logoImage, x, y, width, height);
   } catch (error: unknown) {
-    console.error(
+    logger.error(
       `Error loading or drawing the logo for ${teamName}: ${(error as Error).message}`,
     );
   }
