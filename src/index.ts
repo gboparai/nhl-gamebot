@@ -288,39 +288,39 @@ const handlePregameState = async () => {
 
         logger.info(`[${new Date().toISOString()}] Generating game stats image`);
         await gameImage({
-          pref: {
+          home: {
             team: currentGame.homeTeam.name.default,
           },
-          opp: {
+          away: {
             team: currentGame.awayTeam.name.default,
           },
           shots: {
-            pref: homeTeamSummary?.shotsForPerGame || 0, // Using goals for per game as closest equivalent to shots
-            opp:  awayTeamSummary?.shotsForPerGame || 0,
+            home: homeTeamSummary?.shotsForPerGame || 0, // Using goals for per game as closest equivalent to shots
+            away:  awayTeamSummary?.shotsForPerGame || 0,
           },
           shotsAgainst:{
-            pref: homeTeamSummary?.shotsAgainstPerGame || 0, // Using goals for per game as closest equivalent to shots
-            opp:  awayTeamSummary?.shotsAgainstPerGame || 0,
+            home: homeTeamSummary?.shotsAgainstPerGame || 0, // Using goals for per game as closest equivalent to shots
+            away:  awayTeamSummary?.shotsAgainstPerGame || 0,
           },
           pentaltyKillPercentage: {
-            pref: homeTeamStats?.pkPctg || 0,
-            opp: awayTeamStats?.pkPctg || 0,
+            home: homeTeamStats?.pkPctg || 0,
+            away: awayTeamStats?.pkPctg || 0,
           },
           powerPlayPercentage: {
-            pref: homeTeamStats?.ppPctg || 0,
-            opp: awayTeamStats?.ppPctg || 0,
+            home: homeTeamStats?.ppPctg || 0,
+            away: awayTeamStats?.ppPctg || 0,
           },
           goalsAgainstPerGame: {
-            pref: homeTeamStats?.goalsAgainstPerGamePlayed || 0,
-            opp: awayTeamStats?.goalsAgainstPerGamePlayed || 0,
+            home: homeTeamStats?.goalsAgainstPerGamePlayed || 0,
+            away: awayTeamStats?.goalsAgainstPerGamePlayed || 0,
           },
           goalsForPerGame: {
-            pref: homeTeamStats?.goalsForPerGamePlayed || 0,
-            opp: awayTeamStats?.goalsForPerGamePlayed || 0,
+            home: homeTeamStats?.goalsForPerGamePlayed || 0,
+            away: awayTeamStats?.goalsForPerGamePlayed || 0,
           },
           faceoffPercentage: {
-            pref: homeTeamStats?.faceoffWinningPctg || 0,
-            opp: awayTeamStats?.faceoffWinningPctg || 0,
+            home: homeTeamStats?.faceoffWinningPctg || 0,
+            away: awayTeamStats?.faceoffWinningPctg || 0,
           },
         });
 
@@ -469,52 +469,52 @@ const handleInGameState = async () => {
 
         //TypeError: Cannot read properties of undefined (reading 'totals')
         await intermissionImage({
-          pref: {
+          home: {
             team: boxscore?.homeTeam.commonName.default || "",
             score: boxscore.homeTeam.score,
             lineScores: lineScores.homeLineScores,
           },
-          opp: {
+          away: {
             team:  boxscore?.awayTeam.commonName.default || "",
             score: boxscore.awayTeam.score,
             lineScores: lineScores.awayLineScores,
           },
           shots: {
-            pref: boxscore.homeTeam.sog,
-            opp: boxscore.awayTeam.sog,
+            home: boxscore.homeTeam.sog,
+            away: boxscore.awayTeam.sog,
           },
 
           blockedShots: {
-            pref: Number(blockedShots?.homeValue) || 0,
-            opp: Number(blockedShots?.awayValue) || 0,
+            home: Number(blockedShots?.homeValue) || 0,
+            away: Number(blockedShots?.awayValue) || 0,
           },
           penalties: {
-            pref: Number(pims?.homeValue) || 0,
-            opp: Number(pims?.awayValue) || 0,
+            home: Number(pims?.homeValue) || 0,
+            away: Number(pims?.awayValue) || 0,
           },
           hits: {
-            pref: Number(hits?.homeValue) || 0,
-            opp: Number(hits?.awayValue) || 0,
+            home: Number(hits?.homeValue) || 0,
+            away: Number(hits?.awayValue) || 0,
           },
           faceoffPercentage: {
-            pref: Number(faceoffWinningPctg?.homeValue) || 0,
-            opp:  Number(faceoffWinningPctg?.awayValue) || 0,
+            home: Number(faceoffWinningPctg?.homeValue) || 0,
+            away:  Number(faceoffWinningPctg?.awayValue) || 0,
           },
           giveaways: {
-            pref: Number(giveaways?.homeValue) || 0,
-            opp: Number(giveaways?.awayValue) || 0,
+            home: Number(giveaways?.homeValue) || 0,
+            away: Number(giveaways?.awayValue) || 0,
           },
           takeaways: {
-            pref: Number(takeaways?.homeValue) || 0,
-            opp: Number(takeaways?.awayValue) || 0,
+            home: Number(takeaways?.homeValue) || 0,
+            away: Number(takeaways?.awayValue) || 0,
           },
           powerPlay: {
-            pref: String(powerPlay?.homeValue) || "",
-            opp: String(powerPlay?.awayValue) || "",
+            home: String(powerPlay?.homeValue) || "",
+            away: String(powerPlay?.awayValue) || "",
           },
           powerPlayPctg:{
-            pref: Number(powerPlayPctg?.homeValue) || 0,
-            opp: Number(powerPlayPctg?.awayValue) || 0,
+            home: Number(powerPlayPctg?.homeValue) || 0,
+            away: Number(powerPlayPctg?.awayValue) || 0,
           }
         });
 
@@ -780,52 +780,52 @@ const handlePostGameState = async () => {
     
     logger.info(`[${new Date().toISOString()}] Generating post-game image`);
     await postGameImage({
-      pref: {
+      home: {
         team: boxscore.homeTeam.commonName.default || "",
         score: boxscore.homeTeam.score,
         lineScores: lineScores.homeLineScores,
       },
-      opp: {
+      away: {
         team: boxscore.awayTeam.commonName.default || "",
         score: boxscore.awayTeam.score,
         lineScores: lineScores.awayLineScores,
       },
       shots: {
-        pref: boxscore.homeTeam.sog,
-        opp: boxscore.awayTeam.sog,
+        home: boxscore.homeTeam.sog,
+        away: boxscore.awayTeam.sog,
       },
 
       blockedShots: {
-        pref: Number(blockedShots?.homeValue) || 0,
-        opp: Number(blockedShots?.awayValue) || 0,
+        home: Number(blockedShots?.homeValue) || 0,
+        away: Number(blockedShots?.awayValue) || 0,
       },
       penalties: {
-        pref: Number(pims?.homeValue) || 0,
-        opp: Number(pims?.awayValue) || 0,
+        home: Number(pims?.homeValue) || 0,
+        away: Number(pims?.awayValue) || 0,
       },
       hits: {
-        pref: Number(hits?.homeValue) || 0,
-        opp: Number(hits?.awayValue) || 0,
+        home: Number(hits?.homeValue) || 0,
+        away: Number(hits?.awayValue) || 0,
       },
       faceoffPercentage: {
-        pref: Number(faceoffWinningPctg?.homeValue) || 0,
-        opp:  Number(faceoffWinningPctg?.awayValue) || 0,
+        home: Number(faceoffWinningPctg?.homeValue) || 0,
+        away:  Number(faceoffWinningPctg?.awayValue) || 0,
       },
       giveaways: {
-        pref: Number(giveaways?.homeValue) || 0,
-        opp: Number(giveaways?.awayValue) || 0,
+        home: Number(giveaways?.homeValue) || 0,
+        away: Number(giveaways?.awayValue) || 0,
       },
       takeaways: {
-        pref: Number(takeaways?.homeValue) || 0,
-        opp: Number(takeaways?.awayValue) || 0,
+        home: Number(takeaways?.homeValue) || 0,
+        away: Number(takeaways?.awayValue) || 0,
       },
       powerPlay: {
-        pref: String(powerPlay?.homeValue) || "",
-        opp: String(powerPlay?.awayValue) || "",
+        home: String(powerPlay?.homeValue) || "",
+        away: String(powerPlay?.awayValue) || "",
       },
       powerPlayPctg:{
-        pref: Number(powerPlayPctg?.homeValue) || 0,
-        opp: Number(powerPlayPctg?.awayValue) || 0,
+        home: Number(powerPlayPctg?.homeValue) || 0,
+        away: Number(powerPlayPctg?.awayValue) || 0,
       }
       
     });

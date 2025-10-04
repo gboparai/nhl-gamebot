@@ -17,51 +17,51 @@ import {
  * Represents the parameters for an intermission game.
  */
 export type IntermissionGameParams = {
-  pref: {
+  home: {
     team: string;
     score: number;
     lineScores: LineScore[];
   };
-  opp: {
+  away: {
     team: string;
     score: number;
     lineScores: LineScore[];
   };
   shots: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   blockedShots: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   penalties: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   hits: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   faceoffPercentage: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   giveaways: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   takeaways: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
   powerPlay: {
-    pref: string;
-    opp:  string;
+    home: string;
+    away:  string;
   };
   powerPlayPctg: {
-    pref: number;
-    opp: number;
+    home: number;
+    away: number;
   };
 };
 
@@ -110,8 +110,8 @@ export default async function intermission(
   });
 
   const barLength = 540;
-  const segment1Color = getTeamColor(params.pref.team ||'');
-  const segment2Color = getTeamColor(params.opp.team ||'');
+  const segment1Color = getTeamColor(params.home.team ||'');
+  const segment2Color = getTeamColor(params.away.team ||'');
 
   const barGraphOptions = {
     x: 40,
@@ -123,13 +123,13 @@ export default async function intermission(
         overallLabel: "Shots",
         segments: [
           {
-            value: calculatePercentage(params.shots.pref, params.shots.pref + params.shots.opp) * barLength,
-            label: String(params.shots.pref),
+            value: calculatePercentage(params.shots.home, params.shots.home + params.shots.away) * barLength,
+            label: String(params.shots.home),
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.shots.opp, params.shots.pref + params.shots.opp) * barLength,
-            label: String(params.shots.opp),
+            value: calculatePercentage(params.shots.away, params.shots.home + params.shots.away) * barLength,
+            label: String(params.shots.away),
             color: segment2Color,
           },
         ],
@@ -138,13 +138,13 @@ export default async function intermission(
         overallLabel: "Faceoff Percentage",
         segments: [
           {
-            value: calculatePercentage(params.faceoffPercentage.pref, params.faceoffPercentage.pref + params.faceoffPercentage.opp) * barLength,
-            label: `${(params.faceoffPercentage.pref*100).toFixed(2)}%`,
+            value: calculatePercentage(params.faceoffPercentage.home, params.faceoffPercentage.home + params.faceoffPercentage.away) * barLength,
+            label: `${(params.faceoffPercentage.home*100).toFixed(2)}%`,
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.faceoffPercentage.opp, params.faceoffPercentage.pref + params.faceoffPercentage.opp) * barLength,
-            label:`${(params.faceoffPercentage.opp*100).toFixed(2)}%`,
+            value: calculatePercentage(params.faceoffPercentage.away, params.faceoffPercentage.home + params.faceoffPercentage.away) * barLength,
+            label:`${(params.faceoffPercentage.away*100).toFixed(2)}%`,
             color: segment2Color,
           },
         ],
@@ -153,13 +153,13 @@ export default async function intermission(
         overallLabel: "Power Play",
         segments: [
           {
-            value: calculatePercentage(params.powerPlayPctg.pref, params.powerPlayPctg.pref + params.powerPlayPctg.opp) * barLength,
-            label: params.powerPlay.pref,
+            value: calculatePercentage(params.powerPlayPctg.home, params.powerPlayPctg.home + params.powerPlayPctg.away) * barLength,
+            label: params.powerPlay.home,
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.powerPlayPctg.opp, params.powerPlayPctg.pref + params.powerPlayPctg.opp) * barLength,
-            label: params.powerPlay.opp,
+            value: calculatePercentage(params.powerPlayPctg.away, params.powerPlayPctg.home + params.powerPlayPctg.away) * barLength,
+            label: params.powerPlay.away,
             color: segment2Color,
           },
         ],
@@ -169,13 +169,13 @@ export default async function intermission(
         overallLabel: "Penalties Minutes",
         segments: [
           {
-            value: calculatePercentage(params.penalties.pref, params.penalties.pref + params.penalties.opp) * barLength,
-            label: String(params.penalties.pref),
+            value: calculatePercentage(params.penalties.home, params.penalties.home + params.penalties.away) * barLength,
+            label: String(params.penalties.home),
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.penalties.opp, params.penalties.pref + params.penalties.opp) * barLength,
-            label: String(params.penalties.opp),
+            value: calculatePercentage(params.penalties.away, params.penalties.home + params.penalties.away) * barLength,
+            label: String(params.penalties.away),
             color: segment2Color,
           },
         ],
@@ -184,13 +184,13 @@ export default async function intermission(
         overallLabel: "Hits",
         segments: [
           {
-            value: calculatePercentage(params.hits.pref, params.hits.pref + params.hits.opp) * barLength,
-            label: String(params.hits.pref),
+            value: calculatePercentage(params.hits.home, params.hits.home + params.hits.away) * barLength,
+            label: String(params.hits.home),
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.hits.opp, params.hits.pref + params.hits.opp) * barLength,
-            label: String(params.hits.opp),
+            value: calculatePercentage(params.hits.away, params.hits.home + params.hits.away) * barLength,
+            label: String(params.hits.away),
             color: segment2Color,
           },
         ],
@@ -199,13 +199,13 @@ export default async function intermission(
         overallLabel: "Blocked Shots",
         segments: [
           {
-            value: calculatePercentage(params.blockedShots.pref, params.blockedShots.pref + params.blockedShots.opp) * barLength,
-            label: String(params.blockedShots.pref),
+            value: calculatePercentage(params.blockedShots.home, params.blockedShots.home + params.blockedShots.away) * barLength,
+            label: String(params.blockedShots.home),
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.blockedShots.opp, params.blockedShots.pref + params.blockedShots.opp) * barLength,
-            label: String(params.blockedShots.opp),
+            value: calculatePercentage(params.blockedShots.away, params.blockedShots.home + params.blockedShots.away) * barLength,
+            label: String(params.blockedShots.away),
             color: segment2Color,
           },
         ],
@@ -214,13 +214,13 @@ export default async function intermission(
         overallLabel: "Giveaways",
         segments: [
           {
-            value: calculatePercentage(params.giveaways.pref, params.giveaways.pref + params.giveaways.opp) * barLength,
-            label: String(params.giveaways.pref),
+            value: calculatePercentage(params.giveaways.home, params.giveaways.home + params.giveaways.away) * barLength,
+            label: String(params.giveaways.home),
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.giveaways.opp, params.giveaways.pref + params.giveaways.opp) * barLength,
-            label: String(params.giveaways.opp),
+            value: calculatePercentage(params.giveaways.away, params.giveaways.home + params.giveaways.away) * barLength,
+            label: String(params.giveaways.away),
             color: segment2Color,
           },
         ],
@@ -229,13 +229,13 @@ export default async function intermission(
         overallLabel: "Takeaways",
         segments: [
           {
-            value: calculatePercentage(params.takeaways.pref, params.takeaways.pref + params.takeaways.opp) * barLength,
-            label: String(params.takeaways.pref),
+            value: calculatePercentage(params.takeaways.home, params.takeaways.home + params.takeaways.away) * barLength,
+            label: String(params.takeaways.home),
             color: segment1Color,
           },
           {
-            value: calculatePercentage(params.takeaways.opp, params.takeaways.pref + params.takeaways.opp) * barLength,
-            label: String(params.takeaways.opp),
+            value: calculatePercentage(params.takeaways.away, params.takeaways.home + params.takeaways.away) * barLength,
+            label: String(params.takeaways.away),
             color: segment2Color,
           },
         ],
@@ -255,7 +255,7 @@ export default async function intermission(
   const textSpacing = 0;
 
   await addTeamLogo(ctx, {
-    teamName: params.pref.team,
+    teamName: params.home.team,
     x: 810,
     y: 120,
     width: logoWidth,
@@ -263,7 +263,7 @@ export default async function intermission(
   });
 
   addText(ctx, {
-    text: String(params.pref.score),
+    text: String(params.home.score),
     x: 810 + logoWidth + textSpacing,
     y: 165,
     font: "72px RobotoBold",
@@ -272,7 +272,7 @@ export default async function intermission(
   });
 
   await addTeamLogo(ctx, {
-    teamName: params.opp.team,
+    teamName: params.away.team,
     x: 810 + logoSpacing + logoWidth + textSpacing,
     y: 120,
     width: logoWidth,
@@ -280,7 +280,7 @@ export default async function intermission(
   });
 
   addText(ctx, {
-    text: String(params.opp.score),
+    text: String(params.away.score),
     x: 810 + logoSpacing + logoWidth * 2 + textSpacing * 2,
     y: 165,
     font: "72px RobotoBold",
@@ -294,7 +294,7 @@ export default async function intermission(
     xPadding: 10,
     yPadding: 20,
     width: 360,
-    lineItems: params.pref.lineScores.map((lineScore) => {
+    lineItems: params.home.lineScores.map((lineScore) => {
       if (lineScore.assists.length > 0) {
         return `[${lineScore.time}] ${lineScore.goalScorer} (${lineScore.assists.join(", ")})`;
       } else {
@@ -311,7 +311,7 @@ export default async function intermission(
     xPadding: 10,
     yPadding: 20,
     width: 360,
-    lineItems: params.opp.lineScores.map((lineScore) => {
+    lineItems: params.away.lineScores.map((lineScore) => {
       if (lineScore.assists.length > 0) {
         return `[${lineScore.time}] - ${lineScore.goalScorer} (${lineScore.assists.join(", ")})`;
       } else {
