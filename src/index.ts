@@ -518,7 +518,7 @@ const handleInGameState = async () => {
         });
 
         console.log(`[${new Date().toISOString()}] Sending intermission message`);
-        send(
+        await send(
           `It's end of the ${formatPeriodLabel(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
           currentGame!,
           [`./temp/intermission.png`],
@@ -702,7 +702,7 @@ const handleInGameState = async () => {
                   );
                 }
               }
-              else if (play.typeDescKey === "stoppage" && play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout") {
+              else if (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout")) {
                 const stoppageMessage = `Game Stoppage: TV Timeout with ${play.timeRemaining} remaining in the ${formatPeriodLabel(play.periodDescriptor.number)} period. \n\n${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}\n${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
                 await send(stoppageMessage, currentGame!, undefined, true);
               }
@@ -830,7 +830,7 @@ const handlePostGameState = async () => {
     });
 
     console.log(`[${new Date().toISOString()}] Sending post-game message`);
-    send(
+    await send(
       `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
       currentGame!,
       [`./temp/postGame.png`],
@@ -862,12 +862,12 @@ const handlePostGameThreeStarsState = async () => {
       gameLanding?.summary.threeStars.length > 0
     ) {
       console.log(`[${new Date().toISOString()}] Three stars available, sending message`);
-      //TODO add full name and team abbreviation
+     
       const threeStars = gameLanding.summary.threeStars
         .map((star) => `${starEmojis(star.star)}: ${star.name.default}`)
         .join("\n");
         
-      send(
+      await send(
         `Tonight's Three Stars\n\n${threeStars}`,
         currentGame!,
       );
@@ -929,14 +929,14 @@ const handlePostGameVideoState = async () => {
       
       // Send condensed game
       const condensedUrl = `https://www.nhl.com/video/topic/condensed-game/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
-      send(
+      await send(
         `Check out the condensed game of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
         currentGame!,
       );
       
       // Send recap video
       const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
-      send(
+      await send(
         `Check out the recap of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
         currentGame!,
       );
@@ -954,7 +954,7 @@ const handlePostGameVideoState = async () => {
       // Send whatever videos are available
       if (condensedVideo) {
         const condensedUrl = `https://www.nhl.com/video/topic/condensed-game/${awayTeamAbbrev}-at-${homeTeamAbbrev}-condensed-game-${condensedVideo}`;
-        send(
+        await send(
           `Check out the condensed game of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${condensedUrl}`,
           currentGame!,
         );
@@ -962,7 +962,7 @@ const handlePostGameVideoState = async () => {
       
       if (recapVideo) {
         const recapUrl = `https://www.nhl.com/video/topic/game-recaps/${awayTeamAbbrev}-at-${homeTeamAbbrev}-recap-${recapVideo}`;
-        send(
+        await send(
           `Check out the recap of tonight's match between the ${currentGame?.homeTeam.name.default} and the ${currentGame?.awayTeam.name.default}:\n\n${recapUrl}`,
           currentGame!,
         );
