@@ -24,31 +24,13 @@ export function ordinalSuffixOf(i: number): string {
 }
 
 /**
- * Gets the current date in Eastern Time Zone (EST/EDT).
+ * Gets the current date in the specified time zone.
+ * @param timeZone - The time zone to use (e.g., "America/New_York", "America/Los_Angeles")
  * @returns The formatted date string in "YYYY-MM-DD" format.
  */
-export function getCurrentDateEasternTime() {
-  // Get current date and time in UTC
-  const currentDateUTC = new Date();
-
-  // Get the offset for Eastern Time Zone (EST/EDT)
-  const easternOffset = -4; // Eastern Standard Time (EST) is UTC-5, but Eastern Daylight Time (EDT) is UTC-4
-
-  // Calculate the milliseconds offset for the Eastern Time Zone
-  const easternOffsetMilliseconds = easternOffset * 60 * 60 * 1000;
-
-  // Adjust the current date by adding the Eastern Time Zone offset
-  const currentDateEastern = new Date(
-    currentDateUTC.getTime() + easternOffsetMilliseconds,
-  );
-
-  // Format the date as "YYYY-MM-DD"
-  const year = currentDateEastern.getFullYear();
-  const month = String(currentDateEastern.getMonth() + 1).padStart(2, "0");
-  const day = String(currentDateEastern.getDate()).padStart(2, "0");
-
-  // Return the formatted date string
-  return `${year}-${month}-${day}`;
+export function getCurrentDateLocalTime(timeZone: string) {
+  // Get current date and time in the specified time zone using moment-timezone
+  return moment().tz(timeZone).format("YYYY-MM-DD");
 }
 
 /**

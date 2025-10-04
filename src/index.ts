@@ -16,7 +16,7 @@ import {
 import { send } from "./social/socialHandler";
 import {
   convertUTCToLocalTime,
-  getCurrentDateEasternTime,
+  getCurrentDateLocalTime,
   goalEmojis,
   thumbsDownEmojis,
   starEmojis,
@@ -81,14 +81,13 @@ function setGoalPosts(posts: GoalPostInfo[]) { goalPosts = posts; }
  * Checks for highlight URLs for stored goal posts and sends replies
  */
 async function checkForHighlights(): Promise<void> {
-  if (!currentGame || goalPosts.length === 0) {
+  if (!currentGame ) {
+      console.log("No current game, skipping highlight check");
     return;
   }
 
   try {
-    console.log(`[${new Date().toISOString()}] Checking for highlights`);
 
-    console.log("goalPosts", goalPosts);
     
     if (goalPosts.length === 0) {
       console.log("No goal posts to check for highlights");
@@ -97,7 +96,7 @@ async function checkForHighlights(): Promise<void> {
     
     // Fetch latest play-by-play data to check for highlight URLs
     const playByPlay = await fetchPlayByPlay(String(currentGame.id));
-    console.log(`Play-by-play has ${playByPlay.plays.length} plays`);
+
     
     for (const goalPost of goalPosts) {
       console.log(`Processing goalPost for ${goalPost.playerName} (eventId: ${goalPost.eventId}, processed: ${goalPost.processed})`);
@@ -154,9 +153,9 @@ const handleWaitingState = async () => {
   
   
   try {
-    console.log(`[${new Date().toISOString()}] Fetching NHL scores for ${getCurrentDateEasternTime()}`);
+    console.log(`[${new Date().toISOString()}] Fetching NHL scores for ${getCurrentDateLocalTime(config.app.script.timeZone)}`);
     const nhlScores: NHLScores = await fetchNHLScores(
-      getCurrentDateEasternTime(),
+      getCurrentDateLocalTime(config.app.script.timeZone),
     );
     
 
@@ -418,7 +417,7 @@ const handleInGameState = async () => {
   
   try {
     const nhlScores: NHLScores = await fetchNHLScores(
-      getCurrentDateEasternTime(),
+      getCurrentDateLocalTime(config.app.script.timeZone),
     );
     currentGame = nhlScores.games.find(
       (game) =>
@@ -534,8 +533,10 @@ const handleInGameState = async () => {
         
         const relevantPlays = playByPlay.plays.filter(
           (play) => {
-            if ( play.typeDescKey === "penalty" && (!play.details?.descKey || ['minor', 'major'].includes(play.details?.descKey ?? ''))) {
-              console.log(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId}`);
+            // Skip placeholder penalties that don't have proper details
+            if (play.typeDescKey === "penalty" && (!play.details?.typeCode || !play.details?.committedByPlayerId || play.details?.descKey === "minor")) {
+              console.log(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId} (missing typeCode or committedByPlayerId)`);
+              console.log(play);
               sentEvents.push(play.eventId);
               return false;
             }
@@ -602,10 +603,10 @@ const handleInGameState = async () => {
 
                 let goalMessage = '';
                 if(play.periodDescriptor.periodType === "SO"){
-                  let shootoutMessage = `🎯 SHOOTOUT GOAL! ${scoringTeam?.name.default} 🎯\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} scores on ${goalie?.firstName.default} ${goalie?.lastName.default}!`;
+                   goalMessage = `🎯 SHOOTOUT GOAL! ${scoringTeam?.name.default} 🎯\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} scores on ${goalie?.firstName.default} ${goalie?.lastName.default}!`;
                   
                   if (scoringTeam?.id !== prefTeam?.id) {
-                    shootoutMessage = `😞 ${scoringTeam?.name.default} scores in the shootout ${thumbsDownEmojis(1)}\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} beats ${goalie?.firstName.default} ${goalie?.lastName.default}.`;
+                    goalMessage = `😞 ${scoringTeam?.name.default} scores in the shootout ${thumbsDownEmojis(1)}\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} beats ${goalie?.firstName.default} ${goalie?.lastName.default}.`;
                   }
                 }
                 else{
@@ -623,7 +624,7 @@ const handleInGameState = async () => {
                 const socialResponse = await send(goalMessage, currentGame!, undefined, true);
                 
                 // Store goal post info for potential highlight reply
-                if (socialResponse.blueskyPost && scoringPlayer && play.periodDescriptor.periodType === "SO") {
+                if (socialResponse.blueskyPost && scoringPlayer && play.periodDescriptor.periodType !== "SO") {
                   goalPosts.push({
                     eventId: play.eventId,
                     gameId: currentGame!.id,

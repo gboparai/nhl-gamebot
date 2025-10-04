@@ -1,6 +1,6 @@
 import {
   ordinalSuffixOf,
-  getCurrentDateEasternTime,
+  getCurrentDateLocalTime,
   goalEmojis,
   thumbsDownEmojis,
   starEmojis,
@@ -44,7 +44,7 @@ describe("src/utils", () => {
     await runWithFakeTimers(() => {
       const mockNow = new Date("2024-07-01T12:00:00Z");
       jest.setSystemTime(mockNow);
-      expect(getCurrentDateEasternTime()).toBe("2024-07-01");
+      expect(getCurrentDateLocalTime("America/Los_Angeles")).toBe("2024-07-01");
     });
   });
 
