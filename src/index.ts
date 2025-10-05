@@ -626,7 +626,7 @@ const handleInGameState = async () => {
                 const socialResponse = await send(goalMessage, currentGame!, undefined, true);
                 
                 // Store goal post info for potential highlight reply
-                if (socialResponse.blueskyPost && scoringPlayer && play.periodDescriptor.periodType !== "SO") {
+                if (scoringPlayer && play.periodDescriptor.periodType !== "SO") {
                   goalPosts.push({
                     eventId: play.eventId,
                     gameId: currentGame!.id,
