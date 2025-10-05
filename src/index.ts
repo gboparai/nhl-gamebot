@@ -24,7 +24,8 @@ import {
   getLastName,
   sleep,
   formatPeriodLabel,
-  transformGameLandingToLineScores
+  transformGameLandingToLineScores,
+  setDateOverride
 } from "./utils";
 import moment from "moment";
 import { dailyfaceoffLines } from "./api/dailyFaceoff";
@@ -1006,10 +1007,17 @@ const handleEndGameState = async () => {
 
 /**
  * The main function that controls the game state transitions.
+ * @param replayDate - Optional date in "YYYY-MM-DD" format to run the bot as if it were that date. Used for testing and replays.
  * @returns A Promise that resolves to void.
  */
-const main = async(): Promise<void> => {
-  logger.info(`[${new Date().toISOString()}] NHL GameBot started`);
+const main = async(replayDate?: string): Promise<void> => {
+  // Set date override if provided
+  if (replayDate) {
+    setDateOverride(replayDate);
+    logger.info(`[${new Date().toISOString()}] NHL GameBot started in REPLAY MODE for date: ${replayDate}`);
+  } else {
+    logger.info(`[${new Date().toISOString()}] NHL GameBot started`);
+  }
 
   
   while (true) {
@@ -1076,5 +1084,6 @@ export {
   handlePostGameState,
   handlePostGameThreeStarsState,
   handlePostGameVideoState,
-  handleEndGameState
+  handleEndGameState,
+  main
 };

@@ -31,3 +31,4 @@ temp/
 logfile.txt
 package-lock.json
 logfile.log
+messages.log

@@ -37,7 +37,6 @@ Discord integration with:
 - Rich text support using Markdown
 - Ability to send messages to specific channels using the `channelId` configuration option
 
-
 ## Quick Start
 
 1. Clone the repository
@@ -58,6 +57,16 @@ See the following documentation for detailed setup:
 
 - `npm start` - Run the bot
 - `npm test` - Run tests
+- `npm run replay YYYY-MM-DD` - Run the bot in replay mode for a specific date
+
+## Replay Mode
+
+The bot supports running in "replay mode" to replay games from specific dates. This is useful for testing and debugging.
+
+```bash
+# Run the bot as if it were March 15, 2024
+npm run replay 2024-03-15
+```
 
 ## License
 

@@ -3,6 +3,28 @@ import { GameLanding } from "./types";
 import { LineScore } from "./graphic/utils";
 
 /**
+ * Global date override for testing and replay functionality.
+ * When set, this date will be used instead of the current date.
+ */
+let dateOverride: string | undefined = undefined;
+
+/**
+ * Sets a date override for testing or replay purposes.
+ * @param date - The date to use in "YYYY-MM-DD" format, or undefined to clear the override.
+ */
+export function setDateOverride(date: string | undefined): void {
+  dateOverride = date;
+}
+
+/**
+ * Gets the current date override value.
+ * @returns The overridden date or undefined if not set.
+ */
+export function getDateOverride(): string | undefined {
+  return dateOverride;
+}
+
+/**
  * Returns the ordinal suffix of a given number.
  *
  * @param i - The number to get the ordinal suffix for.
@@ -25,10 +47,15 @@ export function ordinalSuffixOf(i: number): string {
 
 /**
  * Gets the current date in the specified time zone.
+ * If a date override is set, it returns that date instead.
  * @param timeZone - The time zone to use (e.g., "America/New_York", "America/Los_Angeles")
  * @returns The formatted date string in "YYYY-MM-DD" format.
  */
 export function getCurrentDateLocalTime(timeZone: string) {
+  // If date override is set, return it directly
+  if (dateOverride) {
+    return dateOverride;
+  }
   // Get current date and time in the specified time zone using moment-timezone
   return moment().tz(timeZone).format("YYYY-MM-DD");
 }
