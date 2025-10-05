@@ -839,7 +839,7 @@ type Details = {
   yCoord?: number;
   zoneCode?: string;
   reason?: string;
-  secondayReason?: string;
+  secondaryReason?: string;
   shotType?: string;
   shootingPlayerId?: number;
   goalieInNetId?: number;

@@ -547,7 +547,7 @@ const handleInGameState = async () => {
               play.typeDescKey === "penalty" ||
               play.typeDescKey === "period-start" ||
               play.typeDescKey === "period-end" ||
-              (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout"))||
+              (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondaryReason === "tv-timeout"))||
               play.typeDescKey === "game-end"
             ) && !sentEvents.includes(play.eventId);
           }
@@ -704,7 +704,7 @@ const handleInGameState = async () => {
                   );
                 }
               }
-              else if (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondayReason === "tv-timeout")) {
+              else if (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondaryReason === "tv-timeout")) {
                 const stoppageMessage = `Game Stoppage: TV Timeout with ${play.timeRemaining} remaining in the ${formatPeriodLabel(play.periodDescriptor.number)} period. \n\n${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}\n${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
                 await send(stoppageMessage, currentGame!, undefined, true);
               }
