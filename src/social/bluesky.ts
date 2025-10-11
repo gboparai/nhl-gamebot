@@ -44,8 +44,21 @@ async function fetchUrlMetadata(url: string): Promise<{ title: string; descripti
     let thumbnailUrl = ogImageMatch ? ogImageMatch[1].trim() : null;
     
     // Clean up strings - remove extra whitespace and decode HTML entities
-    title = title.replace(/\s+/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-    description = description.replace(/\s+/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    const decodeHtmlEntities = (str: string) => {
+      return str
+        .replace(/\s+/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x27;/g, "'")
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'")
+        .replace(/&nbsp;/g, ' ');
+    };
+    
+    title = decodeHtmlEntities(title);
+    description = decodeHtmlEntities(description);
     
     let thumb = undefined;
     if (thumbnailUrl) {

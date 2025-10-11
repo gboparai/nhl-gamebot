@@ -183,11 +183,11 @@ const handleWaitingState = async () => {
 
       
       const sleepTime = new Date(currentGame.startTimeUTC);
-      sleepTime.setHours(sleepTime.getHours() - 1);
+      sleepTime.setMinutes(sleepTime.getMinutes() - 30);
       const sleepDuration = sleepTime.getTime() - Date.now();
-      
+
       logger.info(`[${new Date().toISOString()}] Sleeping for ${Math.round(sleepDuration / 60000)} minutes until pregame (${sleepTime.toISOString()})`);
-      
+
       await sleep(sleepDuration);
       currentState = GameStates.PREGAME;
       logger.info(`[${new Date().toISOString()}] Transitioning to PREGAME state`);
@@ -536,10 +536,8 @@ const handleInGameState = async () => {
         const relevantPlays = playByPlay.plays.filter(
           (play) => {
             // Skip placeholder penalties that don't have proper details
-            if (play.typeDescKey === "penalty" && (!play.details?.typeCode || !play.details?.committedByPlayerId || play.details?.descKey === "minor")) {
-              logger.info(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId} (missing typeCode or committedByPlayerId)`,play);
-          
-              sentEvents.push(play.eventId);
+            if (play.typeDescKey === "penalty" && (!play.details?.typeCode || play.details?.descKey === "minor" || (!play.details?.committedByPlayerId && !play.details?.servedByPlayerId))) {
+              logger.info(`[${new Date().toISOString()}] Skipping placeholder penalty event ${play.eventId} (missing typeCode or minor)`,play);
               return false;
             }
             return (
@@ -649,7 +647,7 @@ const handleInGameState = async () => {
                   : currentGame?.homeTeam;
                   
                 const penaltyPlayer = playByPlay?.rosterSpots.find(
-                  (player) => player.playerId === play.details?.committedByPlayerId,
+                  (player) => player.playerId === play.details?.committedByPlayerId || play.details?.servedByPlayerId,
                 );
                 
                 // Get the player who drew the penalty (if any)
@@ -663,7 +661,7 @@ const handleInGameState = async () => {
                 const penaltyType = play.details?.descKey
                   ? play.details.descKey
                       .split('-')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .map(word => word.charAt(0) + word.slice(1))
                       .join(' ')
                   : '';
                                 
