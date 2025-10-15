@@ -689,10 +689,14 @@ const handleInGameState = async () => {
                   const boxscoreNow = await fetchBoxscore(String(currentGame!.id));
                   const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
                   logger.info('Play details:', play)
-                  await send(
-                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n${scoreText}`,
-                    currentGame!
-                  );
+                  if(boxscoreNow.homeTeam.score !== undefined && boxscoreNow.awayTeam.score !== undefined){
+                    await send(
+                      `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n${scoreText}`,
+                      currentGame!
+                    );
+                  } else {
+                    throw new Error("Boxscore scores are undefined");
+                  }
                 } catch (err) {
                   // If fetching the boxscore fails, fall back to the original message without score.
                   logger.warn(`[${new Date().toISOString()}] Failed to fetch boxscore for period-start message:`, err);

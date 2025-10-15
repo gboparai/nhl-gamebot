@@ -284,8 +284,8 @@ const TEAM_IMAGES = {
 };
 
 const TEAM_COLORS = {
-   Ducks: "rgba(252, 76, 2, 0.75)",          // Orange
-    Mammoth: "rgba(70, 130, 180, 0.75)",      // Steel Blue
+  Ducks: "rgba(252, 76, 2, 0.75)",          // Orange
+  Mammoth: "rgba(70, 130, 180, 0.75)",      // Steel Blue
   Bruins: "rgba(252, 181, 20, 0.75)",       // Gold
   Sabres: "rgba(255, 184, 28, 0.75)",       // Yellow/Gold ✅
   Flames: "rgba(200, 16, 46, 0.75)",        // Red
