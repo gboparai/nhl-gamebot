@@ -521,7 +521,7 @@ const handleInGameState = async () => {
 
         logger.info(`[${new Date().toISOString()}] Sending intermission message`);
         await send(
-          `It's end of the ${formatPeriodLabel(playByPlay?.displayPeriod || 0)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
+          `It's end of the ${formatPeriodLabel(playByPlay?.displayPeriod || 0,  playByPlay.gameType)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
           currentGame!,
           [`./temp/intermission.png`],
         );
@@ -611,12 +611,12 @@ const handleInGameState = async () => {
                 }
                 else{
                   goalMessage = `${scoringTeam?.name.default} GOAL! ${goalEmojis(scoringTeamsScore || 0)}
-                            \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
+                            \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period.${assistsText}
                                     \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
 
                   if (scoringTeam?.id !== prefTeam?.id) {
                     goalMessage = `${scoringTeam?.name.default} score ${thumbsDownEmojis(scoringTeamsScore || 0)} 
-                                \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number)} period.${assistsText}
+                                \n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} (${play.details?.scoringPlayerTotal}) scores with ${play.timeRemaining} left in the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period.${assistsText}
                                         \n${currentGame?.homeTeam.name.default}: ${play.details?.homeScore}\n${currentGame?.awayTeam.name.default}: ${play.details?.awayScore}`;
                   }
                 }
@@ -674,10 +674,10 @@ const handleInGameState = async () => {
                 
                 if (play.details?.typeCode === 'PS') {
                   // Penalty shot message
-                  penaltyMessage = `Penalty Shot ${drawnTeam?.name.default}\n\n${drawnByPlayer?.firstName.default} ${drawnByPlayer?.lastName.default} awarded a penalty shot with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
+                  penaltyMessage = `Penalty Shot ${drawnTeam?.name.default}\n\n${drawnByPlayer?.firstName.default} ${drawnByPlayer?.lastName.default} awarded a penalty shot with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period.`;
                 } else {
                   // Regular penalty message
-                  penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes${drawnByText} for ${penaltyType} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number)} period.`;
+                  penaltyMessage = `Penalty ${penaltyTeam?.name.default}\n\n${penaltyPlayer?.firstName.default} ${penaltyPlayer?.lastName.default} ${play.details?.duration}:00 minutes${drawnByText} for ${penaltyType} with ${play.timeRemaining} to play in the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period.`;
                 }
                 
                 logger.info(`[${new Date().toISOString()}] Sending penalty message:`, penaltyMessage);
@@ -691,7 +691,7 @@ const handleInGameState = async () => {
                   logger.info('Play details:', play)
                   if(boxscoreNow.homeTeam.score !== undefined && boxscoreNow.awayTeam.score !== undefined){
                     await send(
-                      `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n${scoreText}`,
+                      `It's time for the ${formatPeriodLabel(play.periodDescriptor.number, boxscoreNow.gameType )} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!\n\n${scoreText}`,
                       currentGame!
                     );
                   } else {
@@ -701,13 +701,13 @@ const handleInGameState = async () => {
                   // If fetching the boxscore fails, fall back to the original message without score.
                   logger.warn(`[${new Date().toISOString()}] Failed to fetch boxscore for period-start message:`, err);
                   await send(
-                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
+                    `It's time for the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
                     currentGame!
                   );
                 }
               }
               else if (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondaryReason === "tv-timeout")) {
-                const stoppageMessage = `Game Stoppage: TV Timeout with ${play.timeRemaining} remaining in the ${formatPeriodLabel(play.periodDescriptor.number)} period. \n\n${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}\n${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
+                const stoppageMessage = `Game Stoppage: TV Timeout with ${play.timeRemaining} remaining in the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period. \n\n${currentGame?.homeTeam.name.default}: ${currentGame?.homeTeam.score || 0}\n${currentGame?.awayTeam.name.default}: ${currentGame?.awayTeam.score || 0}`;
                 await send(stoppageMessage, currentGame!, undefined, true);
               }
               

@@ -189,11 +189,12 @@ export function sleep(milliseconds: number): Promise<void> {
  * @param period - The period number (1-3 for regulation, 4+ for overtime)
  * @returns A formatted period string (e.g., "1st", "2nd", "3rd", "OT", "2OT", etc.)
  */
-export function formatPeriodLabel(period: number): string {
+export function formatPeriodLabel(period: number, gameType: number): string {
   if (period === 1) return "1st";
   if (period === 2) return "2nd";
   if (period === 3) return "3rd";
   if (period === 4) return "OT";
+  if (gameType === 2 && period === 5) return "SO"; 
   return `${period - 3}OT`; // e.g. 5 → "2OT", 6 → "3OT"
 }
 
@@ -204,7 +205,7 @@ export function formatPeriodLabel(period: number): string {
  * @returns An object containing homeLineScores and awayLineScores.
  */
 
-export function formatPeriodTime(period: number, rawTime: string): string {
+export function formatPeriodTime(period: number, rawTime: string, gameType: number): string {
   let [minutes, seconds] = rawTime.split(":");
   if (!seconds) {
     // Handle compact format like "754"
@@ -212,7 +213,7 @@ export function formatPeriodTime(period: number, rawTime: string): string {
     minutes = rawTime.slice(0, -2);
     seconds = rawTime.slice(-2);
   }
-  return `${formatPeriodLabel(period)} – ${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
+  return `${formatPeriodLabel(period, gameType)} – ${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
 }
 
 
@@ -225,6 +226,7 @@ export function formatPeriodTime(period: number, rawTime: string): string {
 export function transformGameLandingToLineScores(gameLanding: GameLanding): {
   homeLineScores: LineScore[];
   awayLineScores: LineScore[];
+
 } {
   const homeLineScores: LineScore[] = [];
   const awayLineScores: LineScore[] = [];
@@ -232,7 +234,7 @@ export function transformGameLandingToLineScores(gameLanding: GameLanding): {
   gameLanding.summary.scoring.forEach((periodGoal) => {
     periodGoal.goals.forEach((goal) => {
       const lineScore: LineScore = {
-        time: formatPeriodTime(periodGoal.periodDescriptor.number, goal.timeInPeriod),
+        time: formatPeriodTime(periodGoal.periodDescriptor.number, goal.timeInPeriod, gameLanding.gameType),
         type: getGoalType(goal.situationCode),
         goalScorer: `${goal.firstName.default} ${goal.lastName.default}`,
         assists: goal.assists.map(
