@@ -608,7 +608,7 @@ const handleInGameState = async () => {
                 // Include current score when announcing the start of a period.
                 try {
                   const boxscoreNow = await fetchBoxscore(String(currentGame!.id));
-                  const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score}`;
+                  const scoreText = `${currentGame?.homeTeam.name.default}: ${boxscoreNow.homeTeam.score || 0}\n${currentGame?.awayTeam.name.default}: ${boxscoreNow.awayTeam.score || 0}`;
                   logger.info('Play details:', play)
                   if(boxscoreNow.homeTeam.score !== undefined && boxscoreNow.awayTeam.score !== undefined){
                     await send(
@@ -1004,20 +1004,45 @@ const handlePostGameVideoState = async () => {
 
 /**
  * Handles the end game state.
- * This function waits for a specific period of time and then sets the current state to "WAITING".
+ * This function calculates sleep time until 2 AM the next day (local time) to prevent processing the same game twice.
  * @returns {Promise<void>} A promise that resolves when the current state is set to "WAITING".
  */
 const handleEndGameState = async () => {
-  logger.info(`[${new Date().toISOString()}] Entering ENDGAME state, sleeping for 7 hours`);
-  
+  logger.info(`[${new Date().toISOString()}] Entering ENDGAME state, calculating sleep until 2 AM next day`);
   
   try {
-    await sleep(config.app.script.endgame_sleep_time ?? 25200000); // 7 hours
+    // Get current time in the configured timezone
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1); // Move to next day
+    tomorrow.setHours(2, 0, 0, 0); // Set to 2:00 AM
+    
+    // Calculate milliseconds until 2 AM tomorrow
+    let sleepDuration = tomorrow.getTime() - now.getTime();
+    
+    // If somehow we're already past 2 AM and the calculation is negative, sleep until 2 AM today
+    if (sleepDuration < 0) {
+      const today2AM = new Date(now);
+      today2AM.setHours(2, 0, 0, 0);
+      sleepDuration = today2AM.getTime() - now.getTime();
+      
+      // If still negative, we're between midnight and 2 AM, so sleep until 2 AM tomorrow
+      if (sleepDuration < 0) {
+        sleepDuration = tomorrow.getTime() - now.getTime();
+      }
+    }
+    
+    const hoursUntil2AM = (sleepDuration / (1000 * 60 * 60)).toFixed(1);
+    logger.info(`[${new Date().toISOString()}] Sleeping for ${hoursUntil2AM} hours until 2 AM (${tomorrow.toISOString()})`);
+    
+    await sleep(sleepDuration);
     currentState = GameStates.WAITING;
-    logger.info(`[${new Date().toISOString()}] Transitioning back to WAITING state`);
+    logger.info(`[${new Date().toISOString()}] Woke up at 2 AM, transitioning back to WAITING state`);
   } catch (error) {
     logger.error(`[${new Date().toISOString()}] Error in ENDGAME state:`, error);
-    
+    // Fall back to default sleep time on error
+    await sleep(config.app.script.endgame_sleep_time ?? 25200000);
+    currentState = GameStates.WAITING;
   }
 };
 
