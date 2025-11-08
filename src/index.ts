@@ -445,7 +445,7 @@ const handleInGameState = async () => {
 
     const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
     
-    if (playByPlay.clock.inIntermission) {
+    if (playByPlay.clock.inIntermission && hasSentIntermission) {
       logger.info(`[${new Date().toISOString()}] Game is in intermission`);
       await checkForHighlights();
       await sleep(config.app.script.intermission_sleep_time);
@@ -632,7 +632,7 @@ const handleInGameState = async () => {
                 logger.info(`[${new Date().toISOString()}] Period ${play.periodDescriptor.number} ended, waiting to check if game ends...`);
                 
                 // Wait a short time to see if game-end event appears
-                await sleep(180000); // Wait 5 seconds
+                await sleep(180000); // Wait 3 minutes
                 
                 // Re-fetch play-by-play to check for game-end
                 const updatedPlayByPlay = await fetchPlayByPlay(String(currentGame!.id));
@@ -713,8 +713,12 @@ const handleInGameState = async () => {
                       currentGame!,
                       [`./temp/intermission.png`],
                     );
+                    
                   } catch (intermissionError) {
                     logger.error(`[${new Date().toISOString()}] Error sending period-end intermission report:`, intermissionError);
+                  }
+                  finally {
+                    hasSentIntermission = true;
                   }
                 } else {
                   logger.info(`[${new Date().toISOString()}] Game-end event found after period ${play.periodDescriptor.number}, skipping intermission report`);
