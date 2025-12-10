@@ -26,19 +26,23 @@ async function initializeBot(): Promise<void> {
 }
 
 /**
- * Sends a message to Telegram with optional media attachments.
+ * Sends a message to Telegram with optional media attachments and reply context.
  * @param text - The text content of the message.
  * @param game - Optional game object (not used for hashtags in Telegram).
  * @param media - Optional array of media file paths to attach to the message.
  * @param retries - Number of retry attempts.
- * @returns A promise that resolves when the message is sent.
+ * @param telegramReplyTo - Optional message to reply to (only affects Telegram).
+ * @returns A promise that resolves with the new message's ID.
  */
 export async function sendTelegramMessage(
   text: string,
   game?: Game,
   media?: string[],
   retries: number = 3,
-): Promise<void> {
+  telegramReplyTo?: { messageId: number },
+): Promise<{ messageId: number } | undefined> {
+  let messageId: number | undefined;
+
   const operation = async () => {
     await initializeBot();
     
@@ -47,6 +51,11 @@ export async function sendTelegramMessage(
     }
 
     const chatId = typedConfig.telegram.chatId;
+    const messageOptions: TelegramBot.SendMessageOptions = {};
+
+    if (telegramReplyTo?.messageId) {
+      messageOptions.reply_to_message_id = telegramReplyTo.messageId;
+    }
 
     // Handle media attachments if provided
     if (media && media.length > 0) {
@@ -58,13 +67,36 @@ export async function sendTelegramMessage(
             };
             return mediaObj;
         });
-        await bot.sendMediaGroup(chatId, mediaGroup);
+        // Telegram's sendMediaGroup does not directly support reply_to_message_id in the same way sendMessage does for the whole group.
+        // If a reply is needed, we'll send a text message first and then media, or just the text message as a reply.
+        // For simplicity, if media is present and a reply is requested, we'll just send the media group without a direct reply to the group itself.
+        // The caption of the first media item can serve as the main message.
+        if (telegramReplyTo?.messageId) {
+          // If replying and media, send text as reply, then media separately.
+          // Or, for simplicity, just send the media group without direct reply.
+          // For now, let's prioritize media and not reply directly to the media group.
+          // A more complex solution would be to send the text as a reply, then the media.
+          const sentMessage = await bot.sendMessage(chatId, text, messageOptions);
+          messageId = sentMessage.message_id;
+          await bot.sendMediaGroup(chatId, mediaGroup); // Media group sent without direct reply
+        } else {
+          const sentMessage = await bot.sendMediaGroup(chatId, mediaGroup);
+          if (sentMessage && sentMessage.length > 0) {
+            messageId = sentMessage[0].message_id; // Get message_id from the first media item
+          }
+        }
     } else {
-        await bot.sendMessage(chatId, text);
+        const sentMessage = await bot.sendMessage(chatId, text, messageOptions);
+        messageId = sentMessage.message_id;
     }
   };
 
   await retryOperation(operation, retries, 5000, "telegram", text);
+
+  if (messageId) {
+    return { messageId };
+  }
+  return undefined;
 }
 
 /**

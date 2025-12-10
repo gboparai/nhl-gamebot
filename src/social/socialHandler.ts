@@ -18,6 +18,7 @@ const typedConfig = config as Config;
  * @param extended - If true, prevents sending to Twitter (for extended/in-game messages).
  * @param blueskyReplyTo - Optional Bluesky post to reply to (only affects Bluesky).
  * @param threadsReplyTo - Optional Threads post to reply to (only affects Threads).
+ * @param telegramReplyTo - Optional Telegram message to reply to (only affects Telegram).
  * @returns A promise that resolves when the message is sent, with post info if sent.
  */
 export async function send(
@@ -27,9 +28,10 @@ export async function send(
   extended?: boolean,
   blueskyReplyTo?: { uri: string; cid: string },
   threadsReplyTo?: { postId: string },
-): Promise<{ blueskyPost?: { uri: string; cid: string }; threadsPost?: { postId: string } }> {
+  telegramReplyTo?: { messageId: number },
+): Promise<{ blueskyPost?: { uri: string; cid: string }; threadsPost?: { postId: string }; telegramPost?: { messageId: number } }> {
   // Send to Twitter if active and not an extended message or reply
-  if (typedConfig.twitter.isActive && !extended && !blueskyReplyTo && !threadsReplyTo) {
+  if (typedConfig.twitter.isActive && !extended && !blueskyReplyTo && !threadsReplyTo && !telegramReplyTo) {
     try {
       const mediaIds = media
         ? await Promise.all(media.map(uploadMedia))
@@ -74,9 +76,10 @@ export async function send(
   }
 
   // Send to Telegram if active
+  let telegramPost: { messageId: number } | undefined;
   if (typedConfig.telegram.isActive) {
     try {
-      await sendTelegramMessage(text, game, media);
+      telegramPost = await sendTelegramMessage(text, game, media, 3, telegramReplyTo);
     } catch (error) {
       logger.error("Failed to send Telegram message", error);
       // Don't throw error to prevent application crash
@@ -98,6 +101,7 @@ export async function send(
         extended,
         blueskyReplyTo,
         threadsReplyTo,
+        telegramReplyTo,
       };
       const logLine = `${JSON.stringify(logEntry)}\n`;
       fs.appendFileSync(typedConfig.fileOutput.filePath, logLine);
@@ -107,5 +111,5 @@ export async function send(
     }
   }
 
-  return { blueskyPost, threadsPost };
+  return { blueskyPost, threadsPost, telegramPost };
 }
