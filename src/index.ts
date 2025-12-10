@@ -449,87 +449,8 @@ const handleInGameState = async () => {
 
     const playByPlay = await fetchPlayByPlay(String(currentGame!.id));
     
-    if (playByPlay.clock.inIntermission) {
+    if (playByPlay.clock.inIntermission && hasSentIntermission) {
       logger.info(`[${new Date().toISOString()}] Game is in intermission`);
-      if (!hasSentIntermission) {
-        logger.info(`[${new Date().toISOString()}] Sending intermission report`);
-        hasSentIntermission = true;
-        
-        const boxscore = await fetchBoxscore(String(currentGame?.id));
-        const gameLanding = await fetchGameLanding(String(currentGame?.id));
-        const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
-        
-       
-        
-        const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
-        const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
-        const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
-        const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
-        const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
-        const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
-        const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
-        const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
-        const lineScores = transformGameLandingToLineScores(gameLanding);
-        logger.info(`[${new Date().toISOString()}] Generating intermission image`);
-
-        //TypeError: Cannot read properties of undefined (reading 'totals')
-        await intermissionImage({
-          home: {
-            team: boxscore?.homeTeam.commonName.default || "",
-            score: boxscore.homeTeam.score,
-            lineScores: lineScores.homeLineScores,
-          },
-          away: {
-            team:  boxscore?.awayTeam.commonName.default || "",
-            score: boxscore.awayTeam.score,
-            lineScores: lineScores.awayLineScores,
-          },
-          shots: {
-            home: boxscore.homeTeam.sog,
-            away: boxscore.awayTeam.sog,
-          },
-
-          blockedShots: {
-            home: Number(blockedShots?.homeValue) || 0,
-            away: Number(blockedShots?.awayValue) || 0,
-          },
-          penalties: {
-            home: Number(pims?.homeValue) || 0,
-            away: Number(pims?.awayValue) || 0,
-          },
-          hits: {
-            home: Number(hits?.homeValue) || 0,
-            away: Number(hits?.awayValue) || 0,
-          },
-          faceoffPercentage: {
-            home: Number(faceoffWinningPctg?.homeValue) || 0,
-            away:  Number(faceoffWinningPctg?.awayValue) || 0,
-          },
-          giveaways: {
-            home: Number(giveaways?.homeValue) || 0,
-            away: Number(giveaways?.awayValue) || 0,
-          },
-          takeaways: {
-            home: Number(takeaways?.homeValue) || 0,
-            away: Number(takeaways?.awayValue) || 0,
-          },
-          powerPlay: {
-            home: String(powerPlay?.homeValue) || "",
-            away: String(powerPlay?.awayValue) || "",
-          },
-          powerPlayPctg:{
-            home: Number(powerPlayPctg?.homeValue) || 0,
-            away: Number(powerPlayPctg?.awayValue) || 0,
-          }
-        });
-
-        logger.info(`[${new Date().toISOString()}] Sending intermission message`);
-        await send(
-          `It's end of the ${formatPeriodLabel(playByPlay?.displayPeriod || 0,  playByPlay.gameType)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
-          currentGame!,
-          [`./temp/intermission.png`],
-        );
-      }
       await checkForHighlights();
       await sleep(config.app.script.intermission_sleep_time);
     } else {
@@ -710,6 +631,103 @@ const handleInGameState = async () => {
                     `It's time for the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period at ${currentGame!.venue.default}. Let's go ${prefTeam?.name.default}!`,
                     currentGame!
                   );
+                }
+              }
+              else if (play.typeDescKey === "period-end") {
+                // Period-end always comes before game-end, so we need to wait to see if game-end follows
+                logger.info(`[${new Date().toISOString()}] Period ${play.periodDescriptor.number} ended, waiting to check if game ends...`);
+                
+                // Wait a short time to see if game-end event appears
+                await sleep(180000); // Wait 3 minutes
+                
+                // Re-fetch play-by-play to check for game-end
+                const updatedPlayByPlay = await fetchPlayByPlay(String(currentGame!.id));
+                const gameEndEvent = updatedPlayByPlay.plays.find((p) => p.typeDescKey === "game-end");
+                
+                if (!gameEndEvent) {
+                  // No game-end event, this is a real intermission
+                  logger.info(`[${new Date().toISOString()}] No game-end event found, sending intermission report for period ${play.periodDescriptor.number}`);
+                  
+                  try {
+                    const boxscore = await fetchBoxscore(String(currentGame?.id));
+                    const gameLanding = await fetchGameLanding(String(currentGame?.id));
+                    const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
+                    
+                    const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
+                    const hits = rightRailInfo?.teamGameStats?.find((team) => team.category === 'hits');
+                    const faceoffWinningPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'faceoffWinningPctg');
+                    const blockedShots = rightRailInfo?.teamGameStats?.find((team) => team.category === 'blockedShots');
+                    const giveaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'giveaways');
+                    const takeaways = rightRailInfo?.teamGameStats?.find((team) => team.category === 'takeaways');
+                    const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
+                    const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
+                    const lineScores = transformGameLandingToLineScores(gameLanding);
+                    
+                    logger.info(`[${new Date().toISOString()}] Generating intermission image for period ${play.periodDescriptor.number}`);
+                    
+                    await intermissionImage({
+                      home: {
+                        team: boxscore?.homeTeam.commonName.default || "",
+                        score: boxscore.homeTeam.score,
+                        lineScores: lineScores.homeLineScores,
+                      },
+                      away: {
+                        team: boxscore?.awayTeam.commonName.default || "",
+                        score: boxscore.awayTeam.score,
+                        lineScores: lineScores.awayLineScores,
+                      },
+                      shots: {
+                        home: boxscore.homeTeam.sog,
+                        away: boxscore.awayTeam.sog,
+                      },
+                      blockedShots: {
+                        home: Number(blockedShots?.homeValue) || 0,
+                        away: Number(blockedShots?.awayValue) || 0,
+                      },
+                      penalties: {
+                        home: Number(pims?.homeValue) || 0,
+                        away: Number(pims?.awayValue) || 0,
+                      },
+                      hits: {
+                        home: Number(hits?.homeValue) || 0,
+                        away: Number(hits?.awayValue) || 0,
+                      },
+                      faceoffPercentage: {
+                        home: Number(faceoffWinningPctg?.homeValue) || 0,
+                        away: Number(faceoffWinningPctg?.awayValue) || 0,
+                      },
+                      giveaways: {
+                        home: Number(giveaways?.homeValue) || 0,
+                        away: Number(giveaways?.awayValue) || 0,
+                      },
+                      takeaways: {
+                        home: Number(takeaways?.homeValue) || 0,
+                        away: Number(takeaways?.awayValue) || 0,
+                      },
+                      powerPlay: {
+                        home: String(powerPlay?.homeValue) || "",
+                        away: String(powerPlay?.awayValue) || "",
+                      },
+                      powerPlayPctg: {
+                        home: Number(powerPlayPctg?.homeValue) || 0,
+                        away: Number(powerPlayPctg?.awayValue) || 0,
+                      }
+                    });
+                    
+                    await send(
+                      `It's end of the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
+                      currentGame!,
+                      [`./temp/intermission.png`],
+                    );
+                    
+                  } catch (intermissionError) {
+                    logger.error(`[${new Date().toISOString()}] Error sending period-end intermission report:`, intermissionError);
+                  }
+                  finally {
+                    hasSentIntermission = true;
+                  }
+                } else {
+                  logger.info(`[${new Date().toISOString()}] Game-end event found after period ${play.periodDescriptor.number}, skipping intermission report`);
                 }
               }
               else if (play.typeDescKey === "stoppage" && (play.details?.reason === "tv-timeout" || play.details?.secondaryReason === "tv-timeout")) {

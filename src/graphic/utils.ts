@@ -237,7 +237,8 @@ export async function addTeamLogo(
   options: TeamLogoOptions,
 ): Promise<void> {
   const { teamName, x, y, width, height } = options;
-  const logoPath = `./assets/logos/${TEAM_IMAGES[teamName as keyof typeof TEAM_IMAGES] || ""}`;
+  const parsedName = teamName.replace(/\s/g, "");
+  const logoPath = `./assets/logos/${TEAM_IMAGES[parsedName as keyof typeof TEAM_IMAGES] || ""}`;
   try {
     const logoImage = await loadImage(logoPath);
     ctx.drawImage(logoImage, x, y, width, height);
