@@ -1,4 +1,4 @@
-import { ThreadsAPI } from 'threads-api';
+import  ThreadsAPI  from 'threads-api';
 import { Config } from '../types';
 import config from '../../config.json';
 import { logger } from '../logger';
@@ -6,7 +6,7 @@ import { retryOperation } from './utils';
 
 const typedConfig = config as Config;
 
-let api: ThreadsAPI | null = null;
+let api: ThreadsAPI.ThreadsAPI | null = null;
 
 /**
  * Initialize and authenticate the Threads client
@@ -14,13 +14,18 @@ let api: ThreadsAPI | null = null;
 async function initializeClient(): Promise<void> {
   if (!api) {
     try {
-      api = new ThreadsAPI({
-        username: typedConfig.threads.username,
-        password: typedConfig.threads.password,
+        api = new ThreadsAPI.ThreadsAPI({
+            username: typedConfig.threads.username,
+            password: typedConfig.threads.password,
+            deviceID: typedConfig.threads.deviceId
+        });
+
+    } catch (error: any) {
+      logger.error('Threads initialization error:', {
+        message: error.message,
+        stack: error.stack,
+        details: error.response?.data,
       });
-      logger.info(`Threads client initialized for user ${typedConfig.threads.username}.`);
-    } catch (error) {
-      logger.error('Threads initialization error:', error);
       throw new Error('Failed to initialize Threads client');
     }
   }

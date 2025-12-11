@@ -21,6 +21,7 @@ export interface Config {
   threads: {
     username: string;
     password: string;
+    deviceId: string;
     isActive: boolean;
   };
   discord: {
