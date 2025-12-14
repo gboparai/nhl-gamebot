@@ -23,6 +23,7 @@ export interface Config {
     password: string;
     deviceId: string;
     isActive: boolean;
+    topic: string;
   };
   discord: {
     botToken: string;

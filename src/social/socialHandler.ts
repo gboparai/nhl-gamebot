@@ -58,7 +58,7 @@ export async function send(
   let threadsPost: { postId: string } | undefined;
   if (typedConfig.threads.isActive) {
     try {
-      threadsPost = await sendThreadsPost(text, media, 3, threadsReplyTo);
+      threadsPost = await sendThreadsPost(text, game, media, 3, threadsReplyTo);
     } catch (error) {
       logger.error("Failed to send Threads post", error);
       // Don't throw error to prevent application crash
