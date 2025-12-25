@@ -63,6 +63,8 @@ interface GoalPostInfo {
   eventId: number;
   gameId: number;
   blueskyPost?: { uri: string; cid: string };
+  threadsPost?: { postId: string };
+  telegramPost?: { messageId: number };
   playerName: string;
   teamName: string;
   processed: boolean;
@@ -130,7 +132,9 @@ async function checkForHighlights(): Promise<void> {
             currentGame,
             undefined,
             true, // extended = true (don't send to Twitter)
-            goalPost.blueskyPost // Bluesky reply to original post
+            goalPost.blueskyPost, // Bluesky reply to original post
+            goalPost.threadsPost, // Threads reply to original post
+            goalPost.telegramPost, // Telegram reply to original post
           );
           
           // Mark as processed
@@ -550,6 +554,8 @@ const handleInGameState = async () => {
                     eventId: play.eventId,
                     gameId: currentGame!.id,
                     blueskyPost: socialResponse.blueskyPost,
+                    threadsPost: socialResponse.threadsPost,
+                    telegramPost: socialResponse.telegramPost,
                     playerName: `${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default}`,
                     teamName: scoringTeam?.name.default || "",
                     processed: false
@@ -1104,6 +1110,7 @@ main().catch((error) => {
   logger.error(`[${new Date().toISOString()}] Fatal error in main function:`, error);
   process.exit(1);
 });
+
 
 // Export internal state and handlers for testing
 export {

@@ -69,13 +69,13 @@ export async function retryOperation<T>(
  * Generates hashtags for a game post.
  * @param game - The game object containing information about the game.
  * @param teamHashtagFunction - Function to get team-specific hashtags.
- * @param format - Format for the hashtags ("twitter" or "bluesky").
+ * @param format - Format for the hashtags ("twitter", "bluesky", or "threads").
  * @returns A string containing the generated hashtags.
  */
 export function generateGameHashtags(
   game: Game,
   teamHashtagFunction: (teamName: string) => string,
-  format: "twitter" | "bluesky" = "twitter"
+  format: "twitter" | "bluesky" | "threads" = "twitter"
 ): string {
   const homeHashtag = teamHashtagFunction(game.homeTeam.name.default);
   const awayHashtag = teamHashtagFunction(game.awayTeam.name.default);
@@ -83,7 +83,7 @@ export function generateGameHashtags(
   const prefix = format === "bluesky" ? "#" : "#";
   const gameHashtag = `${prefix}${game.awayTeam.abbrev.toUpperCase()}vs${game.homeTeam.abbrev.toUpperCase()}`;
   
-  if (format === "bluesky") {
+  if (format === "bluesky" || format === "threads") {
     return `\n\n${gameHashtag} ${homeHashtag} ${awayHashtag}`;
   } else {
     return `\n\n${gameHashtag}  ${homeHashtag} ${awayHashtag}`;

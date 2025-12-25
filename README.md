@@ -8,6 +8,8 @@ See the bot in action on https://bsky.app/profile/canucksgamebot.bsky.social
 
 - 🐦 **Twitter Integration**: Post game updates, scores, and media to Twitter
 - 🦋 **Bluesky Integration**: Cross-post to Bluesky with proper hashtag handling
+- 🧵 **Threads Integration**: Post game updates and reply with highlights to Threads
+- ✈️ **Telegram Integration**: Send game updates and media to Telegram channels
 - 💬 **Discord Integration**: Send game updates and graphics to Discord channels
 - 🏒 **Game Tracking**: Automatic game detection and updates
 - 🖼️ **Media Support**: Automatic graphic generation and posting
@@ -27,6 +29,21 @@ Bluesky integration with:
 
 - Proper hashtag detection using AT Protocol facets
 - Rich text support
+- Media upload capabilities
+- Replying to posts with highlights
+
+### Threads
+
+Threads integration with:
+
+- Media upload capabilities
+- Replying to posts with highlights
+
+### Telegram
+
+Telegram integration with:
+
+- Channel posting capabilities
 - Media upload capabilities
 
 ### Discord
@@ -50,6 +67,8 @@ See the following documentation for detailed setup:
 
 - [App Setup Guide](./docs/APP_SETUP.md)
 - [Bluesky Setup Guide](./docs/BLUESKY_SETUP.md)
+- [Threads Setup Guide](./docs/THREADS_SETUP.md)
+- [Telegram Setup Guide](./docs/TELEGRAM_SETUP.md)
 - [Discord Setup Guide](./docs/DISCORD_SETUP.md)
 - [Twitter Setup Guide](./docs/TWITTER_SETUP.md)
 
