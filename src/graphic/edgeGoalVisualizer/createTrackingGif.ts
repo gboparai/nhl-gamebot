@@ -62,7 +62,7 @@ export async function createTrackingGif(
       timeDiffs.push(diff);
     }
     const avgDiff = timeDiffs.reduce((a, b) => a + b, 0) / timeDiffs.length;
-    delay = Math.max(10, Math.round(avgDiff * frameSkip)); // Adjust for frame skipping
+    delay = Math.max(100, Math.round(avgDiff * frameSkip)); // Adjust for frame skipping
   }
 
   console.log(`Creating GIF with ${selectedFrames.length} frames (skipped ${frames.length - selectedFrames.length}) at ~${Math.round(1000 / delay)} fps (${delay}ms per frame)`);

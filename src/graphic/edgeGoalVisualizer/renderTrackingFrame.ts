@@ -83,10 +83,15 @@ export function renderTrackingFrame(
       // leftTeam and rightTeam in rinkParams are full team names, convert to abbreviations for comparison
       const leftTeamAbbrev = getTeamAbbreviation(rinkParams.leftTeam);
       const rightTeamAbbrev = getTeamAbbreviation(rinkParams.rightTeam);
+      const homeTeamAbbrev = getTeamAbbreviation(rinkParams.homeTeam);
       
-      const teamColor = entity.teamAbbrev === leftTeamAbbrev
+      const isLeftTeam = entity.teamAbbrev === leftTeamAbbrev;
+      const isRightTeam = entity.teamAbbrev === rightTeamAbbrev;
+      const isHomeTeam = entity.teamAbbrev === homeTeamAbbrev;
+      
+      const teamColor = isLeftTeam
         ? leftColor
-        : entity.teamAbbrev === rightTeamAbbrev
+        : isRightTeam
         ? rightColor
         : "#CCCCCC";
 
@@ -96,18 +101,25 @@ export function renderTrackingFrame(
       // Render player
       let playerElement = `<g style="transform: translate(${entity.x}px, ${entity.y}px);">`;
 
-      // Add highlight circle if needed (goal scorer) - render BEFORE main circle
+      // Add highlight circle if needed (goal scorer) - solid circle, render BEFORE main circle
       if (isHighlighted) {
-        playerElement += `<circle r="${playerRadius + 12}" fill="none" stroke="${teamColor}" stroke-width="4" stroke-dasharray="8,4" opacity="0.8"/>`;
+        playerElement += `<circle r="${playerRadius + 12}" fill="none" stroke="${teamColor}" stroke-width="4" opacity="0.8"/>`;
       }
 
-      // Main circle for player - solid filled with team color
-      playerElement += `<circle r="${playerRadius}" fill="${teamColor}" stroke="#FFFFFF" stroke-width="2"/>`;
+      // Main circle for player - home team filled, away team inverted (white with colored border)
+      if (isHomeTeam) {
+        // Home team: solid filled with team color
+        playerElement += `<circle r="${playerRadius}" fill="${teamColor}" stroke="#FFFFFF" stroke-width="2"/>`;
+      } else {
+        // Away team: inverted - white fill with team color border
+        playerElement += `<circle r="${playerRadius}" fill="#FFFFFF" stroke="${teamColor}" stroke-width="4"/>`;
+      }
 
-      // Add sweater number - white text on top of colored circle
+      // Add sweater number - white text for home team, team color text for away team
       if (showNumbers && entity.sweaterNumber) {
+        const textColor = isHomeTeam ? "#FFFFFF" : teamColor;
         playerElement += `<text x="0" y="0" text-anchor="middle" dominant-baseline="central" ` +
-          `fill="#FFFFFF" font-size="32" font-weight="bold" font-family="Arial, sans-serif">` +
+          `fill="${textColor}" font-size="32" font-weight="bold" font-family="Arial, sans-serif">` +
           `${entity.sweaterNumber}</text>`;
       }
 
