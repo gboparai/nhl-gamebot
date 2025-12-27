@@ -319,8 +319,80 @@ const TEAM_COLORS = {
   Jets: "rgba(4, 30, 66, 0.75)",            // Navy Blue
 };
 
+const TEAM_ABBREVIATIONS = {
+  Ducks: "ANA",
+  Mammoth: "UTA",
+  Bruins: "BOS",
+  Sabres: "BUF",
+  Flames: "CGY",
+  Hurricanes: "CAR",
+  Blackhawks: "CHI",
+  Avalanche: "COL",
+  BlueJackets: "CBJ",
+  Stars: "DAL",
+  RedWings: "DET",
+  Oilers: "EDM",
+  Panthers: "FLA",
+  Kings: "LAK",
+  Wild: "MIN",
+  Canadiens: "MTL",
+  Predators: "NSH",
+  Devils: "NJD",
+  Islanders: "NYI",
+  Rangers: "NYR",
+  Senators: "OTT",
+  Flyers: "PHI",
+  Penguins: "PIT",
+  Sharks: "SJS",
+  Kraken: "SEA",
+  Blues: "STL",
+  Lightning: "TBL",
+  MapleLeafs: "TOR",
+  Canucks: "VAN",
+  GoldenKnights: "VGK",
+  Capitals: "WSH",
+  Jets: "WPG",
+};
+
 export function getTeamColor(teamName: string): string {
   return TEAM_COLORS[teamName as keyof typeof TEAM_IMAGES] || "rgba(128,128,128,0.75)"; // fallback gray
+}
+
+/**
+ * Gets the team abbreviation for a given team name
+ * @param teamName - The team name
+ * @returns The team abbreviation or "NHL" as fallback
+ */
+export function getTeamAbbreviation(teamName: string): string {
+  return TEAM_ABBREVIATIONS[teamName as keyof typeof TEAM_ABBREVIATIONS] || "NHL";
+}
+
+/**
+ * Gets the center ice logo path for a given team name
+ * @param teamName - The team name
+ * @returns The relative path to the team's center ice logo
+ */
+export function getCenterIceLogo(teamName: string): string {
+  const logoFileName = TEAM_IMAGES[teamName as keyof typeof TEAM_IMAGES] || "default.png";
+  // Return path relative to src/graphic/edgeGoalVisualizer/ -> ../../../assets/logos/
+  return `../../../assets/logos/${logoFileName}`;
+}
+
+/**
+ * Converts RGBA color string to hex format
+ * @param rgba - RGBA color string like "rgba(252, 76, 2, 0.75)"
+ * @returns Hex color string like "#fc4c02"
+ */
+export function rgbaToHex(rgba: string): string {
+  // Extract RGB values from rgba string
+  const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) return "#808080"; // fallback gray
+  
+  const r = parseInt(match[1]);
+  const g = parseInt(match[2]);
+  const b = parseInt(match[3]);
+  
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
 
