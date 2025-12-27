@@ -14,6 +14,7 @@ import {
   Team,
 } from "./types";
 import { send } from "./social/socialHandler";
+import { generateEdgeGoalVisualization } from "./graphic/edgeGoalVisualizer/edgeGoalVisualizer";
 import {
   convertUTCToLocalTime,
   getCurrentDateLocalTime,
@@ -66,6 +67,8 @@ interface GoalPostInfo {
   playerName: string;
   teamName: string;
   processed: boolean;
+  gifSent: boolean;
+  videoSent: boolean;
 }
 
 let goalPosts: GoalPostInfo[] = [];
@@ -101,10 +104,10 @@ async function checkForHighlights(): Promise<void> {
 
     
     for (const goalPost of goalPosts) {
-      logger.info(`Processing goalPost for ${goalPost.playerName} (eventId: ${goalPost.eventId}, processed: ${goalPost.processed})`);
+      logger.info(`Processing goalPost for ${goalPost.playerName} (eventId: ${goalPost.eventId}, gifSent: ${goalPost.gifSent}, videoSent: ${goalPost.videoSent})`);
       
-      if (goalPost.processed) {
-        logger.info(`Skipping already processed goalPost for ${goalPost.playerName}`);
+      if (goalPost.gifSent && goalPost.videoSent) {
+        logger.info(`Skipping fully processed goalPost for ${goalPost.playerName}`);
         continue;
       }
 
@@ -116,13 +119,54 @@ async function checkForHighlights(): Promise<void> {
         logger.info(`Goal details for ${goalPost.playerName}:`, {
           eventId: goal.eventId,
           hasHighlightUrl: !!goal.details?.highlightClipSharingUrl,
-          highlightUrl: goal.details?.highlightClipSharingUrl || "Not available yet"
+          highlightUrl: goal.details?.highlightClipSharingUrl || "Not available yet",
+          hasTrackingUrl: !!goal.pptReplayUrl,
+          trackingUrl: goal.pptReplayUrl || "Not available yet"
         });
 
-        if (goal.details?.highlightClipSharingUrl && goal.details?.highlightClipSharingUrl !== 'https://nhl.com/video/') {
+        // Check for edge goal visualization (tracking data)
+        if (goal.details && goal.pptReplayUrl && !goalPost.gifSent) {
+          try {
+            logger.info(`Generating edge goal visualization for ${goalPost.playerName}: ${goal.pptReplayUrl}`);
+            
+            const homeTeamName = currentGame.homeTeam.name?.default || currentGame.homeTeam.abbrev;
+            const awayTeamName = currentGame.awayTeam.name?.default || currentGame.awayTeam.abbrev;
+            const period = goal.periodDescriptor.number;
+            
+            // Generate the GIF
+            const gifPath = await generateEdgeGoalVisualization({
+              trackingUrl: goal.pptReplayUrl,
+              homeTeam: homeTeamName,
+              awayTeam: awayTeamName,
+              period: period,
+              goalScorerId: goal.details.scoringPlayerId,
+            });
+            
+            logger.info(`Edge goal visualization generated at: ${gifPath}`);
+            
+            // Send edge goal visualization as reply to original goal post
+            const edgeGoalText = `EDGE Goal Visualization: ${goalPost.playerName} scores for the ${goalPost.teamName}!`;
+            
+            await send(
+              edgeGoalText,
+              currentGame,
+              [gifPath],
+              true, // extended = true (don't send to Twitter)
+              goalPost.blueskyPost // Bluesky reply to original post
+            );
+            
+            goalPost.gifSent = true;
+            logger.info(`Sent edge goal visualization for ${goalPost.playerName}`);
+          } catch (error) {
+            logger.error(`Error generating edge goal visualization for ${goalPost.playerName}:`, error);
+          }
+        }
+
+        // Check for highlight video URL (separate from GIF)
+        if (goal.details?.highlightClipSharingUrl && goal.details?.highlightClipSharingUrl !== 'https://nhl.com/video/' && !goalPost.videoSent) {
           logger.info(`Found highlight URL for ${goalPost.playerName}: ${goal.details.highlightClipSharingUrl}`);
           
-          // Send highlight reply using the centralized send function
+          // Send highlight video as reply to original goal post
           const highlightText = `HIGHLIGHT: ${goalPost.playerName} scores for the ${goalPost.teamName}!\n\n${goal.details.highlightClipSharingUrl}`;
           
           await send(
@@ -133,10 +177,15 @@ async function checkForHighlights(): Promise<void> {
             goalPost.blueskyPost // Bluesky reply to original post
           );
           
-          // Mark as processed
+          goalPost.videoSent = true;
+          logger.info(`Sent highlight video for ${goalPost.playerName}`);
+        }
+        
+        // Mark as fully processed if both were sent
+        if (goalPost.gifSent && goalPost.videoSent) {
           goalPost.processed = true;
-          logger.info(`Sent highlight reply for ${goalPost.playerName}`);
-        } 
+          logger.info(`Both GIF and video sent for ${goalPost.playerName}, marking as fully processed`);
+        }
       }
     }
   } catch (error) {
@@ -552,7 +601,9 @@ const handleInGameState = async () => {
                     blueskyPost: socialResponse.blueskyPost,
                     playerName: `${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default}`,
                     teamName: scoringTeam?.name.default || "",
-                    processed: false
+                    processed: false,
+                    gifSent: false,
+                    videoSent: false,
                   });
                   logger.info(`Stored goal post info for ${scoringPlayer.firstName.default} ${scoringPlayer.lastName.default} (event ${play.eventId})`);
                 }

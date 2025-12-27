@@ -97,16 +97,17 @@ describe("src/utils", () => {
   });
 
   test("formatPeriodLabel handles regulation and overtime", () => {
-    expect(formatPeriodLabel(1)).toBe("1st");
-    expect(formatPeriodLabel(2)).toBe("2nd");
-    expect(formatPeriodLabel(3)).toBe("3rd");
-    expect(formatPeriodLabel(4)).toBe("OT");
-    expect(formatPeriodLabel(5)).toBe("2OT");
+    expect(formatPeriodLabel(1, 2)).toBe("1st");
+    expect(formatPeriodLabel(2, 2)).toBe("2nd");
+    expect(formatPeriodLabel(3, 2)).toBe("3rd");
+    expect(formatPeriodLabel(4, 2)).toBe("OT");
+    expect(formatPeriodLabel(5, 2)).toBe("SO");
+    expect(formatPeriodLabel(5, 1)).toBe("2OT");
   });
 
   test("formatPeriodTime pads compact times", () => {
-    expect(formatPeriodTime(1, "12:34")).toBe("1st – 12:34");
-    expect(formatPeriodTime(4, "754")).toBe("OT – 07:54");
+    expect(formatPeriodTime(1, "12:34", 2)).toBe("1st – 12:34");
+    expect(formatPeriodTime(4, "754", 2)).toBe("OT – 07:54");
   });
 
   test("transformGameLandingToLineScores builds home and away line scores", () => {
