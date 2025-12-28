@@ -59,30 +59,44 @@ export async function sendTelegramMessage(
 
     // Handle media attachments if provided
     if (media && media.length > 0) {
-        const mediaGroup: ReadonlyArray<TelegramBot.InputMedia> = media.map((mediaPath, index) => {
-            const mediaObj: TelegramBot.InputMedia = {
-                type: 'photo',
-                media: mediaPath,
-                caption: index === 0 ? text : '',
-            };
-            return mediaObj;
-        });
-        // Telegram's sendMediaGroup does not directly support reply_to_message_id in the same way sendMessage does for the whole group.
-        // If a reply is needed, we'll send a text message first and then media, or just the text message as a reply.
-        // For simplicity, if media is present and a reply is requested, we'll just send the media group without a direct reply to the group itself.
-        // The caption of the first media item can serve as the main message.
-        if (telegramReplyTo?.messageId) {
-          // If replying and media, send text as reply, then media separately.
-          // Or, for simplicity, just send the media group without direct reply.
-          // For now, let's prioritize media and not reply directly to the media group.
-          // A more complex solution would be to send the text as a reply, then the media.
-          const sentMessage = await bot.sendMessage(chatId, text, messageOptions);
+        // Check if media contains GIF files
+        const hasGif = media.some(path => path.toLowerCase().endsWith('.gif'));
+        
+        if (hasGif && media.length === 1) {
+          // Send single GIF as animation with reply support
+          const gifPath = media[0];
+          const animationOptions: TelegramBot.SendAnimationOptions = {
+            caption: text,
+          };
+          
+          if (telegramReplyTo?.messageId) {
+            animationOptions.reply_to_message_id = telegramReplyTo.messageId;
+          }
+          
+          const sentMessage = await bot.sendAnimation(chatId, gifPath, animationOptions);
           messageId = sentMessage.message_id;
-          await bot.sendMediaGroup(chatId, mediaGroup); // Media group sent without direct reply
         } else {
-          const sentMessage = await bot.sendMediaGroup(chatId, mediaGroup);
-          if (sentMessage && sentMessage.length > 0) {
-            messageId = sentMessage[0].message_id; // Get message_id from the first media item
+          // Handle photos or mixed media
+          const mediaGroup: ReadonlyArray<TelegramBot.InputMedia> = media.map((mediaPath, index) => {
+              const isGif = mediaPath.toLowerCase().endsWith('.gif');
+              const mediaObj: TelegramBot.InputMedia = {
+                  type: isGif ? 'animation' : 'photo',
+                  media: mediaPath,
+                  caption: index === 0 ? text : '',
+              };
+              return mediaObj;
+          });
+          
+          if (telegramReplyTo?.messageId) {
+            // If replying and media, send text as reply, then media separately
+            const sentMessage = await bot.sendMessage(chatId, text, messageOptions);
+            messageId = sentMessage.message_id;
+            await bot.sendMediaGroup(chatId, mediaGroup); // Media group sent without direct reply
+          } else {
+            const sentMessage = await bot.sendMediaGroup(chatId, mediaGroup);
+            if (sentMessage && sentMessage.length > 0) {
+              messageId = sentMessage[0].message_id; // Get message_id from the first media item
+            }
           }
         }
     } else {
