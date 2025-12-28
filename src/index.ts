@@ -154,7 +154,9 @@ async function checkForHighlights(): Promise<void> {
               currentGame,
               [gifPath],
               true, // extended = true (don't send to Twitter)
-              goalPost.blueskyPost // Bluesky reply to original post
+              goalPost.blueskyPost, // Bluesky reply to original post
+              goalPost.threadsPost, // Threads reply to original post
+              goalPost.telegramPost, // Telegram reply to original post
             );
             
             goalPost.gifSent = true;
