@@ -905,6 +905,7 @@ type Play = {
     | "goal";
   sortOrder: number;
   details?: Details;
+  pptReplayUrl?: string;
 };
 
 type GameOutcome = {
