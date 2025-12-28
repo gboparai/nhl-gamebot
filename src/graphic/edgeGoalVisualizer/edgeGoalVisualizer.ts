@@ -104,11 +104,11 @@ export async function generateEdgeGoalVisualization(
       showNumbers: true,
       playerRadius: 38,
       puckRadius: 12,
-      width: 960,
+      width: 960,  
       height: 405,
       quality: 20,
-      repeat: 0, // Loop forever
-      frameSkip: 1, // Use all frames for smooth playback
+      repeat: 0,
+      frameSkip: 1,
     },
   });
 

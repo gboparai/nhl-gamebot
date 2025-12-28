@@ -3,7 +3,7 @@ declare module "gif-encoder-2" {
     import { CanvasRenderingContext2D } from "canvas";
 
     export default class GIFEncoder {
-        constructor(width: number, height: number);
+        constructor(width: number, height: number, algorithim: string, optimize: boolean);
 
         start(): void;
         finish(): void;

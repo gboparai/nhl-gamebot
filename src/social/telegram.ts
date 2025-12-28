@@ -78,9 +78,9 @@ export async function sendTelegramMessage(
         } else {
           // Handle photos or mixed media
           const mediaGroup: ReadonlyArray<TelegramBot.InputMedia> = media.map((mediaPath, index) => {
-              const isGif = mediaPath.toLowerCase().endsWith('.gif');
+  
               const mediaObj: TelegramBot.InputMedia = {
-                  type: isGif ? 'animation' : 'photo',
+                  type: 'photo',
                   media: mediaPath,
                   caption: index === 0 ? text : '',
               };

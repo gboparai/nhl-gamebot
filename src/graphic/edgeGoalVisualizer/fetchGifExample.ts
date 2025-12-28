@@ -26,11 +26,11 @@ fetchAndCreateGif({
   options: {
     highlightPlayerId: 8482176, // Player #44 (CHI) - adjust to actual goal scorer
     showNumbers: true,
-    width: 960,            // Reduced for smaller file size
-    height: 405,           // Reduced for smaller file size
-    quality: 20,           // Maximum compression
-    repeat: 0,             // Loop forever
-    frameSkip: 0,          // Use every 2nd frame for smoother playback
+      width: 960,  // Reduced from 960 for smaller file size
+      height: 405, // Reduced from 405 (maintains 2400:1013 aspect ratio)
+      quality: 20, // Increased from 20 for faster encoding and smaller file
+      repeat: 0, // Loop forever
+      frameSkip: 1, // Use all frames for smooth playback
   },
 })
   .then(() => {
