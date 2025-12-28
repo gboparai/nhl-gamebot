@@ -18,10 +18,22 @@ export interface Config {
     handle: string;
     isActive: boolean;
   };
+  threads: {
+    username: string;
+    password: string;
+    deviceId: string;
+    isActive: boolean;
+    topic: string;
+  };
   discord: {
     botToken: string;
     channelId: string;
     guildId: string;
+    isActive: boolean;
+  };
+  telegram: {
+    botToken: string;
+    chatId: string;
     isActive: boolean;
   };
   fileOutput: {

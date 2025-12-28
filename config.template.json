@@ -18,6 +18,17 @@
     "guildId": "your_discord_guild_id",
     "isActive": true
   },
+  "threads": {
+    "username": "YOUR_INSTAGRAM_USERNAME",
+    "password": "YOUR_INSTAGRAM_PASSWORD",
+    "isActive": true,
+    "topic": "YOUR_TOPIC"
+  },
+  "telegram": {
+    "botToken": "YOUR_TELEGRAM_BOT_TOKEN",
+    "chatId": "YOUR_TELEGRAM_CHAT_ID",
+    "isActive": true
+  },
   "fileOutput": {
     "filePath": "./sent_messages.log",
     "isActive": false
