@@ -51,7 +51,7 @@ export async function fetchAndCreateGif(params: FetchAndCreateGifParams): Promis
     // Determine which team is on left vs right based on period
     // In NHL, home team defends the left side in periods 1 and 3
     // Away team defends the left side in period 2
-    const isHomeOnLeft = period === 1 || period === 3;
+    const isHomeOnLeft = period === 2 ;
     const leftTeam = isHomeOnLeft ? homeTeam : awayTeam;
     const rightTeam = isHomeOnLeft ? awayTeam : homeTeam;
 
