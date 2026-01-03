@@ -11,6 +11,7 @@ declare module "gif-encoder-2" {
         setRepeat(repeat: number): void;
         setDelay(delay: number): void;
         setQuality(quality: number): void;
+        setThreshold(threshold: number): void;
 
         addFrame(ctx: CanvasRenderingContext2D): void;
 

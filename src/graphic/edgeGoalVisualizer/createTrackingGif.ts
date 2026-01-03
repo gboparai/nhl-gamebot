@@ -3,6 +3,9 @@ import { CreateRinkParams } from "./createRink";
 import { createCanvas, loadImage } from "canvas";
 import GIFEncoder from "gif-encoder-2";
 import fs from "fs";
+import path from "path";
+import imagemin from "imagemin";
+import gifsicle from "imagemin-gifsicle";
 
 export interface CreateTrackingGifOptions {
   highlightPlayerId?: number;
@@ -72,7 +75,7 @@ export async function createTrackingGif(
   const ctx = canvas.getContext("2d");
 
   // Create GIF encoder
-  const encoder = new GIFEncoder(width, height, 'octree', true);
+  const encoder = new GIFEncoder(width, height, "octree", true);
   encoder.setDelay(delay);
   encoder.setRepeat(repeat);
   encoder.setQuality(quality);
@@ -119,13 +122,45 @@ export async function createTrackingGif(
 
   // Write to file
   const buffer = encoder.out.getData();
-  fs.writeFileSync(outputPath, buffer as any);
+  const tempPath = outputPath.replace(/\.gif$/, '.temp.gif');
+  fs.writeFileSync(tempPath, buffer as any);
+
+  console.log(`✓ GIF created, now compressing...`);
+
+  // Compress the GIF using imagemin
+  await imagemin([tempPath], {
+    destination: path.dirname(outputPath),
+    plugins: [
+      gifsicle({
+        optimizationLevel: 3,
+        colors: 32
+      })
+    ]
+  });
+
+  // Get the compressed file name (imagemin may change it)
+  const compressedPath = path.join(
+    path.dirname(outputPath),
+    path.basename(tempPath)
+  );
+
+  // Rename to final output path if needed
+  if (compressedPath !== outputPath) {
+    fs.renameSync(compressedPath, outputPath);
+  }
+
+  // Clean up temp file if it still exists
+  if (fs.existsSync(tempPath)) {
+    fs.unlinkSync(tempPath);
+  }
+
+  const finalSize = fs.statSync(outputPath).size;
 
   console.log(`✓ GIF created successfully: ${outputPath}`);
   console.log(`  Frames: ${selectedFrames.length} (${frames.length} total)`);
   console.log(`  Frame rate: ~${Math.round(1000 / delay)} fps`);
   console.log(`  Duration: ~${((selectedFrames.length * delay) / 1000).toFixed(1)}s`);
-  console.log(`  File size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
+  console.log(`  File size: ${(finalSize / 1024 / 1024).toFixed(2)} MB (compressed)`);
 }
 
 /**

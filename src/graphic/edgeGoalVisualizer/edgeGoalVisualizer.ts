@@ -102,11 +102,9 @@ export async function generateEdgeGoalVisualization(
     options: {
       highlightPlayerId: goalScorerId,
       showNumbers: true,
-      playerRadius: 38,
-      puckRadius: 12,
       width: 960,  
       height: 405,
-      quality: 20,
+      quality: 30,
       repeat: 0,
       frameSkip: 1,
     },

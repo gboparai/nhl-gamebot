@@ -28,7 +28,7 @@ fetchAndCreateGif({
     showNumbers: true,
       width: 960,  // Reduced from 960 for smaller file size
       height: 405, // Reduced from 405 (maintains 2400:1013 aspect ratio)
-      quality: 20, // Increased from 20 for faster encoding and smaller file
+      quality: 30, // Increased from 20 for faster encoding and smaller file
       repeat: 0, // Loop forever
       frameSkip: 1, // Use all frames for smooth playback
   },
