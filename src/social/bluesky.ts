@@ -1,7 +1,7 @@
 import { BskyAgent, RichText } from "@atproto/api";
 import { Game, Config } from "../types";
 import config from "../../config.json";
-import { getMimeType, retryOperation, generateGameHashtags, teamHashtag } from "./utils";
+import { getMimeType, retryOperation, generateGameHashtags, teamHashtag, convertGifToMp4 } from "./utils";
 import axios from "axios";
 import { logger } from "../logger";
 
@@ -199,10 +199,26 @@ export async function sendBlueskyPost(
 
       const validMedia = uploadedMedia.filter(m => m !== null);
       if (validMedia.length > 0) {
-        postData.embed = {
-          $type: "app.bsky.embed.images",
-          images: validMedia,
-        };
+        // Check if we have video content
+        const hasVideo = validMedia.some(m => m.$type === 'app.bsky.embed.video');
+        
+        if (hasVideo) {
+          // Bluesky supports only one video per post
+          const videoMedia = validMedia.find(m => m.$type === 'app.bsky.embed.video');
+          if (videoMedia) {
+            postData.embed = {
+              $type: "app.bsky.embed.video",
+              video: videoMedia.video,
+              alt: videoMedia.alt || "Game animation",
+            };
+          }
+        } else {
+          // All images
+          postData.embed = {
+            $type: "app.bsky.embed.images",
+            images: validMedia,
+          };
+        }
       }
     }
 
@@ -252,18 +268,38 @@ export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
     }
 
     const fs = await import('fs');
-    const mediaData = fs.readFileSync(mediaPath);
+    
+    // Check if this is a GIF file - convert to MP4 for Bluesky
+    let uploadPath = mediaPath;
+    let isVideo = false;
+    const mimeType = getMimeType(mediaPath);
+    
+    if (mimeType === 'image/gif') {
+      logger.info(`Converting GIF to MP4 for Bluesky: ${mediaPath}`);
+      try {
+        uploadPath = await convertGifToMp4(mediaPath);
+        isVideo = true;
+        logger.info(`Successfully converted to MP4: ${uploadPath}`);
+      } catch (error) {
+        logger.error(`Failed to convert GIF to MP4, uploading as static image:`, error);
+        // Continue with original GIF path if conversion fails
+      }
+    } else if (mimeType?.startsWith('video/')) {
+      isVideo = true;
+    }
+    
+    const mediaData = fs.readFileSync(uploadPath);
     
     // Convert Buffer to Uint8Array for Bluesky API
     const uint8Array = new Uint8Array(mediaData);
     
     // Determine MIME type based on file extension
-    const mimeType = getMimeType(mediaPath);
+    const finalMimeType = getMimeType(uploadPath);
     
     let uploadResponse;
     try {
       uploadResponse = await agent.uploadBlob(uint8Array, {
-        encoding: mimeType,
+        encoding: finalMimeType,
       });
     } catch (uploadError: any) {
       // If upload fails due to auth, try re-authenticating once
@@ -273,17 +309,36 @@ export async function uploadBlueskyMedia(mediaPath: string): Promise<any> {
         await initializeAgent();
         
         uploadResponse = await agent!.uploadBlob(uint8Array, {
-          encoding: mimeType,
+          encoding: finalMimeType,
         });
       } else {
         throw uploadError;
       }
     }
 
-    return {
-      alt: "Game graphic",
-      image: uploadResponse.data.blob,
-    };
+    // Clean up temporary MP4 file if we created one
+    if (uploadPath !== mediaPath && fs.existsSync(uploadPath)) {
+      try {
+        fs.unlinkSync(uploadPath);
+        logger.info(`Cleaned up temporary MP4 file: ${uploadPath}`);
+      } catch (cleanupError) {
+        logger.warn(`Failed to clean up temporary file ${uploadPath}:`, cleanupError);
+      }
+    }
+
+    // Return appropriate format based on media type
+    if (isVideo) {
+      return {
+        $type: 'app.bsky.embed.video',
+        video: uploadResponse.data.blob,
+        alt: "Game animation",
+      };
+    } else {
+      return {
+        alt: "Game graphic",
+        image: uploadResponse.data.blob,
+      };
+    }
     
   } catch (error: unknown) {
     logger.error("Error uploading media to Bluesky:", (error as Error).message);

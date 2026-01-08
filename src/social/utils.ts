@@ -1,6 +1,12 @@
 import { lookup } from "mime-types";
 import { Game } from "../types";
 import { logger } from "../logger";
+import fs from "fs";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegPath from "@ffmpeg-installer/ffmpeg";
+
+// Set ffmpeg path from the bundled installer
+ffmpeg.setFfmpegPath(ffmpegPath.path);
 
 /**
  * Determines if an error should trigger a retry.
@@ -28,6 +34,59 @@ export function shouldRetry(error: unknown): boolean {
 export function getMimeType(filePath: string): string | undefined {
   const mimeType = lookup(filePath);
   return (typeof mimeType === "string" ? mimeType : null) ?? undefined;
+}
+
+/**
+ * Converts a GIF file to MP4 format using ffmpeg.
+ * @param gifPath - Path to the input GIF file
+ * @param outputPath - Optional path for output MP4 (defaults to same name with .mp4 extension)
+ * @returns Promise that resolves to the path of the created MP4 file
+ */
+export async function convertGifToMp4(gifPath: string, outputPath?: string): Promise<string> {
+  if (!fs.existsSync(gifPath)) {
+    throw new Error(`GIF file not found: ${gifPath}`);
+  }
+
+  const mp4Path = outputPath || gifPath.replace(/\.gif$/i, '.mp4');
+  
+  // Remove output file if it already exists
+  if (fs.existsSync(mp4Path)) {
+    fs.unlinkSync(mp4Path);
+  }
+
+  return new Promise((resolve, reject) => {
+    ffmpeg(gifPath)
+      .outputOptions([
+        '-movflags +faststart',       // Optimize for web streaming
+        '-pix_fmt yuv420p',            // Ensure compatibility with most players
+        '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2', // Ensure even dimensions
+        '-c:v libx264',                // Use H.264 codec
+        '-preset fast',                // Balance between speed and compression
+        '-crf 23'                      // Quality (lower = better quality, 23 is default)
+      ])
+      .output(mp4Path)
+      .on('start', (commandLine) => {
+        logger.debug(`Starting GIF to MP4 conversion: ${commandLine}`);
+      })
+      .on('progress', (progress) => {
+        if (progress.percent) {
+          logger.debug(`Conversion progress: ${Math.round(progress.percent)}%`);
+        }
+      })
+      .on('end', () => {
+        if (!fs.existsSync(mp4Path)) {
+          reject(new Error(`Failed to create MP4 file: ${mp4Path}`));
+          return;
+        }
+        logger.info(`Successfully converted GIF to MP4: ${mp4Path}`);
+        resolve(mp4Path);
+      })
+      .on('error', (error) => {
+        logger.error(`Error converting GIF to MP4: ${error.message}`);
+        reject(new Error(`Failed to convert GIF to MP4: ${error.message}`));
+      })
+      .run();
+  });
 }
 
 /**
