@@ -81,7 +81,7 @@ export function createRink(params: CreateRinkParams): string {
   // Convert logo to base64 and replace center ice logo
   // The centerLogo is a relative path like "../../assets/logos/TeamName.png"
   // Resolve from project root
-  const logoPath = path.join(process.cwd(), `assets/logos/${path.basename(centerLogo) || ""}`);
+  const logoPath = centerLogo ;
 
   let logoData = "";
   try {

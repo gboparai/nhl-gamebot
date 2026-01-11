@@ -6,6 +6,7 @@ import {
 } from "canvas";
 import fs from "fs";
 import { logger } from "../logger";
+import path from "path";
 
 
 /**
@@ -355,7 +356,8 @@ const TEAM_ABBREVIATIONS = {
 };
 
 export function getTeamColor(teamName: string): string {
-  return TEAM_COLORS[teamName as keyof typeof TEAM_IMAGES] || "rgba(128,128,128,0.75)"; // fallback gray
+  const parsedName = teamName.replace(/\s/g, "");
+  return TEAM_COLORS[parsedName as keyof typeof TEAM_IMAGES] || "rgba(128,128,128,0.75)"; // fallback gray
 }
 
 /**
@@ -364,7 +366,8 @@ export function getTeamColor(teamName: string): string {
  * @returns The team abbreviation or "NHL" as fallback
  */
 export function getTeamAbbreviation(teamName: string): string {
-  return TEAM_ABBREVIATIONS[teamName as keyof typeof TEAM_ABBREVIATIONS] || "NHL";
+    const parsedName = teamName.replace(/\s/g, "");
+  return TEAM_ABBREVIATIONS[parsedName as keyof typeof TEAM_ABBREVIATIONS] || "NHL";
 }
 
 /**
@@ -373,9 +376,11 @@ export function getTeamAbbreviation(teamName: string): string {
  * @returns The relative path to the team's center ice logo
  */
 export function getCenterIceLogo(teamName: string): string {
-  const logoFileName = TEAM_IMAGES[teamName as keyof typeof TEAM_IMAGES] || "default.png";
+  const parsedName = teamName.replace(/\s/g, "");
+  const logoFileName = TEAM_IMAGES[parsedName as keyof typeof TEAM_IMAGES] || "default.png";
   // Return path relative to src/graphic/edgeGoalVisualizer/ -> ../../../assets/logos/
-  return `../../../assets/logos/${logoFileName}`;
+  return path.join(process.cwd(), `assets/logos/${path.basename(logoFileName) || ""}`)
+ 
 }
 
 /**
