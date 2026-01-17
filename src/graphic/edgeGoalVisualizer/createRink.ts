@@ -90,7 +90,8 @@ export function createRink(params: CreateRinkParams): string {
     const ext = path.extname(logoPath).toLowerCase();
     const mimeType = ext === ".svg" ? "image/svg+xml" : "image/png";
     logoData = `data:${mimeType};base64,${base64Logo}`;
-    console.log(`Loaded logo for ${homeTeam} from ${logoPath}`);
+    console.log(`Loaded logo for ${homeTeam} from ${logoPath} and base64`);
+    console.log(`Logo data:  ${base64Logo}`);
   } catch (error) {
     console.warn(`Failed to load logo: ${logoPath}`, error);
     logoData = centerLogo; // Fallback to path
