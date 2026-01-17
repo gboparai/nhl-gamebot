@@ -104,7 +104,6 @@ export async function createTrackingGif(
     // Convert SVG to image and draw on canvas
     // For SVG, we need to create a data URL
     const svgDataUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString("base64")}`;
-    console.log("frame",svgDataUrl);
     const image = await loadImage(svgDataUrl);
 
     // Fill with light grey background
