@@ -48,6 +48,7 @@
     "moment-timezone": "^0.5.45",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.66.0",
+    "sharp": "^0.34.5",
     "threads-api": "latest",
     "twitter-api-v2": "^1.16.0",
     "yt-search": "^2.10.4"

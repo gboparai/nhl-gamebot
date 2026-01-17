@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import imagemin from "imagemin";
 import gifsicle from "imagemin-gifsicle";
+import sharp from "sharp";
 
 export interface CreateTrackingGifOptions {
   highlightPlayerId?: number;
@@ -70,10 +71,6 @@ export async function createTrackingGif(
 
   console.log(`Creating GIF with ${selectedFrames.length} frames (skipped ${frames.length - selectedFrames.length}) at ~${Math.round(1000 / delay)} fps (${delay}ms per frame)`);
 
-  // Create canvas
-  const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext("2d");
-
   // Create GIF encoder
   const encoder = new GIFEncoder(width, height, "octree", true);
   encoder.setDelay(delay);
@@ -101,20 +98,28 @@ export async function createTrackingGif(
       }
     );
 
-    // Convert SVG to image and draw on canvas
-    // For SVG, we need to create a data URL
-    const svgDataUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString("base64")}`;
-    const image = await loadImage(svgDataUrl);
+    // Convert SVG to PNG using sharp (works reliably on Linux)
+    const pngBuffer = await sharp(Buffer.from(svgContent))
+      .resize(width, height)
+      .png()
+      .toBuffer();
+
+    // Load PNG image from buffer
+    const image = await loadImage(pngBuffer);
+
+    // Create a new canvas for each frame to ensure proper encoding
+    const frameCanvas = createCanvas(width, height);
+    const frameCtx = frameCanvas.getContext("2d");
 
     // Fill with light grey background
-    ctx.fillStyle = "#E5E5E5";
-    ctx.fillRect(0, 0, width, height);
+    frameCtx.fillStyle = "#E5E5E5";
+    frameCtx.fillRect(0, 0, width, height);
 
-    // Draw the SVG image
-    ctx.drawImage(image, 0, 0, width, height);
+    // Draw the PNG image
+    frameCtx.drawImage(image, 0, 0, width, height);
 
     // Add frame to GIF
-    encoder.addFrame(ctx);
+    encoder.addFrame(frameCtx);
   }
 
   // Finish encoding
