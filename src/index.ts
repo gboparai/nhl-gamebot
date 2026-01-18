@@ -34,6 +34,7 @@ import preGameImage from "./graphic/preGame";
 import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
+import { createShotChart } from "./graphic/shotChart";
 import { teamHashtag } from "./social/utils";
 import { logger } from "./logger";
 
@@ -767,11 +768,58 @@ const handleInGameState = async () => {
                       }
                     });
                     
-                    await send(
+                    const intermissionPost = await send(
                       `It's end of the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
                       currentGame!,
                       [`./temp/intermission.png`],
                     );
+                    
+                    // Generate and send shot charts as replies
+                    try {
+                      logger.info(`[${new Date().toISOString()}] Starting intermission shot chart generation`);
+                      
+                      // First reply: Heatmap only (density visualization)
+                      logger.info(`[${new Date().toISOString()}] Creating heatmap-only chart...`);
+                      await createShotChart(
+                        String(currentGame!.id),
+                        './temp/intermission-shot-chart-heatmap.png',
+                        { includeHeatmap: true, includeShots: false }
+                      );
+                      logger.info(`[${new Date().toISOString()}] Heatmap chart created, sending as reply...`);
+                      
+                      const heatmapPost = await send(
+                        `Shot density through ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period`,
+                        currentGame!,
+                        ['./temp/intermission-shot-chart-heatmap.png'],
+                        true,
+                        intermissionPost.blueskyPost,
+                        intermissionPost.threadsPost,
+                        intermissionPost.telegramPost
+                      );
+                      logger.info(`[${new Date().toISOString()}] Heatmap reply sent`);
+                      
+                      // Second reply: Shots only (no heatmap)
+                      logger.info(`[${new Date().toISOString()}] Creating shots-only chart...`);
+                      await createShotChart(
+                        String(currentGame!.id),
+                        './temp/intermission-shot-chart-shots.png',
+                        { includeHeatmap: false, includeShots: true }
+                      );
+                      logger.info(`[${new Date().toISOString()}] Shots-only chart created, sending as reply...`);
+                      
+                      await send(
+                        `Shot chart (all shots) through ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period`,
+                        currentGame!,
+                        ['./temp/intermission-shot-chart-shots.png'],
+                        true,
+                        heatmapPost.blueskyPost,
+                        heatmapPost.threadsPost,
+                        heatmapPost.telegramPost
+                      );
+                      logger.info(`[${new Date().toISOString()}] Shots-only reply sent`);
+                    } catch (shotChartError) {
+                      logger.error(`[${new Date().toISOString()}] Error generating intermission shot charts:`, shotChartError);
+                    }
                     
                   } catch (intermissionError) {
                     logger.error(`[${new Date().toISOString()}] Error sending period-end intermission report:`, intermissionError);
@@ -911,11 +959,63 @@ const handlePostGameState = async () => {
     });
 
     logger.info(`[${new Date().toISOString()}] Sending post-game message`);
-    await send(
+    const postGamePost = await send(
       `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
       currentGame!,
       [`./temp/postGame.png`],
     );
+    
+    // Generate and send shot charts as replies
+    try {
+      logger.info(`[${new Date().toISOString()}] Starting post-game shot chart generation`);
+      logger.info(`[${new Date().toISOString()}] Post-game post info:`, { 
+        bluesky: !!postGamePost.blueskyPost, 
+        threads: !!postGamePost.threadsPost, 
+        telegram: !!postGamePost.telegramPost 
+      });
+      
+      // First reply: Full shot chart with hexbin density
+      logger.info(`[${new Date().toISOString()}] Creating full shot chart with heatmap...`);
+      await createShotChart(
+        String(currentGame!.id),
+        './temp/postgame-shot-chart-full.png',
+        { includeHeatmap: true, includeShots: true }
+      );
+      logger.info(`[${new Date().toISOString()}] Full shot chart created, sending as reply...`);
+      
+      const shotChartPost = await send(
+        'Shot chart with density visualization',
+        currentGame!,
+        ['./temp/postgame-shot-chart-full.png'],
+        true,
+        postGamePost.blueskyPost,
+        postGamePost.threadsPost,
+        postGamePost.telegramPost
+      );
+      logger.info(`[${new Date().toISOString()}] First shot chart reply sent`);
+      
+      // Second reply: Shots only (no heatmap)
+      logger.info(`[${new Date().toISOString()}] Creating shots-only chart...`);
+      await createShotChart(
+        String(currentGame!.id),
+        './temp/postgame-shot-chart-shots.png',
+        { includeHeatmap: false, includeShots: true }
+      );
+      logger.info(`[${new Date().toISOString()}] Shots-only chart created, sending as reply...`);
+      
+      await send(
+        'Shot chart (all shots)',
+        currentGame!,
+        ['./temp/postgame-shot-chart-shots.png'],
+        true,
+        shotChartPost.blueskyPost,
+        shotChartPost.threadsPost,
+        shotChartPost.telegramPost
+      );
+      logger.info(`[${new Date().toISOString()}] Second shot chart reply sent`);
+    } catch (shotChartError) {
+      logger.error(`[${new Date().toISOString()}] Error generating post-game shot charts:`, shotChartError);
+    }
 
     currentState = GameStates.POSTGAMETHREESTARS;
     logger.info(`[${new Date().toISOString()}] Transitioning to POSTGAMETHREESTARS state`);
