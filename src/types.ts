@@ -712,6 +712,7 @@ export type Team = {
   score: number;
   sog: number;
   logo: string;
+  commonName: { default: string };
   record?: string;
 };
 

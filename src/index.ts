@@ -34,6 +34,7 @@ import preGameImage from "./graphic/preGame";
 import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
+import { createShotChart } from "./graphic/shotChart";
 import { teamHashtag } from "./social/utils";
 import { logger } from "./logger";
 
@@ -767,11 +768,50 @@ const handleInGameState = async () => {
                       }
                     });
                     
-                    await send(
+                    const intermissionPost = await send(
                       `It's end of the ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period at ${currentGame!.venue.default}\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
                       currentGame!,
                       [`./temp/intermission.png`],
                     );
+                    
+                    // Generate and send both shot charts in one post as reply
+                    try {
+                      logger.info(`[${new Date().toISOString()}] Starting intermission shot chart generation`);
+                      
+                      // Generate both charts
+                      logger.info(`[${new Date().toISOString()}] Creating heatmap-only chart...`);
+                      await createShotChart(
+                        String(currentGame!.id),
+                        './temp/intermission-shot-chart-heatmap.png',
+                        { includeHeatmap: true, includeShots: false, normalizeByTeam: true }
+                      );
+                      
+                      logger.info(`[${new Date().toISOString()}] Creating shots-only chart...`);
+                      await createShotChart(
+                        String(currentGame!.id),
+                        './temp/intermission-shot-chart-shots.png',
+                        { includeHeatmap: false, includeShots: true, normalizeByTeam: true }
+                      );
+                      
+                      // Send both charts in one post as reply
+                      logger.info(`[${new Date().toISOString()}] Sending both shot charts as reply...`);
+                      await send(
+                        `Shot charts through ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period`,
+                        currentGame!,
+                        [
+                          './temp/intermission-shot-chart-heatmap.png',
+                          './temp/intermission-shot-chart-shots.png'
+                        ],
+                        true,
+                        intermissionPost.blueskyPost,
+                        intermissionPost.threadsPost,
+                        intermissionPost.telegramPost,
+                        intermissionPost.twitterPost
+                      );
+                      logger.info(`[${new Date().toISOString()}] Shot charts reply sent`);
+                    } catch (shotChartError) {
+                      logger.error(`[${new Date().toISOString()}] Error generating intermission shot charts:`, shotChartError);
+                    }
                     
                   } catch (intermissionError) {
                     logger.error(`[${new Date().toISOString()}] Error sending period-end intermission report:`, intermissionError);
@@ -911,11 +951,56 @@ const handlePostGameState = async () => {
     });
 
     logger.info(`[${new Date().toISOString()}] Sending post-game message`);
-    await send(
+    const postGamePost = await send(
       `The ${winningTeam} defeat the ${losingTeam} at ${currentGame!.venue.default}!\n\n${currentGame?.homeTeam.name.default}: ${boxscore.homeTeam.score}\n${currentGame?.awayTeam.name.default}: ${boxscore.awayTeam.score}`,
       currentGame!,
       [`./temp/postGame.png`],
     );
+    
+    // Generate and send both shot charts in one post as reply
+    try {
+      logger.info(`[${new Date().toISOString()}] Starting post-game shot chart generation`);
+      logger.info(`[${new Date().toISOString()}] Post-game post info:`, { 
+        bluesky: !!postGamePost.blueskyPost, 
+        threads: !!postGamePost.threadsPost, 
+        telegram: !!postGamePost.telegramPost,
+        twitter: !!postGamePost.twitterPost
+      });
+      
+      // Generate both charts
+      logger.info(`[${new Date().toISOString()}] Creating full shot chart with heatmap...`);
+      await createShotChart(
+        String(currentGame!.id),
+        './temp/postgame-shot-chart-full.png',
+        { includeHeatmap: true, includeShots: false, normalizeByTeam: true }
+      );
+      
+      logger.info(`[${new Date().toISOString()}] Creating shots-only chart...`);
+      await createShotChart(
+        String(currentGame!.id),
+        './temp/postgame-shot-chart-shots.png',
+        { includeHeatmap: false, includeShots: true, normalizeByTeam: true }
+      );
+      
+      // Send both charts in one post as reply
+      logger.info(`[${new Date().toISOString()}] Sending both shot charts as reply...`);
+      await send(
+        `Final shot charts for tonight's game`,
+        currentGame!,
+        [
+          './temp/postgame-shot-chart-full.png',
+          './temp/postgame-shot-chart-shots.png'
+        ],
+        true,
+        postGamePost.blueskyPost,
+        postGamePost.threadsPost,
+        postGamePost.telegramPost,
+        postGamePost.twitterPost
+      );
+      logger.info(`[${new Date().toISOString()}] Shot charts reply sent`);
+    } catch (shotChartError) {
+      logger.error(`[${new Date().toISOString()}] Error generating post-game shot charts:`, shotChartError);
+    }
 
     currentState = GameStates.POSTGAMETHREESTARS;
     logger.info(`[${new Date().toISOString()}] Transitioning to POSTGAMETHREESTARS state`);

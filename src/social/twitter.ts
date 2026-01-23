@@ -21,32 +21,38 @@ export async function sendTweet(
   game?: Game,
   media?: string[],
   retries: number = 3,
-): Promise<void> {
+  replyTo?: string,
+): Promise<string | undefined> {
+  let tweetId: string | undefined;
   const operation = async () => {
+    const tweetOptions: any = {};
+    
     if (media && media.length > 0) {
-      await twitter.v2.tweet(game? tweet+ getHashtags(game): tweet, {
-        media: {
-          media_ids: media,
-        },
-      });
-    } else {
-      if (game) {
-        await twitter.v2.tweet(tweet + getHashtags(game));
-      } else {
-        await twitter.v2.tweet(tweet);
-      }
+      tweetOptions.media = { media_ids: media };
     }
+    
+    if (replyTo) {
+      tweetOptions.reply = { in_reply_to_tweet_id: replyTo };
+    }
+    
+    const result = await twitter.v2.tweet(
+      game ? tweet + getHashtags(game) : tweet,
+      Object.keys(tweetOptions).length > 0 ? tweetOptions : undefined
+    );
+    
+    tweetId = result.data.id;
   };
 
   try {
     await operation();
+    return tweetId;
   } catch (error: unknown) {
     logger.error(`Failed to send tweet: ${tweet}`);
     logger.error(`Twitter API error: ${(error as Error).message}`);
 
     if ((error as Error).message.includes("403") && retries > 0) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
-      await sendTweet(tweet, game, media, retries - 1);
+      return await sendTweet(tweet, game, media, retries - 1, replyTo);
     } else {
       throw error;
     }

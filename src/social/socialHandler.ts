@@ -19,6 +19,7 @@ const typedConfig = config as Config;
  * @param blueskyReplyTo - Optional Bluesky post to reply to (only affects Bluesky).
  * @param threadsReplyTo - Optional Threads post to reply to (only affects Threads).
  * @param telegramReplyTo - Optional Telegram message to reply to (only affects Telegram).
+ * @param twitterReplyTo - Optional Twitter tweet ID to reply to (only affects Twitter).
  * @returns A promise that resolves when the message is sent, with post info if sent.
  */
 export async function send(
@@ -29,14 +30,16 @@ export async function send(
   blueskyReplyTo?: { uri: string; cid: string },
   threadsReplyTo?: { postId: string },
   telegramReplyTo?: { messageId: number },
-): Promise<{ blueskyPost?: { uri: string; cid: string }; threadsPost?: { postId: string }; telegramPost?: { messageId: number } }> {
-  // Send to Twitter if active and not an extended message or reply
-  if (typedConfig.twitter.isActive && !extended && !blueskyReplyTo && !threadsReplyTo && !telegramReplyTo) {
+  twitterReplyTo?: string,
+): Promise<{ blueskyPost?: { uri: string; cid: string }; threadsPost?: { postId: string }; telegramPost?: { messageId: number }; twitterPost?: string }> {
+  // Send to Twitter if active and not an extended message (unless it's a reply)
+  let twitterPost: string | undefined;
+  if (typedConfig.twitter.isActive && (!extended || twitterReplyTo)) {
     try {
       const mediaIds = media
         ? await Promise.all(media.map(uploadMedia))
         : undefined;
-      await sendTweet(text, game, mediaIds);
+      twitterPost = await sendTweet(text, game, mediaIds, 3, twitterReplyTo);
     } catch (error) {
       logger.error("Failed to send tweet", error);
       // Don't throw error to prevent application crash
@@ -111,5 +114,5 @@ export async function send(
     }
   }
 
-  return { blueskyPost, threadsPost, telegramPost };
+  return { blueskyPost, threadsPost, telegramPost, twitterPost };
 }
