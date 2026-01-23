@@ -2,10 +2,10 @@ import { fetchPlayByPlay } from "../api/nhl";
 import { logger } from "../logger";
 import type { PlayByPlayGame } from "../types";
 import { rgbaToHex } from "./utils";
-import { createHeatmapCanvas } from "./heatmap";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
+import {JSDOM} from "jsdom";
 
 export interface ShotEvent {
   coordinates: { x: number; y: number };
@@ -25,6 +25,7 @@ export interface ShotChartOptions {
   awayTeamOnly?: boolean;
   bandwidth?: number;
   maxOpacity?: number;
+  normalizeByTeam?: boolean; // If true, home attacks left, away attacks right
 }
 
 /**
@@ -32,19 +33,40 @@ export interface ShotChartOptions {
  * NHL API uses feet from center ice: -100 to +100 (x), -42.5 to +42.5 (y)
  * d3-hockey uses the same coordinate system
  * Coordinates need to be flipped when home team defends right (period 2, OT2, OT4, etc.)
+ * When normalizeByTeam is true: home always attacks left (negative x), away always attacks right (positive x)
  */
-function convertCoordinates(xCoord: number, yCoord: number, homeDefendingSide?: string): { x: number; y: number } {
+function convertCoordinates(
+  xCoord: number, 
+  yCoord: number, 
+  homeDefendingSide?: string,
+  isHomeTeam?: boolean,
+  normalizeByTeam?: boolean
+): { x: number; y: number } {
   // Flip coordinates when home team defends right side
   const shouldFlip = homeDefendingSide === 'right';
   
+  let x = xCoord;
+  let y = yCoord;
+  
   if (shouldFlip) {
-    return { x: -xCoord, y: -yCoord };
+    x = -x;
+    y = -y;
   }
   
-  return {
-    x: xCoord,
-    y: yCoord,
-  };
+  // Normalize by team: home attacks left (negative x), away attacks right (positive x)
+  if (normalizeByTeam) {
+    if (isHomeTeam && x > 0) {
+      // Home team shot on right side, flip to left
+      x = -x;
+      y = -y;
+    } else if (!isHomeTeam && x < 0) {
+      // Away team shot on left side, flip to right
+      x = -x;
+      y = -y;
+    }
+  }
+  
+  return { x, y };
 }
 
 /**
@@ -52,9 +74,10 @@ function convertCoordinates(xCoord: number, yCoord: number, homeDefendingSide?: 
  */
 export function extractShotEvents(
   playByPlay: PlayByPlayGame,
-  options?: { homeTeamOnly?: boolean; awayTeamOnly?: boolean }
+  options?: { homeTeamOnly?: boolean; awayTeamOnly?: boolean; normalizeByTeam?: boolean }
 ): ShotEvent[] {
   const shots: ShotEvent[] = [];
+  let skippedGoals = 0;
 
   for (const play of playByPlay.plays) {
     // Check if this is a shot-related event
@@ -64,7 +87,18 @@ export function extractShotEvents(
       play.typeDescKey === "blocked-shot" ||
       play.typeDescKey === "missed-shot";
 
-    if (!isShotEvent || !play.details?.xCoord || !play.details?.yCoord) {
+    if (!isShotEvent) {
+      continue;
+    }
+
+    // Log missing coordinates for goals specifically (check for null/undefined, not falsy since 0 is valid)
+    if (play.typeDescKey === "goal" && (play.details?.xCoord == null || play.details?.yCoord == null || play.details?.xCoord == undefined || play.details?.yCoord == undefined)) {
+      skippedGoals++;
+      logger.warn(`Goal missing coordinates - Period ${play.periodDescriptor?.number}, EventId: ${play.eventId}, xCoord: ${play.details?.xCoord}, yCoord: ${play.details?.yCoord}`);
+      continue;
+    }
+
+    if (play.details?.xCoord == null || play.details?.yCoord == null || play.details?.xCoord == undefined || play.details?.yCoord == undefined) {
       continue;
     }
 
@@ -101,7 +135,14 @@ export function extractShotEvents(
 
     // Get defending side for coordinate flipping
     const homeDefendingSide = play.homeTeamDefendingSide;
-    const coords = convertCoordinates(play.details.xCoord, play.details.yCoord, homeDefendingSide);
+    const isHomeTeam = eventOwnerTeamId === playByPlay.homeTeam.id;
+    const coords = convertCoordinates(
+      play.details.xCoord, 
+      play.details.yCoord, 
+      homeDefendingSide,
+      isHomeTeam,
+      options?.normalizeByTeam
+    );
 
     shots.push({
       coordinates: coords,
@@ -113,6 +154,13 @@ export function extractShotEvents(
       teamAbbrev,
     });
   }
+
+  if (skippedGoals > 0) {
+    logger.warn(`Skipped ${skippedGoals} goals due to missing coordinates`);
+  }
+
+  const goalCount = shots.filter(s => s.type === "goal").length;
+  logger.info(`Extracted ${goalCount} goals out of ${shots.length} total shot events`);
 
   return shots;
 }
@@ -182,6 +230,7 @@ export async function createShotChart(
     const shots = extractShotEvents(playByPlay, {
       homeTeamOnly: options.homeTeamOnly,
       awayTeamOnly: options.awayTeamOnly,
+      normalizeByTeam: options.normalizeByTeam,
     });
 
     logger.info(`Extracted ${shots.length} shot events`);
@@ -192,10 +241,8 @@ export async function createShotChart(
     }
 
     // Dynamically import d3-hockey and jsdom only when needed
-    const { JSDOM } = await import("jsdom");
     const d3Hockey = await import("d3-hockey/dist/d3-hockey.es.js");
     const { Rink, NHLDataManager } = d3Hockey;
-
     // Setup jsdom for server-side rendering
     const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
     (global as any).document = dom.window.document;
@@ -234,7 +281,7 @@ export async function createShotChart(
     if (options.includeHeatmap === true) {
       logger.info("Adding hexbin layer...");
       rink.addHexbin(shots, {
-        radius: 3,
+        radius: 4,
         opacity: options.maxOpacity || 0.8,
         animate: false,
       });

@@ -783,14 +783,14 @@ const handleInGameState = async () => {
                       await createShotChart(
                         String(currentGame!.id),
                         './temp/intermission-shot-chart-heatmap.png',
-                        { includeHeatmap: true, includeShots: false }
+                        { includeHeatmap: true, includeShots: false, normalizeByTeam: true }
                       );
                       
                       logger.info(`[${new Date().toISOString()}] Creating shots-only chart...`);
                       await createShotChart(
                         String(currentGame!.id),
                         './temp/intermission-shot-chart-shots.png',
-                        { includeHeatmap: false, includeShots: true }
+                        { includeHeatmap: false, includeShots: true, normalizeByTeam: true }
                       );
                       
                       // Send both charts in one post as reply
@@ -972,20 +972,20 @@ const handlePostGameState = async () => {
       await createShotChart(
         String(currentGame!.id),
         './temp/postgame-shot-chart-full.png',
-        { includeHeatmap: true, includeShots: false }
+        { includeHeatmap: true, includeShots: false, normalizeByTeam: true }
       );
       
       logger.info(`[${new Date().toISOString()}] Creating shots-only chart...`);
       await createShotChart(
         String(currentGame!.id),
         './temp/postgame-shot-chart-shots.png',
-        { includeHeatmap: false, includeShots: true }
+        { includeHeatmap: false, includeShots: true, normalizeByTeam: true }
       );
       
       // Send both charts in one post as reply
       logger.info(`[${new Date().toISOString()}] Sending both shot charts as reply...`);
       await send(
-        'Shot charts',
+        `Final shot charts for tonight's game`,
         currentGame!,
         [
           './temp/postgame-shot-chart-full.png',
