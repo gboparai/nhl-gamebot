@@ -577,13 +577,14 @@ const handleInGameState = async () => {
                 const goalie = playByPlay?.rosterSpots.find(
                   (player) => player.playerId === play.details?.goalieInNetId,
                 );
+                const goalieName = goalie ? `${goalie.firstName.default} ${goalie.lastName.default}` : 'the goalie';
 
                 let goalMessage = '';
                 if(play.periodDescriptor.periodType === "SO"){
-                   goalMessage = `🎯 SHOOTOUT GOAL! ${scoringTeam?.name.default} 🎯\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} scores on ${goalie?.firstName.default} ${goalie?.lastName.default}!`;
+                   goalMessage = `🎯 SHOOTOUT GOAL! ${scoringTeam?.name.default} 🎯\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} scores on ${goalieName}!`;
                   
                   if (scoringTeam?.id !== prefTeam?.id) {
-                    goalMessage = `😞 ${scoringTeam?.name.default} scores in the shootout ${thumbsDownEmojis(1)}\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} beats ${goalie?.firstName.default} ${goalie?.lastName.default}.`;
+                    goalMessage = `😞 ${scoringTeam?.name.default} scores in the shootout ${thumbsDownEmojis(1)}\n\n${scoringPlayer?.firstName.default} ${scoringPlayer?.lastName.default} beats ${goalieName}.`;
                   }
                 }
                 else{

@@ -80,6 +80,11 @@ export function extractShotEvents(
   let skippedGoals = 0;
 
   for (const play of playByPlay.plays) {
+    // Skip shootout plays
+    if (play.periodDescriptor?.periodType === "SO") {
+      continue;
+    }
+
     // Check if this is a shot-related event
     const isShotEvent =
       play.typeDescKey === "shot-on-goal" ||
