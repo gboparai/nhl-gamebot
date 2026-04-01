@@ -5,8 +5,9 @@ import {
   fetchPlayByPlay,
   fetchNHLScores,
   fetchGameCenterRightRail,
-  fetchTeamSummaries
+  fetchTeamSummaries,
 } from "./api/nhl";
+import { fetchLiveAdvancedGameStats } from "./api/hockeychart";
 import { GameDetails, fetchGameDetails } from "./api/scoutingTheRefs";
 import {
   Game,
@@ -34,6 +35,7 @@ import preGameImage from "./graphic/preGame";
 import intermissionImage from "./graphic/intermission";
 import postGameImage from "./graphic/postGame";
 import gameImage from "./graphic/game";
+import liveAdvancedGameStatsImage from "./graphic/liveAdvancedGameStats";
 import { createShotChart } from "./graphic/shotChart";
 import { teamHashtag } from "./social/utils";
 import { logger } from "./logger";
@@ -84,6 +86,41 @@ function setOppTeam(team: Team | undefined) { oppTeam = team; }
 function setHasSentIntermission(sent: boolean) { hasSentIntermission = sent; }
 function setSentEvents(events: number[]) { sentEvents = events; }
 function setGoalPosts(posts: GoalPostInfo[]) { goalPosts = posts; }
+
+async function generateLiveAdvancedStatsGraphic(options: {
+  gameId: number;
+  title: string;
+  outputPath: string;
+  homeTeamName: string;
+  awayTeamName: string;
+}): Promise<boolean> {
+  const { gameId, title, outputPath, homeTeamName, awayTeamName } = options;
+
+  try {
+    const liveStats = await fetchLiveAdvancedGameStats(String(gameId));
+
+    await liveAdvancedGameStatsImage({
+      title,
+      outputPath,
+      home: {
+        team: homeTeamName,
+        stats: liveStats.stats.home,
+      },
+      away: {
+        team: awayTeamName,
+        stats: liveStats.stats.away,
+      },
+    });
+
+    return true;
+  } catch (error) {
+    logger.warn(
+      `[${new Date().toISOString()}] Live advanced stats endpoint unavailable, skipping advanced stats reply graphic:`,
+      error,
+    );
+    return false;
+  }
+}
 
 /**
  * Checks for highlight URLs for stored goal posts and sends replies
@@ -705,6 +742,7 @@ const handleInGameState = async () => {
                   
                   try {
                     const boxscore = await fetchBoxscore(String(currentGame?.id));
+                    logger.info(`[${new Date().toISOString()}] Generating intermission image for period ${play.periodDescriptor.number}`);
                     const gameLanding = await fetchGameLanding(String(currentGame?.id));
                     const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
                     
@@ -717,9 +755,7 @@ const handleInGameState = async () => {
                     const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
                     const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
                     const lineScores = transformGameLandingToLineScores(gameLanding);
-                    
-                    logger.info(`[${new Date().toISOString()}] Generating intermission image for period ${play.periodDescriptor.number}`);
-                    
+
                     await intermissionImage({
                       home: {
                         team: boxscore?.homeTeam.commonName.default || "",
@@ -774,6 +810,32 @@ const handleInGameState = async () => {
                       currentGame!,
                       [`./temp/intermission.png`],
                     );
+
+                    try {
+                      const intermissionAdvancedStatsPath = `./temp/intermission-advanced-stats.png`;
+                      const advancedStatsGraphicGenerated = await generateLiveAdvancedStatsGraphic({
+                        gameId: currentGame!.id,
+                        title: "INTERMISSION ADVANCED STATS",
+                        outputPath: intermissionAdvancedStatsPath,
+                        homeTeamName: boxscore?.homeTeam.commonName.default || "",
+                        awayTeamName: boxscore?.awayTeam.commonName.default || "",
+                      });
+
+                      if (advancedStatsGraphicGenerated) {
+                        await send(
+                          `Advanced stats through ${formatPeriodLabel(play.periodDescriptor.number, playByPlay.gameType)} period`,
+                          currentGame!,
+                          [intermissionAdvancedStatsPath],
+                          true,
+                          intermissionPost.blueskyPost,
+                          intermissionPost.threadsPost,
+                          intermissionPost.telegramPost,
+                          intermissionPost.twitterPost,
+                        );
+                      }
+                    } catch (advancedStatsError) {
+                      logger.error(`[${new Date().toISOString()}] Error generating/sending intermission advanced stats reply:`, advancedStatsError);
+                    }
                     
                     // Generate and send both shot charts in one post as reply
                     try {
@@ -887,6 +949,7 @@ const handlePostGameState = async () => {
     
     
     
+    logger.info(`[${new Date().toISOString()}] Generating post-game image`);
     const gameLanding = await fetchGameLanding(String(currentGame?.id));
     const rightRailInfo = await fetchGameCenterRightRail(String(currentGame?.id));
     const pims = rightRailInfo?.teamGameStats?.find((team) => team.category === 'pim');
@@ -898,8 +961,7 @@ const handlePostGameState = async () => {
     const powerPlay = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlay');
     const powerPlayPctg = rightRailInfo?.teamGameStats?.find((team) => team.category === 'powerPlayPctg');
     const lineScores = transformGameLandingToLineScores(gameLanding);
-    
-    logger.info(`[${new Date().toISOString()}] Generating post-game image`);
+
     await postGameImage({
       home: {
         team: boxscore.homeTeam.commonName.default || "",
@@ -957,6 +1019,32 @@ const handlePostGameState = async () => {
       currentGame!,
       [`./temp/postGame.png`],
     );
+
+    try {
+      const postgameAdvancedStatsPath = `./temp/postgame-advanced-stats.png`;
+      const advancedStatsGraphicGenerated = await generateLiveAdvancedStatsGraphic({
+        gameId: currentGame!.id,
+        title: "END OF GAME ADVANCED STATS",
+        outputPath: postgameAdvancedStatsPath,
+        homeTeamName: boxscore.homeTeam.commonName.default || "",
+        awayTeamName: boxscore.awayTeam.commonName.default || "",
+      });
+
+      if (advancedStatsGraphicGenerated) {
+        await send(
+          `Final advanced stats for tonight's game`,
+          currentGame!,
+          [postgameAdvancedStatsPath],
+          true,
+          postGamePost.blueskyPost,
+          postGamePost.threadsPost,
+          postGamePost.telegramPost,
+          postGamePost.twitterPost,
+        );
+      }
+    } catch (advancedStatsError) {
+      logger.error(`[${new Date().toISOString()}] Error generating/sending post-game advanced stats reply:`, advancedStatsError);
+    }
     
     // Generate and send both shot charts in one post as reply
     try {
