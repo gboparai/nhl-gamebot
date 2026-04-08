@@ -7,7 +7,10 @@ import {
   fetchGameCenterRightRail,
   fetchTeamSummaries,
 } from "./api/nhl";
-import { fetchLiveAdvancedGameStats } from "./api/hockeychart";
+import {
+  fetchLiveAdvancedGameStats,
+  fetchTeamAverageAdvancedStats,
+} from "./api/hockeychart";
 import { GameDetails, fetchGameDetails } from "./api/scoutingTheRefs";
 import {
   Game,
@@ -116,6 +119,54 @@ async function generateLiveAdvancedStatsGraphic(options: {
   } catch (error) {
     logger.warn(
       `[${new Date().toISOString()}] Live advanced stats endpoint unavailable, skipping advanced stats reply graphic:`,
+      error,
+    );
+    return false;
+  }
+}
+
+async function generatePregameMatchupAdvancedStatsGraphic(options: {
+  season: string;
+  homeTeamAbbrev: string;
+  awayTeamAbbrev: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  title: string;
+  outputPath: string;
+}): Promise<boolean> {
+  const {
+    season,
+    homeTeamAbbrev,
+    awayTeamAbbrev,
+    homeTeamName,
+    awayTeamName,
+    title,
+    outputPath,
+  } = options;
+
+  try {
+    const [homeStats, awayStats] = await Promise.all([
+      fetchTeamAverageAdvancedStats(season, homeTeamAbbrev),
+      fetchTeamAverageAdvancedStats(season, awayTeamAbbrev),
+    ]);
+
+    await liveAdvancedGameStatsImage({
+      title,
+      outputPath,
+      home: {
+        team: homeTeamName,
+        stats: homeStats.per_game,
+      },
+      away: {
+        team: awayTeamName,
+        stats: awayStats.per_game,
+      },
+    });
+
+    return true;
+  } catch (error) {
+    logger.warn(
+      `[${new Date().toISOString()}] Pregame team-average advanced stats endpoint unavailable, skipping pregame advanced stats reply graphic:`,
       error,
     );
     return false;
@@ -418,11 +469,43 @@ const handlePregameState = async () => {
           },
         });
 
-        await send(
+        const gamePost = await send(
           `🔥 Get ready for an epic showdown! Tonight, it's the ${prefTeam?.name.default} going head-to-head with the ${oppTeam?.name.default} at ${currentGame.venue.default}. You won’t want to miss a second of the action! `,
           currentGame,
           [`./temp/game.png`],
         );
+
+        try {
+          const pregameAdvancedStatsPath = `./temp/pregame-advanced-stats.png`;
+          const advancedStatsGraphicGenerated =
+            await generatePregameMatchupAdvancedStatsGraphic({
+              season: String(currentGame.season),
+              homeTeamAbbrev: currentGame.homeTeam.abbrev,
+              awayTeamAbbrev: currentGame.awayTeam.abbrev,
+              homeTeamName: currentGame.homeTeam.name.default,
+              awayTeamName: currentGame.awayTeam.name.default,
+              title: "MATCHUP ADVANCED STATS",
+              outputPath: pregameAdvancedStatsPath,
+            });
+
+          if (advancedStatsGraphicGenerated) {
+            await send(
+              `Pregame matchup advanced stats`,
+              currentGame,
+              [pregameAdvancedStatsPath],
+              true,
+              gamePost.blueskyPost,
+              gamePost.threadsPost,
+              gamePost.telegramPost,
+              gamePost.twitterPost,
+            );
+          }
+        } catch (advancedStatsError) {
+          logger.error(
+            `[${new Date().toISOString()}] Error generating/sending pregame advanced stats reply:`,
+            advancedStatsError,
+          );
+        }
 
         const dfLines = await dailyfaceoffLines(prefTeam?.name.default || "");
         if (dfLines.confirmed) {

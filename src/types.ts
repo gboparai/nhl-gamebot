@@ -81,15 +81,27 @@ export type LiveAdvancedGameStats = {
   slot_chances: number;
   slot_chances_5v5: number;
 };
-
+export type TeamAverageAdvancedStats = LiveAdvancedGameStats & {
+  home_plate: number;
+  home_plate_5v5: number;
+};
 export type LiveAdvancedGameStatsResponse = {
   game_id: number;
   home_team: string;
   away_team: string;
   stats: {
-    home: LiveAdvancedGameStats;
-    away: LiveAdvancedGameStats;
+    home: TeamAverageAdvancedStats;
+    away: TeamAverageAdvancedStats;
   };
+};
+
+
+
+export type TeamAverageAdvancedStatsResponse = {
+  team: string;
+  season: string;
+  games_played: number;
+  per_game: TeamAverageAdvancedStats;
 };
 
 // https://api.nhle.com/stats/rest/en/team/summary
