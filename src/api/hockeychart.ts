@@ -6,7 +6,7 @@ import {
 } from "../types";
 
 const hockeyChartApiBaseUrl =
-  process.env.HOCKEYCHART_API_BASE_URL ?? "http://127.0.0.1:8000/api";
+  process.env.HOCKEYCHART_API_BASE_URL ?? "https://api.hockeychart.com/api";
 
 /**
  * Fetches live advanced game stats from the HockeyChart endpoint.
