@@ -4,6 +4,7 @@ import preGameImage from "../src/graphic/preGame";
 import intermissionImage from "../src/graphic/intermission";
 import postGameImage from "../src/graphic/postGame";
 import gameImage from "../src/graphic/game";
+import liveAdvancedGameStatsImage from "../src/graphic/liveAdvancedGameStats";
 import { LineScore } from "../src/graphic/utils";
 
 const tempDir = path.join(process.cwd(), "temp");
@@ -123,5 +124,91 @@ describe("Graphics Generation Tests", () => {
     };
     await expect(gameImage(params)).resolves.toBeUndefined();
     expect(fs.existsSync(outputPath)).toBe(true);
+  });
+
+  test("should generate live advanced stats preview images", async () => {
+    const balancedOutputPath = resetTemp("live-advanced-stats-preview-balanced.png");
+
+    await expect(liveAdvancedGameStatsImage({
+      title: "INTERMISSION ADVANCED STATS",
+      outputPath: balancedOutputPath,
+      home: {
+        team: "WPG",
+        stats: {
+          xg: 1.64,
+          xg_5v5: 0.998,
+          corsi: 47,
+          corsi_5v5: 40,
+          fenwick: 40,
+          fenwick_5v5: 33,
+          hd_chances: 10,
+          hd_chances_5v5: 6,
+          scoring_chances: 24,
+          scoring_chances_5v5: 19,
+          slot_chances: 3,
+          slot_chances_5v5: 2,
+        },
+      },
+      away: {
+        team: "COL",
+        stats: {
+          xg: 3.604,
+          xg_5v5: 2.959,
+          corsi: 70,
+          corsi_5v5: 51,
+          fenwick: 46,
+          fenwick_5v5: 33,
+          hd_chances: 20,
+          hd_chances_5v5: 15,
+          scoring_chances: 39,
+          scoring_chances_5v5: 29,
+          slot_chances: 13,
+          slot_chances_5v5: 10,
+        },
+      },
+    })).resolves.toBeUndefined();
+    expect(fs.existsSync(balancedOutputPath)).toBe(true);
+
+    const lopsidedOutputPath = resetTemp("live-advanced-stats-preview-lopsided.png");
+
+    await expect(liveAdvancedGameStatsImage({
+      title: "END OF GAME ADVANCED STATS",
+      outputPath: lopsidedOutputPath,
+      home: {
+        team: "TOR",
+        stats: {
+          xg: 0.72,
+          xg_5v5: 0.41,
+          corsi: 28,
+          corsi_5v5: 19,
+          fenwick: 21,
+          fenwick_5v5: 14,
+          hd_chances: 4,
+          hd_chances_5v5: 2,
+          scoring_chances: 11,
+          scoring_chances_5v5: 7,
+          slot_chances: 1,
+          slot_chances_5v5: 1,
+        },
+      },
+      away: {
+        team: "EDM",
+        stats: {
+          xg: 4.85,
+          xg_5v5: 3.67,
+          corsi: 81,
+          corsi_5v5: 63,
+          fenwick: 57,
+          fenwick_5v5: 44,
+          hd_chances: 23,
+          hd_chances_5v5: 17,
+          scoring_chances: 45,
+          scoring_chances_5v5: 34,
+          slot_chances: 16,
+          slot_chances_5v5: 12,
+        },
+      },
+    })).resolves.toBeUndefined();
+    expect(fs.existsSync(lopsidedOutputPath)).toBe(true);
   });
 });

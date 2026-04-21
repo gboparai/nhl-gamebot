@@ -357,7 +357,22 @@ const TEAM_ABBREVIATIONS = {
 
 export function getTeamColor(teamName: string): string {
   const parsedName = teamName.replace(/\s/g, "");
-  return TEAM_COLORS[parsedName as keyof typeof TEAM_IMAGES] || "rgba(128,128,128,0.75)"; // fallback gray
+
+  // Direct full-name lookup
+  if (TEAM_COLORS[parsedName as keyof typeof TEAM_COLORS]) {
+    return TEAM_COLORS[parsedName as keyof typeof TEAM_COLORS];
+  }
+
+  // Abbreviation reverse-lookup (e.g. "WPG" -> "Jets")
+  const entry = Object.entries(TEAM_ABBREVIATIONS).find(
+    ([, abbrev]) => abbrev === parsedName.toUpperCase(),
+  );
+  if (entry) {
+    const teamKey = entry[0];
+    return TEAM_COLORS[teamKey as keyof typeof TEAM_COLORS] || "rgba(128,128,128,0.75)";
+  }
+
+  return "rgba(128,128,128,0.75)"; // fallback gray
 }
 
 /**

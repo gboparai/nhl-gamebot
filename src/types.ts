@@ -67,6 +67,43 @@ export interface Config {
   };
 }
 
+export type LiveAdvancedGameStats = {
+  corsi: number;
+  fenwick: number;
+  corsi_5v5: number;
+  fenwick_5v5: number;
+  xg: number;
+  xg_5v5: number;
+  hd_chances: number;
+  hd_chances_5v5: number;
+  scoring_chances: number;
+  scoring_chances_5v5: number;
+  slot_chances: number;
+  slot_chances_5v5: number;
+};
+export type TeamAverageAdvancedStats = LiveAdvancedGameStats & {
+  home_plate: number;
+  home_plate_5v5: number;
+};
+export type LiveAdvancedGameStatsResponse = {
+  game_id: number;
+  home_team: string;
+  away_team: string;
+  stats: {
+    home: TeamAverageAdvancedStats;
+    away: TeamAverageAdvancedStats;
+  };
+};
+
+
+
+export type TeamAverageAdvancedStatsResponse = {
+  team: string;
+  season: string;
+  games_played: number;
+  per_game: TeamAverageAdvancedStats;
+};
+
 // https://api.nhle.com/stats/rest/en/team/summary
 export type TeamSummary = {
   faceoffWinPct: number | null;
