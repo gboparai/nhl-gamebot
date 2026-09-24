@@ -31,18 +31,34 @@ export async function fetchLiveAdvancedGameStats(
  * Fetches season per-game advanced averages for a single team.
  * @param season - NHL season in API format (for example: "20242025").
  * @param teamAbbrev - Team abbreviation (for example: "VAN").
+ * @param gameType - Optional game type ("regular", "playoff", "preseason").
  * @returns Team-level per-game advanced stats.
  */
 export async function fetchTeamAverageAdvancedStats(
   season: string,
   teamAbbrev: string,
-): Promise<TeamAverageAdvancedStatsResponse> {
+  gameType?: string,
+): Promise<TeamAverageAdvancedStatsResponse | null> {
   try {
-    const response = await axios.get(
-      `${hockeyChartApiBaseUrl}/team/${season}/${teamAbbrev}`,
-    );
+    const url = gameType
+      ? `${hockeyChartApiBaseUrl}/team/${season}/${teamAbbrev}?game_type=${gameType}`
+      : `${hockeyChartApiBaseUrl}/team/${season}/${teamAbbrev}`;
+
+    const response = await axios.get(url, {
+      validateStatus: function (status) {
+        return status >= 200 && status < 300 || status === 400; // Accept 400s if it's the custom error format
+      }
+    });
+
+    if (response.data && response.data.success === false && response.data.error && response.data.error.includes("No completed")) {
+      return null;
+    }
+
     return response.data as TeamAverageAdvancedStatsResponse;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.response && error.response.data && error.response.data.success === false && error.response.data.error && error.response.data.error.includes("No completed")) {
+      return null;
+    }
     logger.error("Error fetching team average advanced stats data:", error);
     throw error;
   }

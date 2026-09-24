@@ -133,6 +133,7 @@ async function generatePregameMatchupAdvancedStatsGraphic(options: {
   awayTeamName: string;
   title: string;
   outputPath: string;
+  gameType: number;
 }): Promise<boolean> {
   const {
     season,
@@ -142,24 +143,51 @@ async function generatePregameMatchupAdvancedStatsGraphic(options: {
     awayTeamName,
     title,
     outputPath,
+    gameType,
   } = options;
 
+  let gameTypeStr = "regular";
+  if (gameType === 1) gameTypeStr = "preseason";
+  else if (gameType === 3) gameTypeStr = "playoff";
+
   try {
-    const [homeStats, awayStats] = await Promise.all([
-      fetchTeamAverageAdvancedStats(season, homeTeamAbbrev),
-      fetchTeamAverageAdvancedStats(season, awayTeamAbbrev),
+    let [homeStats, awayStats] = await Promise.all([
+      fetchTeamAverageAdvancedStats(season, homeTeamAbbrev, gameTypeStr),
+      fetchTeamAverageAdvancedStats(season, awayTeamAbbrev, gameTypeStr),
     ]);
+
+    // Fallback for first game of playoffs to use regular season stats
+    if (gameTypeStr === "playoff" && (!homeStats || !awayStats)) {
+      const fallbackStats = await Promise.all([
+        homeStats ? Promise.resolve(homeStats) : fetchTeamAverageAdvancedStats(season, homeTeamAbbrev, "regular"),
+        awayStats ? Promise.resolve(awayStats) : fetchTeamAverageAdvancedStats(season, awayTeamAbbrev, "regular"),
+      ]);
+      homeStats = fallbackStats[0];
+      awayStats = fallbackStats[1];
+    }
+
+    // Default to 0s if no stats are available (e.g., first game of preseason/regular season)
+    const defaultStats = {
+      corsi: 0, fenwick: 0, corsi_5v5: 0, fenwick_5v5: 0,
+      xg: 0, xg_5v5: 0, hd_chances: 0, hd_chances_5v5: 0,
+      scoring_chances: 0, scoring_chances_5v5: 0,
+      slot_chances: 0, slot_chances_5v5: 0,
+      home_plate: 0, home_plate_5v5: 0,
+    };
+
+    const homeStatsFinal = homeStats?.per_game || defaultStats;
+    const awayStatsFinal = awayStats?.per_game || defaultStats;
 
     await liveAdvancedGameStatsImage({
       title,
       outputPath,
       home: {
         team: homeTeamName,
-        stats: homeStats.per_game,
+        stats: homeStatsFinal,
       },
       away: {
         team: awayTeamName,
-        stats: awayStats.per_game,
+        stats: awayStatsFinal,
       },
     });
 
@@ -486,6 +514,7 @@ const handlePregameState = async () => {
               awayTeamName: currentGame.awayTeam.name.default,
               title: "MATCHUP ADVANCED STATS",
               outputPath: pregameAdvancedStatsPath,
+              gameType: currentGame.gameType,
             });
 
           if (advancedStatsGraphicGenerated) {
