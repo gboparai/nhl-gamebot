@@ -27,7 +27,8 @@ Desktop.ini
 
 # Config files
 config.json
-temp/
+temp/*
+!temp/.gitkeep
 logfile.txt
 package-lock.json
 logfile.log

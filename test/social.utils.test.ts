@@ -8,9 +8,13 @@ import {
   teamHashtag,
 } from "../src/social/utils";
 
-jest.mock("fs", () => ({
-  existsSync: jest.fn(),
-}));
+jest.mock("fs", () => {
+  const actualFs = jest.requireActual("fs");
+  return {
+    ...actualFs,
+    existsSync: jest.fn(),
+  };
+});
 
 jest.mock("../src/logger", () => ({
   logger: {
@@ -57,33 +61,33 @@ describe("src/social/utils", () => {
       .toBeUndefined();
   });
 
-  // test("retryOperation retries transient failures and succeeds", async () => {
-  //   jest.useFakeTimers();
-  //   const operation = jest
-  //     .fn<Promise<string>, []>()
-  //     .mockRejectedValueOnce(new Error("network hiccup"))
-  //     .mockResolvedValueOnce("ok");
+  test("retryOperation retries transient failures and succeeds", async () => {
+    jest.useFakeTimers();
+    const operation = jest
+      .fn<Promise<string>, []>()
+      .mockRejectedValueOnce(new Error("network hiccup"))
+      .mockResolvedValueOnce("ok");
 
-  //   const promise = retryOperation(operation, 2, 100, "twitter", "payload");
+    const promise = retryOperation(operation, 2, 100, "twitter", "payload");
 
-  //   await jest.advanceTimersByTimeAsync(100);
+    await jest.advanceTimersByTimeAsync(100);
 
-  //   await expect(promise).resolves.toBe("ok");
-  //   expect(operation).toHaveBeenCalledTimes(2);
-  //   expect(logger.debug).toHaveBeenCalledWith("failed-twitter-post", "payload");
-  //   expect(logger.error).toHaveBeenCalledWith("twitter-error", expect.any(Error));
+    await expect(promise).resolves.toBe("ok");
+    expect(operation).toHaveBeenCalledTimes(2);
+    expect(logger.debug).toHaveBeenCalledWith("Failed twitter post content", "payload");
+    expect(logger.error).toHaveBeenCalledWith("twitter operation error", expect.any(Error));
 
-  //   jest.useRealTimers();
-  // });
+    jest.useRealTimers();
+  });
 
-  // test("retryOperation throws when retries exhausted or non-retryable", async () => {
-  //   const operation = jest.fn<Promise<void>, []>().mockRejectedValue(new Error("fatal failure"));
+  test("retryOperation throws when retries exhausted or non-retryable", async () => {
+    const operation = jest.fn<Promise<void>, []>().mockRejectedValue(new Error("fatal failure"));
 
-  //   await expect(retryOperation(operation, 1, 100, "bluesky"))
-  //     .rejects.toThrow("fatal failure");
-  //   expect(operation).toHaveBeenCalledTimes(1);
-  //   expect(logger.error).toHaveBeenCalledWith("bluesky-error", expect.any(Error));
-  // });
+    await expect(retryOperation(operation, 1, 100, "bluesky"))
+      .rejects.toThrow("fatal failure");
+    expect(operation).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith("Failed to execute bluesky operation", expect.any(Error));
+  });
 
   test("generateGameHashtags builds twitter formatted hashtags by default", () => {
     const game = {

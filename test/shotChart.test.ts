@@ -51,8 +51,14 @@ jest.mock("jsdom", () => ({
         createElement: jest.fn().mockReturnValue({
           id: "",
           querySelector: jest.fn().mockReturnValue({
+            setAttribute: jest.fn(),
+            appendChild: jest.fn(),
             outerHTML: '<svg xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100"/></svg>',
           }),
+        }),
+        createElementNS: jest.fn().mockReturnValue({
+          setAttribute: jest.fn(),
+          appendChild: jest.fn(),
         }),
         body: {
           appendChild: jest.fn(),
@@ -67,6 +73,7 @@ jest.mock("d3-hockey", () => ({
   Rink: jest.fn().mockImplementation(() => ({
     render: jest.fn().mockReturnThis(),
     addHeatmap: jest.fn().mockReturnThis(),
+    addHexbin: jest.fn().mockReturnThis(),
     addEvents: jest.fn().mockReturnThis(),
   })),
   colorByCategory: jest.fn().mockReturnValue("#ff0000"),
@@ -115,7 +122,7 @@ describe("shotChart", () => {
           xCoord: 1020, // 85 feet
           yCoord: 60, // 5 feet
           shotType: "Snap Shot",
-          shootingPlayerId: 8481519,
+          scoringPlayerId: 8481519,
         },
       } as any,
       {
@@ -193,23 +200,23 @@ describe("shotChart", () => {
 
       expect(shots).toHaveLength(4);
       expect(shots[0]).toMatchObject({
-        coordinates: { x: 70, y: 10 },
+        coordinates: { x: 840, y: 120 },
         type: "shot",
         shotType: "Wrist Shot",
         period: 1,
         timeInPeriod: "05:23",
       });
       expect(shots[1]).toMatchObject({
-        coordinates: { x: 85, y: 5 },
+        coordinates: { x: 1020, y: 60 },
         type: "goal",
         shotType: "Snap Shot",
       });
       expect(shots[2]).toMatchObject({
-        coordinates: { x: 60, y: -15 },
+        coordinates: { x: 720, y: -180 },
         type: "blocked",
       });
       expect(shots[3]).toMatchObject({
-        coordinates: { x: 65, y: 12 },
+        coordinates: { x: 780, y: 144 },
         type: "missed",
       });
     });
