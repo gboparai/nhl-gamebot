@@ -92,10 +92,10 @@ export function extractOfficialData(
     const name = $(el).text().trim();
     if (!name) return;
 
-    const seasongames = $(seasonGamesRow.children().get(i)).text().trim();
-    const careergames = $(careerGamesRow.children().get(i)).text().trim();
+    const seasongames = $(seasonGamesRow.next().children().get(i)).text().trim();
+    const careergames = $(careerGamesRow.next().children().get(i)).text().trim();
     const penaltygame = includesPenalties
-      ? $(penaltyGamesRow?.children().get(i) || "")
+      ? $(penaltyGamesRow?.next().children().get(i) || "")
           .text()
           .split(" (")[0]
           .trim()
